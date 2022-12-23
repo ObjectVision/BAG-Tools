@@ -20,7 +20,7 @@ container XML
 			parameter<string> ComSpec         := Expand(., '%env:ComSpec%');
 			parameter<string> FileNameDirInfo := '%LocalDataProjDir%/dirinfo_' + date +'.str';
 
-			parameter<string> DirCmdOrg       := Expand(., 'Dir '+ XmlDir +'/*.xml > ' + FileNameDirInfo);
+			parameter<string> DirCmdOrg       := Expand(., 'MD "%LocalDataProjDir%" & Dir '+ XmlDir +'/*.xml > ' + FileNameDirInfo);
 			parameter<string> DirCmd          := Replace(DirCmdOrg, '/', '\\') + ' /B';
 			
 			parameter<string> NewLine         : [ '\n' ];

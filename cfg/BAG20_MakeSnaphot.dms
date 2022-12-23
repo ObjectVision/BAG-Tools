@@ -24,8 +24,8 @@
 container BAG20_MakeSnapshot
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20220711';	
-	parameter<string> Snapshot_Date_Input := '20220701';
+	parameter<string> BAG_Date            := '20221011';	
+	parameter<string> Snapshot_Date_Input := '20221001';
 	//
 	parameter<string> FSSDir              := 'D:/SourceData/BAG20/'+BAG_Date+'/fss';
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
