@@ -149,7 +149,7 @@ container Templates: IsHidden = "True"
 
 		container impl 
 		{
-			parameter<bool> Check := (#child == #parent) && all(parent_rel == ID(child));
+			parameter<bool> Check := (#child == #parent) && all(parent_rel == ID(child)[parent]);
 		}
 		attribute<rdc_mm> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
 	}
