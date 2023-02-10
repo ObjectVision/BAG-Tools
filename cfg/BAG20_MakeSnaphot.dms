@@ -24,8 +24,8 @@
 container BAG20_MakeSnapshot
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20221011';	
-	parameter<string> Snapshot_Date_Input := '20221001';
+	parameter<string> BAG_Date            := '20230113';	
+	parameter<string> Snapshot_Date_Input := '20230101';
 	//
 	parameter<string> FSSDir              := 'D:/SourceData/BAG20/'+BAG_Date+'/fss';
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
@@ -40,6 +40,7 @@ container BAG20_MakeSnapshot
 	
 	container snapshot_date_nl_geoparaat                              := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , False                   , False)';
 	container snapshot_date_nl_geoparaat_gpkg                         := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], False  , False          , False                   , False)';
+	container snapshot_date_ameland_geoparaat_gpkg                    := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], True   , False          , False                   , False)';
 	
 	container snapshot_date_nl_vreemde_eruit                          := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , True                    , False)';
 
@@ -94,12 +95,13 @@ container BAG20_MakeSnapshot
 //	:   StorageName     = "D:/SourceData/Leiden/gemeente.shp"
 //:   StorageName     = "D:/SourceData/Lansingerland/gemeente.shp"
 //	:   StorageName     = "D:/SourceData/Schiedam/Schiedam.shp"
-	:   StorageName     = "D:/SourceData/HoekscheWaard/HW.shp"
-	
+//	:   StorageName     = "D:/SourceData/HoekscheWaard/HW.shp"
+	:   StorageName     = "D:/SourceData/demo/ameland.shp"	
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	{
-		parameter<string>         Label := 'HoekscheWaard';
+//		parameter<string>         Label := 'HoekscheWaard';
+		parameter<string>         Label := 'Ameland';
 		attribute<geometries/rdc> geometry (poly);
 	}
 

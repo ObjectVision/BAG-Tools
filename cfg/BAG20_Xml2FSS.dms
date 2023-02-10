@@ -33,7 +33,7 @@
 container BAG20_Xml2FSS
 {
 	// te configureren
-	parameter<string> date     := '20221011';
+	parameter<string> date     := '20230113';
 	//
 
 	//parameter<string> date_dir := '%SourceDataDir%/BAG20/' + date;
