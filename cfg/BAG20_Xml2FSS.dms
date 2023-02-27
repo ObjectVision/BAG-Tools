@@ -30,7 +30,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container BAG20_Xml2FSS
+container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS version should be 8.6.x or later
 {
 	// te configureren
 	parameter<string> date     := '20230113';
