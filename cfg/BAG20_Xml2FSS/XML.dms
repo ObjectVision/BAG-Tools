@@ -3,7 +3,7 @@
 //                                                                                    //
 //              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
 //                                                                                    //
-//                              Object Vision 2022                                    //
+//                              Object Vision 2023                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
@@ -22,19 +22,18 @@ container XML
 
 			parameter<string> DirCmdOrg       := Expand(., 'MD "%LocalDataProjDir%" & Dir '+ XmlDir +'/*.xml > ' + FileNameDirInfo);
 			parameter<string> DirCmd          := Replace(DirCmdOrg, '/', '\\') + ' /B';
-			
-			parameter<string> NewLine         : [ '\n' ];
+
+			parameter<string> NewLine         : ['\n'];
 		}
 
-		parameter<uint32>   writeObjectenlijst := exec_ec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
-		parameter<bool>     CheckIsBAG2data    := strcount(xml/ligplaats/XmlData[0], '<Objecten:Ligplaats>') > 0;
-		parameter<uint8>    CanGenerate        := writeObjectenlijst > 0 
-			?	2b
-			:	!CheckIsBAG2data 
+		parameter<uint32> writeObjectenlijst := exec_ec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
+		parameter<bool>   CheckIsBAG2data    := strcount(xml/ligplaats/XmlData[0], '<Objecten:Ligplaats>') > 0;
+		parameter<uint8>  CanGenerate        := writeObjectenlijst > 0 
+			? 2b
+			: !CheckIsBAG2data 
 				? 1b
 				: 0b;
-		
-		
+
 		parameter<string> Objectenlijst: Storagename = "=impl/FileNameDirInfo";	
 
 		container bestand_selectie
@@ -43,50 +42,21 @@ container XML
 			unit<uint32> alle_regels := range(uint32, 0, nr_lines)
 			{
 				attribute<string> inhoud    := uppercase(readLines(Objectenlijst, ., 0));
+				attribute<string> naam      := inhoud;
 				attribute<bool>   isxmlfile := strcount(inhoud,'.XML') > 0;
 			}
 
-			unit<uint32> xml_regels := Subset(alle_regels/isxmlfile)
-			{
-				attribute<string> inhoud := alle_regels/inhoud[nr_OrgEntity];	
-			}
-			
+			unit<uint32> xml_regels := select_many(alle_regels, alle_regels/isxmlfile);
+
 			container xml_bestanden
 			{
-				unit<uint32> ligplaats := Subset(strcount(xml_regels/inhoud,'LIG') > 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
-
-				unit<uint32> standplaats := Subset(strcount(xml_regels/inhoud,'STA') > 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
-				
-				unit<uint32> pand := Subset(strcount(xml_regels/inhoud,'PND') > 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
-				
-				unit<uint32> vbo := Subset(strcount(xml_regels/inhoud,'VBO') > 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
-				
-				unit<uint32> nummeraanduiding := Subset(strcount(xml_regels/inhoud,'NUM') > 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
-				
-				unit<uint32> openbareruimte := Subset(strcount(xml_regels/inhoud,'OPR') > 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
-				
-				unit<uint32> woonplaats := Subset(strcount(xml_regels/inhoud,'WPL') > 0 && strcount(xml_regels/inhoud,'GEM-WPL-RELATIE') == 0)
-				{
-					attribute<string> naam := xml_regels/inhoud[nr_OrgEntity];
-				}
+				unit<uint32> ligplaats        := select_many(xml_regels, strcount(xml_regels/inhoud,'LIG') > 0);
+				unit<uint32> standplaats      := select_many(xml_regels, strcount(xml_regels/inhoud,'STA') > 0);
+				unit<uint32> pand             := select_many(xml_regels, strcount(xml_regels/inhoud,'PND') > 0);
+				unit<uint32> vbo              := select_many(xml_regels, strcount(xml_regels/inhoud,'VBO') > 0);
+				unit<uint32> nummeraanduiding := select_many(xml_regels, strcount(xml_regels/inhoud,'NUM') > 0);
+				unit<uint32> openbareruimte   := select_many(xml_regels, strcount(xml_regels/inhoud,'OPR') > 0);
+				unit<uint32> woonplaats       := select_many(xml_regels, strcount(xml_regels/inhoud,'WPL') > 0 && strcount(xml_regels/inhoud,'GEM-WPL-RELATIE') == 0);
 			}
 		}
 	}
@@ -94,8 +64,8 @@ container XML
 	container ligplaats
 	{
 		unit<uint32> File := folderinfo/bestand_selectie/xml_bestanden/ligplaats;
-		attribute<string> FileName(File) := File/naam;
-		attribute<string> XmlData(File)
+		attribute<string> FileName (File) := File/naam;
+		attribute<string> XmlData  (File)
 		:	StorageType = "strfiles"
 		,	StorageName = "=XmlDir";
 
@@ -194,11 +164,10 @@ container XML
 	container standplaats
 	{
 		unit<uint32> File := folderinfo/bestand_selectie/xml_bestanden/standplaats;
-		attribute<string> FileName(File) := File/naam;
-		attribute<string> XmlData(File)
+		attribute<string> FileName (File) := File/naam;
+		attribute<string> XmlData  (File)
 		:	StorageType = "strfiles"
 		,	StorageName = "=XmlDir";
-
 
 		/* XML code 1 standplaats object, BAG 2.0
 			<sl:stand>
@@ -313,15 +282,15 @@ container XML
 			parameter<uint32> fileset_rel;
 			// end case parameters
 
-			unit<uint32>      File := Subset(FilesAll/fileset_rel = fileset_rel);
+			unit<uint32>      File := Select_many(FilesAll, FilesAll/fileset_rel = fileset_rel);
 
-			attribute<string> FileName (File) := FilesAll/FileName[File/nr_OrgEntity];
+			attribute<string> FileName (File) := File/FileName;
 			attribute<string> XmlData  (File)
-			:	StorageType = "strfiles"
-			,	StorageName = "=XmlDir";
+			: StorageType = "strfiles"
+			, StorageName = "=XmlDir";
 
 			container ParsedXML  := parse_xml(XmlData, schema);
-			container geoBuilder := Templates/ProcessGmlPolygon(ParsedXML/Objecten_pand,false);
+			container geoBuilder := Templates/ProcessGmlPolygon(ParsedXML/Objecten_pand, false);
 
 			unit<uint32> pand := ParsedXML/Objecten_Pand, StorageName= "= FSSDir + '/pand/fs_' + string(fileset_rel) + '.fss'"
 			{
@@ -426,9 +395,9 @@ container XML
 			attribute<string> FileName      := FilesAll/naam;
 		}
 
-		unit<uint32> fileset:= unique(FilesAll/fileset_rel);
+		unit<uint32> fileset := unique(FilesAll/fileset_rel);
 
-		container PerFileSet:= 
+		container PerFileSet :=
 			for_each_ne(
 				'fs_' + string(fileset/values)
 				,'VerwerkFileSet('+ string(fileset/values)+ ')'
@@ -440,12 +409,12 @@ container XML
 			parameter<fileset> fileset_rel;
 			// end case parameters
 
-			unit<uint32> File := Subset(FilesAll/fileset_rel = fileset_rel);
+			unit<uint32>      File := Select_many(FilesAll, FilesAll/fileset_rel = fileset_rel);
 
-			attribute<string> FileName(File) := FilesAll/FileName[File/nr_OrgEntity];
-			attribute<string> XmlData (File)
-			:	StorageType = "strfiles"
-			,	StorageName = "=XmlDir";
+			attribute<string> FileName (File) := File/FileName;
+			attribute<string> XmlData  (File)
+			: StorageType = "strfiles"
+			, StorageName = "=XmlDir";
 
 			/* XML code 1 verblijfsobject object, BAG 2.0
 				<sl:stand>
@@ -507,7 +476,7 @@ container XML
 // 						attribute<string> nummeraanduiding_id := Objectenref_NummeraanduidingRef/_ValuesTable/Values[nevenadres/Objectenref_NummeraanduidingRef/value_rel];
 // 					}
 // 				}
-				
+
 				unit<uint32> nevenadres := vbo_impl/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef  // 1->0..n relatie
 				{
 					attribute<uint32> mutatie_rel         := vbo_impl/Objecten_heeftAlsNevenadres/Parent_rel[nevenadres/Parent_rel];
@@ -555,7 +524,7 @@ container XML
 					attribute<uint32> key := parent_rel + type_factor * uint32(rlookup(_ValuesTable/values[value_rel], typeringen/gebruiksdoel_vbo/label));
 				}
 
-				container gebruiksdoelen:=
+				container gebruiksdoelen :=
 					for_each_nedv(
 						typeringen/gebruiksdoel_vbo/name
 						,'isDefined(rlookup(type_factor * ' + string(id(typeringen/gebruiksdoel_vbo)) + '+ id(vbo),vbo_doel_domain/key))' 
@@ -688,12 +657,12 @@ container XML
 			parameter<fileset> fileset_rel;
 			// end case parameters
 
-			unit<uint32> File := Subset(FilesAll/fileset_rel == fileset_rel);
+			unit<uint32>      File := Select_many(FilesAll, FilesAll/fileset_rel = fileset_rel);
 
-			attribute<string> FileName(File) := FilesAll/FileName[File/nr_OrgEntity];
-			attribute<string> XmlData (File)
-			:	StorageType = "strfiles"
-			,	StorageName = "=XmlDir";
+			attribute<string> FileName (File) := File/FileName;
+			attribute<string> XmlData  (File)
+			: StorageType = "strfiles"
+			, StorageName = "=XmlDir";
 
 			/* XML code 1 nummeraanduiding object, BAG 2.0
 				<sl:stand>
@@ -785,8 +754,8 @@ container XML
 	container openbareruimte
 	{
 		unit<uint32> File := folderinfo/bestand_selectie/xml_bestanden/openbareruimte;
-		attribute<string> FileName(File) := File/naam;
-		attribute<string> XmlData(File)
+		attribute<string> FileName (File) := File/naam;
+		attribute<string> XmlData  (File)
 		:	StorageType = "strfiles"
 		,	StorageName = "=XmlDir";
 
@@ -852,7 +821,7 @@ container XML
 		}
 		container ParsedXML := parse_xml(XmlData, schema);
 
-		attribute<string> gerelateerdeWoonplaats_id (ParsedXML/Objecten_OpenbareRuimte) := 
+		attribute<string> gerelateerdeWoonplaats_id (ParsedXML/Objecten_OpenbareRuimte) :=
 			ParsedXML/Objecten_OpenbareRuimte/Objecten_ligtIn/Objectenref_WoonplaatsRef
 				[invert(value(ParsedXML/Objecten_OpenbareRuimte/Objecten_ligtIn/Parent_rel, ParsedXML/Objecten_OpenbareRuimte))];
 	}
@@ -860,10 +829,10 @@ container XML
 	container woonplaats
 	{
 		unit<uint32> File := folderinfo/bestand_selectie/xml_bestanden/woonplaats;
-		attribute<string> FileName(File) := File/naam;
-		attribute<string> XmlData(File)
-		:	StorageType = "strfiles"
-		,	StorageName = "=XmlDir";
+		attribute<string> FileName (File) := File/naam;
+		attribute<string> XmlData  (File)
+		: StorageType = "strfiles"
+		, StorageName = "=XmlDir";
 		attribute<uint32> nr_srsDimension  (File):= strcount(XmlData, 'srsDimension') ;
 		attribute<uint32> nr_srsDimension2 (File):= strcount(XmlData, 'srsDimension="2"');
 		parameter<bool>   allnr_srsDimensionis2  := all(nr_srsDimension == nr_srsDimension2);
@@ -949,6 +918,6 @@ container XML
 			}
 		}
 		container ParsedXML  := parse_xml(XmlData, schema);
-		container geoBuilder := Templates/ProcessGmlPolygon(ParsedXML/Objecten_Woonplaats, true); // voor woonplaatsen wordt gecheckt of coordinaten altijd 
+		container geoBuilder := Templates/ProcessGmlPolygon(ParsedXML/Objecten_Woonplaats, true);
 	}
 }

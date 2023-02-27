@@ -3,7 +3,7 @@
 //                                                                                    //
 //              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
 //                                                                                    //
-//                              Object Vision 2022                                    //
+//                              Object Vision 2023                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
@@ -70,13 +70,13 @@ container Templates: IsHidden = "True"
 
 		unit<uint32> impl := posList
 		{
-			attribute<string>  values      := _ValuesTable/Values[value_rel];
+			attribute<string> values := _ValuesTable/Values[value_rel];
 
 			attribute<uint32> srsDimension_with_nullvalues := strlen(posList/srsDimension) == 0 
-					? uint32(gmlPolygon/srsDimension[posList/Parent_rel]) // als de poslist geen srsdimension heeft, nemen we die van de parent
-					: uint32(posList/srsDimension);
-			attribute<uint32> srsDimension := MakeDefined(srsDimension_with_nullvalues, srsDimensionDefaultValue)	
-			, IntegrityCheck = "srsDimension == 2 || srsDimension == 3";				
+				? uint32(gmlPolygon/srsDimension[posList/Parent_rel]) // als de poslist geen srsdimension heeft, nemen we die van de parent
+				: uint32(posList/srsDimension);
+			attribute<uint32> srsDimension := MakeDefined(srsDimension_with_nullvalues, srsDimensionDefaultValue)
+			, IntegrityCheck = "srsDimension == 2 || srsDimension == 3";
 
 			attribute<string>  str_sequence        := '{'+string(uint32(count) * srsDimension) + ':' + values + '}';
 			attribute<float64> f64_sequence (poly) := float64Seq(str_sequence);
@@ -88,15 +88,16 @@ container Templates: IsHidden = "True"
 
 			unit<uint32> coordinates := sequence2points(union_data(posListUnit, f64_sequence));
 
-			unit<uint32> p := subset(coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/SequenceNr] == 0)
+			unit<uint32> p := select_afew(coordinates, coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/SequenceNr] == 0)
 			{
-				attribute<float64>     x    := coordinates/point[nr_OrgEntity  ];
-				attribute<float64>     y    := coordinates/point[nr_OrgEntity+1];
+				attribute<float64>     x    := point;
+				attribute<float64>     y    := coordinates/point[org_rel + 1];
 				attribute<rdc_mm>      p_mm := point(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
-				attribute<posListUnit> s    := coordinates/SequenceNr[nr_OrgEntity];
-				attribute<uint32>      fo   := coordinates/ordinal[nr_OrgEntity] / posListUnit/nrCoordPerPoint[s]; // forward winding
-				attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding
+				attribute<posListUnit> s    := SequenceNr;
+				attribute<uint32>      fo   := ordinal / posListUnit/nrCoordPerPoint[s]; // forward winding
+				attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding*/
 			}
+
 			attribute<rdc_mm> geometry_mm (poly) := union_data(posList, points2sequence_pso(p/p_mm, p/s, isExterior ? p/ro : p/fo));
 		}
 		attribute<rdc_mm> result (posList, poly) := impl/geometry_mm[rdc_mm];
@@ -114,7 +115,7 @@ container Templates: IsHidden = "True"
 		attribute<rdc_mm> result (poly, parent) := partitioned_union_polygon(geometry, parent_rel);
 	}
 
-	Template optimized_union 
+	Template optimized_union
 	{
 		// begin case parameters
 		unit<uint32>      child;
@@ -123,11 +124,11 @@ container Templates: IsHidden = "True"
 		attribute<parent> parent_rel (child);
 		// end case parameters
 
-		container impl 
+		container impl
 		{
 			attribute<uint32> count (parent) := pcount(parent_rel);
 			unit<uint32> childCopy := range(child, 0, #child);
-			
+
 			unit<uint32> nonTrivialChild := subset((count != 1)[union_data(childCopy, parent_rel)])
 			{
 				attribute<child>  child_rel            := value(nr_OrgEntity, child);
@@ -138,7 +139,7 @@ container Templates: IsHidden = "True"
 		attribute<Int32>  area   (parent)      := area(result, Int32); // DEBUG
 	}
 
-	Template one2one_union 
+	Template one2one_union
 	{
 		// begin case parameters
 		unit<uint32>      child;
@@ -197,8 +198,8 @@ container Templates: IsHidden = "True"
 
 			attribute<rdc_mm> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
 		}
-		attribute<rdc_mm> result (poly,Exterior) := 
-			impl/count == 0 
+		attribute<rdc_mm> result (poly,Exterior) :=
+			impl/count == 0
 				? ExtGeometry 
 				: impl/result;
 		attribute<Int32>  area   (Exterior)      := area(result, Int32); // DEBUG
@@ -210,9 +211,9 @@ container Templates: IsHidden = "True"
 		unit<uint32> gmlPolygon;
 		// end case parameters
 
-		container Exterior      := Templates/LinearRing(gmlPolygon, true);
-		container Interior      := Templates/LinearRing(gmlPolygon/gml_Interior, false);
-		container Polygon       := Templates/Polygon(
+		container Exterior := Templates/LinearRing(gmlPolygon, true);
+		container Interior := Templates/LinearRing(gmlPolygon/gml_Interior, false);
+		container Polygon  := Templates/Polygon(
 			gmlPolygon,              Exterior/geometry_mm,
 			gmlPolygon/gml_Interior, Interior/geometry_mm,
 			gmlPolygon/gml_Interior/Parent_rel
@@ -222,8 +223,8 @@ container Templates: IsHidden = "True"
 	Template ProcessGmlPolygon
 	{
 		// begin case parameters
-		unit<uint32>     gmlContext;
-		parameter<bool>  hasMultiplePolygons;
+		unit<uint32>    gmlContext;
+		parameter<bool> hasMultiplePolygons;
 		// end case parameters
 
 		container impl := ProcessGmlPolygonImpl(gmlContext/gml_Polygon);

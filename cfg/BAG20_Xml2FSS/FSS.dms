@@ -3,22 +3,22 @@
 //                                                                                    //
 //              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
 //                                                                                    //
-//                              Object Vision 2022                                    //
+//                              Object Vision 2023                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-//                 Configuratie van resulterende FSS Files                            //
+//                 Configuratie voor resulterende FSS Files                           //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 container FSS // Resultaten wegschrijven naar FSS files per BAG object
 {
 	unit<uint32> ligplaats := xml/ligplaats/ParsedXML/Objecten_ligplaats
-	,	StorageName= "= FSSDir + '/ligplaats.fss'"
+	, StorageName= "= FSSDir + '/ligplaats.fss'"
 	{
 		attribute<rdc_mm> geometry_mm (polygon) := xml/ligplaats/geoBuilder/result;
 		attribute<string> identificatie         := ligplaats/Objecten_identificatie;
-		attribute<string> nummeraanduiding_id   := 
+		attribute<string> nummeraanduiding_id   :=
 			ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
 				[invert(ligplaats/Objecten_heeftAlsHoofdadres/parent_rel[ligplaats])];
 
@@ -32,11 +32,11 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	}
 
 	unit<uint32> standplaats := xml/standplaats/ParsedXML/Objecten_standplaats
-	,	StorageName= "= FSSDir + '/standplaats.fss'"
+	, StorageName= "= FSSDir + '/standplaats.fss'"
 	{
 		attribute<rdc_mm> geometry_mm (polygon) := xml/standplaats/geoBuilder/result;
 		attribute<string> identificatie         := standplaats/Objecten_identificatie;
-		attribute<string> nummeraanduiding_id   := 
+		attribute<string> nummeraanduiding_id   :=
 			standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
 				[invert(standplaats/Objecten_heeftAlsHoofdadres/parent_rel[standplaats])];
 
@@ -53,7 +53,7 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	{
 		parameter<string> generate_all_expr := AsList('xml/pand/PerFileSet/fs_' + string(xml/pand/fileset/Values) + '/pand', ';') + ';nr_fss';
 		parameter<string> nr_fss            := string(#xml/pand/fileset) + ';',  StorageName = "= FSSDir + '/pand/nr_fss.csv'", StorageType = "str";
-		
+
 		parameter<string> generate_all      := 'OK', ExplicitSuppliers = "= generate_all_expr";
 	}
 
@@ -65,9 +65,8 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 		parameter<string> generate_all      := 'OK', ExplicitSuppliers = "= generate_all_expr ";
 	}
 
-
 	unit<uint32> nummeraanduiding := ='union_unit(' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/ParsedXML/Objecten_Nummeraanduiding') + ')'
-	,	StorageName= "= FSSDir + '/nummeraanduiding.fss'"
+	, StorageName= "= FSSDir + '/nummeraanduiding.fss'"
 	{
 		attribute<string> identificatie           := ='union_data(.,' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/ParsedXML/Objecten_Nummeraanduiding/Objecten_identificatie ') + ')';
 		attribute<int32>  huisnummer              := ='union_data(.,' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/ParsedXML/Objecten_Nummeraanduiding/Objecten_huisnummer[int32]') + ')';
@@ -82,18 +81,18 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	}
 
 	unit<uint32> openbareruimte := XML/openbareruimte/ParsedXML/Objecten_openbareruimte
-	,	StorageName= "= FSSDir + '/openbareruimte.fss'"
+	, StorageName= "= FSSDir + '/openbareruimte.fss'"
 	{
 		attribute<string> identificatie := openbareruimte/Objecten_identificatie;
 		attribute<string> naam          := openbareruimte/Objecten_Naam;
 		attribute<string> type          := openbareruimte/Objecten_Type;
 		attribute<string> woonplaats_id := XML/openbareruimte/gerelateerdeWoonplaats_id;
 
-		container meta := Templates/meta ( . , Objecten_Status ) ;
+		container meta := Templates/meta (., Objecten_Status ) ;
 	}
 
 	unit<uint32> woonplaats := XML/woonplaats/ParsedXML/Objecten_Woonplaats
-	,	StorageName= "= FSSDir + '/woonplaats.fss'"
+	, StorageName= "= FSSDir + '/woonplaats.fss'"
 	{
 		attribute<rdc_mm> geometry_mm (polygon) := XML/woonplaats/geoBuilder/result;
 		attribute<string> identificatie         := woonplaats/Objecten_identificatie;
@@ -101,5 +100,6 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 
 		container meta := Templates/meta(., Objecten_Status);
 	}
+
 	parameter<string> overzicht := overzichten/impl/genereer_rapport;
 }
