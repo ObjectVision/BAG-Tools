@@ -3,7 +3,7 @@
 //                                                                                    //
 //              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
 //                                                                                    //
-//                              Object Vision 2022                                    //
+//                              Object Vision 2023                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
@@ -19,30 +19,35 @@
 // 1) woonpandtypering                                                                //
 // 2) pandhoogte obv PHN (afgeleid van AHN3). Deze afleiding is optioneel.            //
 //                                                                                    //
+// Voor meer informatie, zie:                                                         //
+// https://github.com/ObjectVision/BAG-Tools/wiki/BAG20-MakeSnapshot                  //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 container BAG20_MakeSnapshot
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20230113';	
+	parameter<string> BAG_Date            := '20230113';
 	parameter<string> Snapshot_Date_Input := '20230101';
 	//
-	parameter<string> FSSDir              := 'D:/SourceData/BAG20/'+BAG_Date+'/fss';
+
+	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
 
-	parameter<string> Snapshot_Date_Batch   := expand(., '%ENV:snapshot_date_env%');
-	parameter<string> Snapshot_Date         := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
-	
-																				    	// snapshot datum                 , geo selectie, status selectie, vreemde waarden selectie, met pandhoogte
-	container snapshot_date_nl_status_overige_selectie_zonder_hoogte  := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , True           , False                   , False)';
-	container snapshot_date_geo_status_selectie_met_hoogte            := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], True        , True           , False                   , True)';
-	container snapshot_date_geo_status_selectie_zonder_hoogte         := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], True        , True           , False                   , False)';
-	
-	container snapshot_date_nl_geoparaat                              := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , False                   , False)';
-	container snapshot_date_nl_geoparaat_gpkg                         := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], False  , False          , False                   , False)';
-	container snapshot_date_ameland_geoparaat_gpkg                    := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], True   , False          , False                   , False)';
-	
-	container snapshot_date_nl_vreemde_eruit                          := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , True                    , False)';
+	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
+	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
+
+	container options														//               snapshot datum                 , geo selectie, status selectie, vreemde waarden selectie, met pandhoogte
+	{
+		container snapshot_date_nl_status_overige_selectie_zonder_hoogte := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , True           , False                   , False)';
+		container snapshot_date_geo_status_selectie_met_hoogte           := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], True        , True           , False                   , True)';
+		container snapshot_date_geo_status_selectie_zonder_hoogte        := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], True        , True           , False                   , False)';
+
+		container snapshot_date_nl_geoparaat                             := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , False                   , False)';
+		container snapshot_date_nl_geoparaat_gpkg                        := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], False  , False          , False                   , False)';
+		container snapshot_date_ameland_geoparaat_gpkg                   := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], True   , False          , False                   , False)';
+
+		container snapshot_date_nl_vreemde_eruit                         := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , True                    , False)';
+	}
 
 	container eenheden
 	{
@@ -52,6 +57,7 @@ container BAG20_MakeSnapshot
 		unit<uint16>  cm_uint16 := uint16(0.01 * m);
 		unit<float32> m         := baseunit('m', float32);
 	}
+
 	container geometries
 	{
 		#include <wmts_layer.dms>
@@ -86,22 +92,11 @@ container BAG20_MakeSnapshot
 // 	}
 
 	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
-//	:	StorageName     = "%ProjDir%/data/geo_sel.shp"
-//	:	StorageName     = "%SourceDataDir%/regressionTests/CBS/utrecht.shp"
-//    :	StorageName     = "D:/SourceData/Waardenland/SG.shp"
-//      :	StorageName     = "D:/SourceData/Nieuwegein/nwg.shp"
-//    :	StorageName     = "C:/SourceData/Hoorn/CBS/wpl_hoorn_sel.shp"
-//    :	StorageName     = "E:/SourceData/KL/KL.shp"
-//	:   StorageName     = "D:/SourceData/Leiden/gemeente.shp"
-//:   StorageName     = "D:/SourceData/Lansingerland/gemeente.shp"
-//	:   StorageName     = "D:/SourceData/Schiedam/Schiedam.shp"
-//	:   StorageName     = "D:/SourceData/HoekscheWaard/HW.shp"
-	:   StorageName     = "D:/SourceData/demo/ameland.shp"	
+	:	StorageName     = "%ProjDir%/data/geo_sel.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	{
-//		parameter<string>         Label := 'HoekscheWaard';
-		parameter<string>         Label := 'Ameland';
+		parameter<string>         Label := 'Geo_Selectie';
 		attribute<geometries/rdc> geometry (poly);
 	}
 
