@@ -28,6 +28,9 @@
 //  De BAG inclusief historie wordt nu weggeschreven naar een set van FSS Files in    //
 //  de FSSDir.                                                                        //
 //                                                                                    //
+// Voor meer informatie, zie:                                                         //
+//  https://github.com/ObjectVision/BAG-Tools/wiki/BAG20-Xml2FSS                      //
+//                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS version should be 8.6.x or later
