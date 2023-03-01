@@ -24,7 +24,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container BAG20_MakeSnapshot
+container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS version should be 8.6.x or later
 { 
 	// te configureren
 	parameter<string> BAG_Date            := '20230113';
