@@ -45,9 +45,9 @@ container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS ve
 	parameter<string> FSSDir   := date_dir + '/fss.new';
 
 	parameter<string> MaakFSSBestanden := xml/folderinfo/CanGenerate == 2b
-		? 'Cannot make list of files'
+		? 'Cannot make list of files, ' + expand(., XmlDir) + ' does not consist or contains no .xml files.'
 		:  xml/folderinfo/CanGenerate == 1b
-			? 'Data is probably not in BAG 2.0 format'
+			? 'Data from ' + expand(., XmlDir) + ' is probably not in requested BAG 2.0 format, make sure you only unzipped: LIG, NUM, OPR, PND, STA, VBO, WPL ZIP files'
 			: 'Ready'
 	, ExplicitSuppliers = "= SupplierList";
 

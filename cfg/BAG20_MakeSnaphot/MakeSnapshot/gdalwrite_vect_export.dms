@@ -1,0 +1,245 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                                                                    //
+//              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
+//                                                                                    //
+//                              Object Vision 2023                                    //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// Template die de resultaten per BAG Objecttype verzamelt, selecteert en wegschrijft //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+container gdalwrite_vect_export
+{
+	container optionSets
+	{
+		container GPKG
+		{
+			unit<uint32> optionSet := range(uint32, 0, 0)
+			{
+				attribute<string> GDAL_LayerCreationOptions: [];
+			}
+		}
+	}
+
+	parameter<string> GDAL_ConfigurationOptions : = "OGR_CURRENT_DATE=2022-04-01 02:03:04";
+
+	container result
+	{
+		unit<uint32> optionSet := optionSets/GPKG/optionSet;
+		attribute<string> GDAL_LayerCreationOptions (optionSet) := optionSet/GDAL_LayerCreationOptions;
+		parameter<string> GDAL_Driver := 'GPKG';
+		parameter<string> filename    := '%LocalDataDir%/BAG20/snapshot_' + SnapshotGeoDirPart + string(prik_datum) + '_new.gpkg';
+
+		parameter<string> make_geopackage := 'OK', ExplicitSuppliers = 
+			"result/ligplaats;result/ligplaats_status_code;result/ligplaats_nevenadres;"
+			"result/standplaats;result/standplaats_status_code;result/standplaats_nevenadres;"
+			"result/pand;result/pand/gebruiksdoelen;result/pand_status_code;result/pand_woningtype;"
+			"result/vbo;result/vbo/gebruiksdoelen;result/vbo_status_code;result/vbo_gerelateerdPand;result/vbo_nevenadres;"
+			"result/nummeraanduiding;result/nummeraanduiding_status_code;"
+			"result/openbareruimte;result/openbareruimte_status_code;"
+			"result/woonplaats;result/woonplaats_status_code;"
+			"result/adres"
+			;
+
+		container result
+		: StorageName     = "= filename"
+		, StorageType     = "gdalwrite.vect"
+		, StorageReadOnly = "False"
+		{
+			unit<uint32> ligplaats := object/ligplaats/result
+			{
+				attribute<string>         identificatie       := object/ligplaats/result/identificatie;
+				attribute<geometries/rdc> geometry     (poly) := object/ligplaats/result/geometry_mm[geometries/rdc];
+				attribute<string>         nummeraanduiding_id := object/ligplaats/result/nummeraanduiding_id;
+
+				container meta := meta_write_template(ligplaats, object/ligplaats/result/meta )
+				{
+					attribute<ligplaats_status_code> StatusCode (ligplaats):= rlookup(lowercase(Status), lowercase(ligplaats_status_code/label));
+				}
+			}
+
+			unit<uint8> ligplaats_status_code := typeringen/status/ligplaats 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/ligplaats/label;
+			}
+
+			unit<uint32> ligplaats_nevenadres := object/ligplaats/result/nevenadres
+			{
+				attribute<string> nummeraanduiding_id := object/ligplaats/result/nevenadres/nummeraanduiding_id;
+				attribute<string> identificatie       := object/ligplaats/result/nevenadres/identificatie;
+			}
+
+			unit<uint32> standplaats := object/standplaats/result
+			{
+				attribute<string>         identificatie       := object/standplaats/result/identificatie;
+				attribute<geometries/rdc> geometry     (poly) := object/standplaats/result/geometry_mm[geometries/rdc];
+				attribute<string>         nummeraanduiding_id := object/standplaats/result/nummeraanduiding_id;
+
+				container meta := meta_write_template(standplaats, object/standplaats/result/meta )
+				{
+					attribute<standplaats_status_code> StatusCode (standplaats):= rlookup(lowercase(Status), lowercase(standplaats_status_code/label));
+				}
+			}
+
+			unit<uint8> standplaats_status_code := typeringen/status/standplaats 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/standplaats/label;
+			}
+
+			unit<uint32> standplaats_nevenadres := object/standplaats/result/nevenadres
+			{
+				attribute<string> nummeraanduiding_id := object/standplaats/result/nevenadres/nummeraanduiding_id;
+				attribute<string> identificatie       := object/standplaats/result/nevenadres/identificatie;
+			}
+
+			unit<uint32> pand := object/pand/result
+			{
+				attribute<string>                                                     identificatie   := object/pand/result/identificatie;
+				attribute<geometries/rdc>                                             geometry (poly) := object/pand/result/geometry_mm[geometries/rdc];
+				attribute<eenheden/jaar>                                              bouwjaar        := object/pand/result/bouwjaar;
+				attribute<object/afleidingen/pand_attributen/geometrie/type_woonpand> woningtype      := object/pand/result/woningtype/woonpand_type;
+
+				container meta := meta_write_template(pand, object/pand/result/meta )
+				{
+					attribute<pand_status_code> StatusCode (pand):= rlookup(lowercase(Status), lowercase(pand_status_code/label));
+				}
+
+				container gebruiksdoelen := for_each_nedv(
+						'nr_'+ typeringen/gebruiksdoel_vbo/name
+						, 'sum(object/vbo/result/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ' ? 1 : 0 , object/vbo/result/pand_rel)'
+						, pand
+						, uint32
+					);
+			}
+
+			unit<uint8> pand_status_code := typeringen/status/pand 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/pand/label;
+			}
+
+			unit<uint8> pand_woningtype := object/afleidingen/pand_attributen/geometrie/type_woonpand
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := object/afleidingen/pand_attributen/geometrie/type_woonpand/Label;
+			}
+
+			unit<uint32> vbo := object/vbo/result
+			{
+				attribute<string>         identificatie       := object/vbo/result/identificatie;
+				attribute<geometries/rdc> geometry            := object/vbo/result/geometry_mm[geometries/rdc];
+				attribute<int32>          oppervlakte         := object/vbo/result/oppervlakte;
+				attribute<string>         nummeraanduiding_id := object/vbo/result/nummeraanduiding_id;
+				attribute<string>         pand_id             := object/vbo/result/pand_id;
+				attribute<string>         pand_id_geom        := object/vbo/result/pand_id_geom;
+
+				container meta := meta_write_template(vbo, object/vbo/result/meta )
+				{
+					attribute<vbo_status_code> StatusCode (vbo):= rlookup(lowercase(Status), lowercase(vbo_status_code/label));
+				}
+
+				container gebruiksdoelen := for_each_nedv(
+						typeringen/gebruiksdoel_vbo/name
+						, 'last(object/vbo/impl/selectie/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ', object/vbo/impl/selectie/result_rel)'
+						, vbo
+						, bool
+					);
+			}
+
+			unit<uint8> vbo_status_code := typeringen/status/vbo 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/vbo/label;
+			}
+
+			unit<uint32> vbo_gerelateerdPand := object/vbo/result/gerelateerdPand
+			{
+				attribute<string> identificatie := object/vbo/result/gerelateerdPand/identificatie;
+				attribute<string> pand_id       := object/vbo/result/gerelateerdPand/pand_id;
+			}
+
+			unit<uint32> vbo_nevenadres := object/vbo/result/nevenadres
+			{
+				attribute<string> identificatie       := object/vbo/result/nevenadres/identificatie;
+				attribute<string> nummeraanduiding_id := object/vbo/result/nevenadres/nummeraanduiding_id;
+			}
+
+			unit<uint32> nummeraanduiding := object/nummeraanduiding/result
+			{
+				attribute<string> identificatie           := object/nummeraanduiding/result/identificatie;
+				attribute<int32>  huisnummer              := object/nummeraanduiding/result/huisnummer;
+				attribute<string> huisletter              := object/nummeraanduiding/result/huisletter;
+				attribute<string> toevoeging              := object/nummeraanduiding/result/toevoeging;
+				attribute<string> postcode                := object/nummeraanduiding/result/postcode;
+				attribute<string> typeAdresseerbaarObject := object/nummeraanduiding/result/typeAdresseerbaarObject;
+				attribute<string> openbareruimte_id       := object/nummeraanduiding/result/openbareruimte_id;
+				attribute<string> woonplaats_id           := object/nummeraanduiding/result/woonplaats_id;
+
+				container meta := meta_write_template(nummeraanduiding, object/nummeraanduiding/result/meta)
+				{
+					attribute<nummeraanduiding_status_code> StatusCode (nummeraanduiding):= rlookup(lowercase(Status), lowercase(nummeraanduiding_status_code/label));
+				}
+			}
+
+			unit<uint8> nummeraanduiding_status_code := typeringen/status/nummeraanduiding 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/nummeraanduiding/label;
+			}
+
+			unit<uint32> openbareruimte := object/openbareruimte/result
+			{
+				attribute<string> identificatie := object/openbareruimte/result/identificatie;
+				attribute<string> naam          := object/openbareruimte/result/naam;
+				attribute<string> type          := object/openbareruimte/result/type;
+				attribute<string> woonplaats_id := object/openbareruimte/result/woonplaats_id;
+
+				container meta := meta_write_template(openbareruimte, object/openbareruimte/result/meta)
+				{
+					attribute<openbareruimte_status_code> StatusCode (openbareruimte):= rlookup(lowercase(Status), lowercase(openbareruimte_status_code/label));
+				}
+			}
+
+			unit<uint8> openbareruimte_status_code := typeringen/status/openbareruimte 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/openbareruimte/label;
+			}
+
+			unit<uint32> woonplaats := object/woonplaats/result
+			{
+				attribute<geometries/rdc> geometry (poly) := object/woonplaats/result/geometry_mm[geometries/rdc];
+				attribute<string>         identificatie   := object/woonplaats/result/identificatie;
+				attribute<string>         woonplaatsNaam  := object/woonplaats/result/woonplaatsNaam;
+
+				container meta := meta_write_template(woonplaats, object/woonplaats/result/meta)
+				{
+					attribute<woonplaats_status_code> StatusCode (woonplaats):= rlookup(lowercase(Status), lowercase(woonplaats_status_code/label));
+				}
+			}
+
+			unit<uint8> woonplaats_status_code := typeringen/status/woonplaats 
+			{
+				attribute<uint8>  code  := id(.);
+				attribute<string> label := typeringen/status/woonplaats/label;
+			}
+
+			unit<uint32> adres := object/afleidingen/adres 
+			{
+				attribute<string> nummeraanduiding_id := object/afleidingen/adres/nummeraanduiding_id;
+				attribute<string> straatnaam          := object/afleidingen/adres/straatnaam;
+				attribute<string> postcode            := object/afleidingen/adres/postcode;
+				attribute<int32>  huisnummer          := object/afleidingen/adres/huisnummer;
+				attribute<string> huisletter          := object/afleidingen/adres/huisletter;
+				attribute<string> toevoeging          := object/afleidingen/adres/toevoeging;
+				attribute<string> woonplaatsnaam      := object/afleidingen/adres/woonplaatsnaam;
+				attribute<geometries/rdc> geometry    := object/afleidingen/adres/geometry;
+			}
+		}
+	}
+}

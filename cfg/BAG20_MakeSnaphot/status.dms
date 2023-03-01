@@ -3,12 +3,12 @@
 //                                                                                    //
 //              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
 //                                                                                    //
-//                              Object Vision 2022                                    //
+//                              Object Vision 2023                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
 // Configuratiebestand waarmee de selectie van statussen van BAG objecttypes          //
-// worden geconfigureerd                                                              //
+// wordt geconfigureerd                                                               //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -26,6 +26,7 @@ container status
 				,'plaats ingetrokken' ,'False'
 			];
 		}
+
 		attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
 		attribute<string> name     := replace(label, ' ', '_', '(','',')','');
 		attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);

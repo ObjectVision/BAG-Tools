@@ -21,6 +21,7 @@
 //                                                                                    //
 // Voor meer informatie, zie:                                                         //
 // https://github.com/ObjectVision/BAG-Tools/wiki/BAG20-MakeSnapshot                  //
+//                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 container BAG20_MakeSnapshot
@@ -30,23 +31,28 @@ container BAG20_MakeSnapshot
 	parameter<string> Snapshot_Date_Input := '20230101';
 	//
 
-	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
+// XXXXXXXX LET OP NIET COMIITTEN
+//	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
+	parameter<string> FSSDir              := 'D:/SourceData/BAG20/20230113/fss';
+
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
 
 	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
 	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
 
-	container options														//               snapshot datum                 , geo selectie, status selectie, vreemde waarden selectie, met pandhoogte
+	parameter<string>  FileNeeded         := expand(., FSSDir) + '/pand/nr_fss.csv';
+	parameter<bool>    isValidFSSDir      := ExistingFile('missing', FileNeeded) == FileNeeded;
+
+	container snapshots
 	{
-		container snapshot_date_nl_status_overige_selectie_zonder_hoogte := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , True           , False                   , False)';
-		container snapshot_date_geo_status_selectie_met_hoogte           := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], True        , True           , False                   , True)';
-		container snapshot_date_geo_status_selectie_zonder_hoogte        := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], True        , True           , False                   , False)';
+		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format)
+		container nl_status_sel_with_strangevalues_no_height_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'')';
+		container geo_sel_status_sel_with_strangevalues_with_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'')';
+		container geo_sel_status_sel_with_strangevalues_no_heigth_fss   := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,False          ,''FSS'')';
+		container nl_status_all_with_strangevalues_no_heigth_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'')';
 
-		container snapshot_date_nl_geoparaat                             := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , False                   , False)';
-		container snapshot_date_nl_geoparaat_gpkg                        := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], False  , False          , False                   , False)';
-		container snapshot_date_ameland_geoparaat_gpkg                   := ='MakeSnapshot_gpkg('+Snapshot_Date+'[eenheden/datum], True   , False          , False                   , False)';
-
-		container snapshot_date_nl_vreemde_eruit                         := ='MakeSnapshot('+Snapshot_Date+'[eenheden/datum], False       , False          , True                    , False)';
+		container nl_geoparaat_gpkg                                     := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'')';
+		container geosel_geoparaat_gpkg                                 := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False,          ''GPKG'')';
 	}
 
 	container eenheden
@@ -119,12 +125,10 @@ container BAG20_MakeSnapshot
 			];
 			attribute<string> name := replace(replace(label,' ','_'), 'functie','');
 		}
-
 		#include<status.dms>
 	}
 
 	#include<MakeSnapshot.dms>
-	#include<MakeSnapshot_gpkg.dms>
 
 	template meta_src_template // Voor het inlezen van de generieke BAG attributen
 	{
@@ -199,7 +203,7 @@ container BAG20_MakeSnapshot
 		attribute<bool> WasBeeindigd (domain) := domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
 
 		unit<uint32> selectie :=
-			= 'Subset(WasGestart && not(WasBeeindigd) ' + 
+			= 'select_afew(src, WasGestart && not(WasBeeindigd) ' +
 				(met_status_sel 
 					? '&& domain/Meta/status_sel ' 
 					: '') +
@@ -210,19 +214,7 @@ container BAG20_MakeSnapshot
 		,	DialogType = "Map"
 		,	DialogData = "geometry_mm"
 		{
-			container meta
-			{
-				attribute<string>         STATUS                 (selectie) := domain/meta/STATUS[nr_OrgEntity];
-				attribute<eenheden/datum> BEGINDATUM             (selectie) := domain/meta/BEGINDATUM[nr_OrgEntity];
-				attribute<eenheden/datum> EINDDATUM              (selectie) := domain/meta/EINDDATUM[nr_OrgEntity];
-				attribute<eenheden/datum> DOCUMENTDATUM          (selectie) := domain/meta/DOCUMENTDATUM[nr_OrgEntity];
-				attribute<string>         DOCUMENTNUMMER         (selectie) := domain/meta/DOCUMENTNUMMER[nr_OrgEntity];
-				attribute<uint32>         VOORKOMENIDENTIFICATIE (selectie) := domain/meta/VOORKOMENIDENTIFICATIE[nr_OrgEntity];
-
-				attribute<string>         TIJDSTIPREGISTRATIE    (selectie) := domain/meta/TIJDSTIPREGISTRATIE[nr_OrgEntity];
-				attribute<string>         EINDREGISTRATIE        (selectie) := domain/meta/EINDREGISTRATIE[nr_OrgEntity];
-				attribute<bool>           IS_GECONSTATEERD       (selectie) := domain/meta/IS_GECONSTATEERD[nr_OrgEntity];
-			}
+			container meta := relate_attr(src/meta, selectie, selectie/org_rel);
 		}
 	}
 

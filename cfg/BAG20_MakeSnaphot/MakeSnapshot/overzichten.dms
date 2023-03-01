@@ -39,18 +39,13 @@ container overzichten
 		unit<uint32> rapport_items_name       := SubTree_PropValues(rapport,'name');
 		unit<uint32> rapport_items_valuesunit := SubTree_PropValues(rapport,'valuesunit');
 
-		unit<uint32> rapport_items_sel := Subset(strcount(lowercase(rapport_items/FullName),'impl') == 0 && lowercase(rapport_items/name) <> 'per_objecttype')
+		unit<uint32> rapport_items_sel := select_many(rapport_items, strcount(lowercase(rapport_items/FullName),'impl') == 0 && lowercase(rapport_items/name) <> 'per_objecttype')
 		{
-			attribute<string> fullname   := rapport_items/fullname[nr_OrgEntity];
-			attribute<string> name       := rapport_items/name[nr_OrgEntity];
-			attribute<string> expr       := rapport_items/expr[nr_OrgEntity];
-			attribute<bool>   isDataItem := strcount(lowercase(rapport_items/valuesunit[nr_OrgEntity]),'unknown') == 0;
-
-			attribute<uint32> level    := strcount(fullname, '/') - 4;
-
-			attribute<uint32> relpos   := strpos(fullname, 'rapport');
-			attribute<string> relname  := isDataItem ? substr(fullname, relpos, strlen(fullname) - relpos) : quote(name);
-			attribute<string> label    := repeat(tab,level) + name + ': ';
+			attribute<bool>   isDataItem := strcount(lowercase(valuesunit),'unknown') == 0;
+			attribute<uint32> level      := strcount(fullname, '/') - 4;
+			attribute<uint32> relpos     := strpos(fullname, 'rapport');
+			attribute<string> relname    := isDataItem ? substr(fullname, relpos, strlen(fullname) - relpos) : quote(name);
+			attribute<string> label      := repeat(tab,level) + name + ': ';
 		}
 
 		parameter<string> seperator:= ' + ' + quote(newline) + ' + ';
