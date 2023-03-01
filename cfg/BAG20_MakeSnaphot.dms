@@ -31,9 +31,7 @@ container BAG20_MakeSnapshot
 	parameter<string> Snapshot_Date_Input := '20230101';
 	//
 
-// XXXXXXXX LET OP NIET COMIITTEN
-//	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
-	parameter<string> FSSDir              := 'D:/SourceData/BAG20/20230113/fss';
+	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
 
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
 
