@@ -16,13 +16,12 @@
 container NVM: Source = "Nederlandse Vereniging van Makelaars, bewerkt door SPINlab Vrije Universiteit Amsterdam, maart 2016"
 {
 	unit<uint32> regio:
-		StorageName     = "%SourceDataDir%/NVM/2015/NVMregios_2015.shp"
-	,	StorageType     = "gdal.vect"
-	,	StorageReadOnly = "True";
+	  StorageName     = "%SourceDataDir%/NVM/2015/NVMregios_2015.shp"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True";
 
 	unit<uint32> afdeling:
-		StorageName     = "%SourceDataDir%/NVM/2015/NVMafdelingen_2015.shp"
-	,	StorageType     = "gdal.vect"
-	,	StorageReadOnly = "True";
-
+	  StorageName     = "%SourceDataDir%/NVM/2015/NVMafdelingen_2015.shp"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True";
 }

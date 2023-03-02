@@ -14,7 +14,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container Geocode
+container Geocode: IntegrityCheck = "GeoDmsVersion() >= 8.060" // i.v.m. select_afew/many
 {
 	unit<fpoint> point_rd := range(fpoint, point(300000f,0f), point(625000f,280000f));
 
@@ -49,9 +49,9 @@ container Geocode
 		#include<bron.dms>
 
 		unit<uint32> bronDomein := bron/TableChopper/Domein
-		, DialogType = "Map"
-		, DialogData = "koppel_aan_bag_aggregaties/Locatie"
 		{
+			attribute<point_rd> geometry     := koppel_aan_bag_aggregaties/geometry;
+
 			attribute<string> straatnaam     := bron/straatnaam/resultaat;
 			attribute<string> postcode       := bron/postcode/resultaat;
 			attribute<string> huisnummer     := bron/huisnummer/resultaat;
@@ -60,7 +60,7 @@ container Geocode
 			attribute<string> postcode5      := bron/postcode5/resultaat;
 			attribute<string> postcode4      := bron/postcode4/resultaat;
 
-			container keys:=
+			container keys :=
 				for_each_nedv(
 					 stap/naam
 					,stap/expr_key
@@ -71,14 +71,14 @@ container Geocode
 
 		container koppel_aan_bag_aggregaties
 		{
-			container rlookups:=
+			container rlookups :=
 				for_each_nedv(
 					 stap/naam
 					,'rlookup(bronDomein/keys/' + stap/naam + ', BAG/aggregaties/' + stap/naam + '/domein/values)'
 					,bronDomein
 					,uint32
 				)
-			,	KeepData = "True";
+			, KeepData = "True";
 
 			parameter<string> niveau_subexpr := AsItemList('case(isDefined(rlookups/'+ stap/naam  + '), ' + string(ID(stap)) + '[niveau])');
 			attribute<niveau> niveau_rel (bronDomein) := = 'switch(' + niveau_subexpr + ', rlookup(int8(-1), niveau/code))';
@@ -100,35 +100,36 @@ container Geocode
 			attribute<string>  bag_toevoeging      (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_toevoeging')      + ', ' + quote(stringparams/emptystring) + ')';
 			attribute<string>  bag_woonplaatsnaam  (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_woonplaatsnaam ') + ', ' + quote(stringparams/emptystring) + ')';
 
-			attribute<fpoint>  locatie             (bronDomein) := point(X,Y,fpoint);
+			attribute<point_rd> geometry           (bronDomein) := point(X,Y,point_rd);
+
 			container buurt
 			{
-				attribute<cbs/buurt> buurt_rel (bronDomein) := point_in_polygon(locatie, fpolygon(cbs/buurt/Geometry));
+				attribute<cbs/buurt> buurt_rel (bronDomein) := point_in_polygon(geometry, fpolygon(cbs/buurt/Geometry));
 				attribute<string>    code      (bronDomein) := cbs/buurt/bu_code[buurt_rel];
 				attribute<string>    naam      (bronDomein) := cbs/buurt/bu_naam[buurt_rel];
 			}
 			container wijk
 			{
-				attribute<cbs/wijk> wijk_rel (bronDomein) := point_in_polygon(locatie, fpolygon(cbs/wijk/Geometry));
+				attribute<cbs/wijk> wijk_rel (bronDomein) := point_in_polygon(geometry, fpolygon(cbs/wijk/Geometry));
 				attribute<string>   code     (bronDomein) := cbs/wijk/wk_code[wijk_rel];
 				attribute<string>   naam     (bronDomein) := cbs/wijk/wk_naam[wijk_rel];
 			}
 			container gemeente
 			{
-				attribute<cbs/gemeente> gemeente_rel (bronDomein) := point_in_polygon(locatie, fpolygon(cbs/gemeente/Geometry));
+				attribute<cbs/gemeente> gemeente_rel (bronDomein) := point_in_polygon(geometry, fpolygon(cbs/gemeente/Geometry));
 				attribute<string>       code         (bronDomein) := cbs/gemeente/gm_code[gemeente_rel];
 				attribute<string>       naam         (bronDomein) := cbs/gemeente/gm_naam[gemeente_rel];
 			}
 			/*
 			container nvm_regio
 			{
-				attribute<nvm/regio>    nvmreg_rel   (bronDomein) := point_in_polygon(locatie, fpolygon(nvm/regio/Geometry));
+				attribute<nvm/regio>    nvmreg_rel   (bronDomein) := point_in_polygon(geometry, fpolygon(nvm/regio/Geometry));
 				attribute<string>       naam         (bronDomein) := nvm/regio/regionaam[nvmreg_rel];
 				attribute<string>       code         (bronDomein) := nvm/regio/regioid[nvmreg_rel];
 			}
 			container nvm_afdeling
 			{
-				attribute<nvm/afdeling> nvmafd_rel   (bronDomein) := point_in_polygon(locatie, fpolygon(nvm/afdeling/Geometry));
+				attribute<nvm/afdeling> nvmafd_rel   (bronDomein) := point_in_polygon(geometry, fpolygon(nvm/afdeling/Geometry));
 				attribute<string>       naam         (bronDomein) := nvm/afdeling/afdeling[nvmafd_rel];
 				attribute<string>       code         (bronDomein) := nvm/afdeling/afdid[nvmafd_rel];
 			}
@@ -154,7 +155,7 @@ container Geocode
 			{
 				attribute<string> bron_adres         := TeGeocoderen/bron/TableChopper/BodyLines[org_rel];
 			}
-			
+
 			container metainformatie
 			{
 				attribute<niveau>  niveau_rel            (bronDomein) := ../niveau_rel;
@@ -177,22 +178,21 @@ container Geocode
 						);
 					
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					, IntegrityCheck = "GeoDmsVersion() >= 7.123" // i.v.m. variantie berekening
-					, StorageName    = "%LocalDataProjDir%/resultaat_meta.csv"
-					, StorageType    = "str";
+					, StorageName = "%LocalDataProjDir%/resultaat_meta.csv"
+					, StorageType = "str";
 				}
 
 				unit<uint32> buurt := CBS/buurt
 				{
 					attribute<uint32> nr_BAG_adressen            := pcount(BAG/adres/buurt_rel);
 					attribute<uint32> nr_geogecodeerde_adressen  := pcount(TeGeocoderen/koppel_aan_bag_aggregaties/buurt/buurt_rel);
-					
+
 					parameter<string> Kopregel := 'buurt_code;buurt_naam;aantal BAG adressen;aantal gegeocodeerde adressen';
 					parameter<string> Body     := AsList(BU_CODE + ';' + BU_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), stringparams/newline);
 
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					, StorageName    = "%LocalDataProjDir%/resultaat_per_buurt.csv"
-					, StorageType    = "str";
+					, StorageName = "%LocalDataProjDir%/resultaat_per_buurt.csv"
+					, StorageType = "str";
 				}
 
 				unit<uint32> wijk := CBS/wijk
@@ -204,8 +204,8 @@ container Geocode
 					parameter<string> Body     := AsList(WK_CODE + ';' + WK_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), stringparams/newline);
 
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					, StorageName    = "%LocalDataProjDir%/resultaat_per_wijk.csv"
-					, StorageType    = "str";
+					, StorageName = "%LocalDataProjDir%/resultaat_per_wijk.csv"
+					, StorageType = "str";
 				}
 
 				unit<uint32> gemeente := CBS/gemeente
@@ -217,11 +217,11 @@ container Geocode
 					parameter<string> Body     := AsList(GM_CODE + ';' + GM_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), stringparams/newline);
 
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					, StorageName    = "%LocalDataProjDir%/resultaat_per_gemeente.csv"
-					, StorageType    = "str";
+					, StorageName = "%LocalDataProjDir%/resultaat_per_gemeente.csv"
+					, StorageType = "str";
 				}
 
-				unit<uint32> nvm_afd:= nvm/afdeling
+				/*unit<uint32> nvm_afd:= nvm/afdeling
 				{
 					attribute<uint32> nr_BAG_adressen            := pcount(BAG/adres/nvmafd_rel);
 					attribute<uint32> nr_geogecodeerde_adressen  := pcount(TeGeocoderen/koppel_aan_bag_aggregaties/nvm_afdeling/nvmafd_rel);
@@ -242,9 +242,9 @@ container Geocode
 						;
 
 					parameter<string> resultaat:= Kopregel + stringparams/newline + AsList(BodyLines, stringparams/newline)
-					, StorageName    = "%LocalDataProjDir%/resultaat_per_nvmafdeling.csv"
-					, StorageType    = "str";
-				}
+					, StorageName = "%LocalDataProjDir%/resultaat_per_nvmafdeling.csv"
+					, StorageType = "str";
+				}*/
 			}
 		}
 	}
@@ -262,11 +262,11 @@ container Geocode
 			parameter<string> ScheidingsTeken := TeGeocoderen/bron/TableChopper/VeldScheidingsTeken;
 			parameter<string> Kopregel        := TeGeocoderen/bron/TableChopper/KopRegel + ScheidingsTeken + 'buurt_code'+ ScheidingsTeken +'wijk_code'+ ScheidingsTeken +'gemeente_code'+ ScheidingsTeken +'nvmafd_code' + ScheidingsTeken + AsList(export/extra_velden/naam, ScheidingsTeken);
 
-			attribute<string> BodyExtra (TeGeocoderen/bronDomein):= = AsList(
+			attribute<string> BodyExtra (TeGeocoderen/bronDomein) := = AsList(
 				'MakeDefined(String(' + export/extra_velden/ItemNaam + '),stringparams/emptystring)'
 			,	' + ' + quote(ScheidingsTeken) + ' + '
 			);
-			attribute<string> Body      (TeGeocoderen/bronDomein):= 
+			attribute<string> Body      (TeGeocoderen/bronDomein) :=
 				  TeGeocoderen/bron/TableChopper/BodyLines + ScheidingsTeken 
 				+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/buurt/code,stringparams/emptystring) + ScheidingsTeken 
 				+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/wijk/code,stringparams/emptystring) + ScheidingsTeken 
@@ -275,16 +275,15 @@ container Geocode
 				+ BodyExtra + ScheidingsTeken ;
 		}
 
-		parameter<string> bestand:= impl/Kopregel + stringparams/newline + AsList(impl/Body, stringparams/newline) + stringparams/newline 
+		parameter<string> bestand := impl/Kopregel + stringparams/newline + AsList(impl/Body, stringparams/newline) + stringparams/newline 
 		//+ substr(TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat,0,0)
-		,	IntegrityCheck    = "GeoDmsVersion() >= 7.126" // i.v.m. from_utf operator
-		,	StorageName       = "%LocalDataProjDir%/resultaat.csv"
-		,	StorageType       = "str"
-		,	ExplicitSuppliers = "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat;"
-								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/buurt/resultaat;"
-								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/wijk/resultaat;"
-								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;";
-								//"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/nvm_afd/resultaat";
+		, StorageName       = "%LocalDataProjDir%/resultaat.csv"
+		, StorageType       = "str"
+		, ExplicitSuppliers = "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat;"
+							  "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/buurt/resultaat;"
+							  "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/wijk/resultaat;"
+							  "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;";
+							//"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/nvm_afd/resultaat";
 	}
 
 	container analyses

@@ -3,7 +3,7 @@
 //                                                                                    //
 //                     Configuratie voor BAG Geocodeer Module                         //
 //                                                                                    //
-//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2018               //
+//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2023               //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
@@ -18,12 +18,13 @@ container adresveld_wel_in_bron_niet_in_BAG
 	{
 		attribute<string> label := readarray(niveau/volgorde[0],.,string,0);
 	}
+
 	container per_adresveld :=
 		for_each_ne(
 			adresveld/label
 			,'veldtemplate(' + quote(adresveld/label) + ')'
 		);
-	
+
 	template veldtemplate
 	{
 		// begin case parameters

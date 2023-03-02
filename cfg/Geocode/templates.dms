@@ -30,6 +30,7 @@ container templates
 
 		attribute<string> resultaat (domain) := replace_value(vervangen, stringparams/emptystring, string(0/0));
 	}
+
 	Template uniformeer_string_straatnaam
 	{
 		// begin case parameters
@@ -72,7 +73,8 @@ container templates
 				}
 			}
 		}
-		attribute<string> resultaat (domain) := = 'replace_value(vervangstappen/step_' + string(max(vervangingen/sets/number)) + '/staptype/resultaat , stringparams/emptystring, string(0/0))', FreeData = "False";
+		attribute<string> resultaat (domain) := = 'replace_value(vervangstappen/step_' + string(max(vervangingen/sets/number)) + '/staptype/resultaat , stringparams/emptystring, string(0/0))'
+		, FreeData = "False";
 	}
 
 	Template vervang
@@ -177,10 +179,7 @@ container templates
 
 		attribute<domein> domein_rel (BAG/adres):= rlookup(key, domein/values);
 
-		unit<uint32> domein:= unique(key)
-		,	FreeData = "False"
-		,	DialogType = "Map"
-		,	DialogData = "locatie"
+		unit<uint32> domein := unique(key), FreeData = "False"
 		{
 			attribute<float32>  meanX    := mean(BAG/adres/X , domein_rel);
 			attribute<float32>  meanY    := mean(BAG/adres/Y , domein_rel);
@@ -191,7 +190,7 @@ container templates
 			attribute<float32>  varX     := var(BAG/adres/X  , domein_rel);
 			attribute<float32>  varY     := var(BAG/adres/Y  , domein_rel);
 			attribute<float32>  var      := varX + varY;
-			attribute<point_rd> locatie  := =aggtype == 0b ? 'point(meanX,meanY,point_rd)' : 'point(medianX,medianY,point_rd)';
+			attribute<point_rd> geometry := =aggtype == 0b ? 'point(meanX,meanY,point_rd)' : 'point(medianX,medianY,point_rd)';
 
 			attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domein_rel) : stringparams/emptystring;
 			attribute<string>  bag_postcode        := min(BAG/impl/adres_met_xy/postcode      , domein_rel) == max(BAG/impl/adres_met_xy/postcode      , domein_rel) ? min(BAG/impl/adres_met_xy/postcode      , domein_rel) : stringparams/emptystring;
@@ -202,7 +201,7 @@ container templates
 			attribute<string>  bag_woonplaatsnaam  := min(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) == max(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) ? min(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) : stringparams/emptystring;
 
 			attribute<string> PC      := uppercase(values);
-			attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(locatie, /CBS/gemeente/geometry_rd)];
+			attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(geometry, /CBS/gemeente/geometry_rd)];
 		}
 	}
 
@@ -223,7 +222,7 @@ container templates
 					,stringparams/tab   ,stringparams/emptystring
 					,stringparams/point ,stringparams/emptystring
 				)
-				,VeldScheidingsTeken_niet_ingebruik, '_'
+				, VeldScheidingsTeken_niet_ingebruik, '_'
 			)
 		;
 	}

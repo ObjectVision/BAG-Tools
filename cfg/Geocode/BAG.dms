@@ -18,17 +18,17 @@ container BAG
 		parameter<string> SnapshotDir:= '%SourceDataDir%/BAG20/snapshots.ext/20220701';
 
 		unit<uint32> adres
-		:	StorageName     = "=SnapshotDir + '/adres.fss'"
-		,	StorageReadOnly = "True"
+		: StorageName     = "=SnapshotDir + '/adres.fss'"
+		, StorageReadOnly = "True"
 		{
-			attribute<string>   straatnaam;
-			attribute<string>   postcode;
-			attribute<int32>    huisnummer;
-			attribute<string>   huisnummer_str := string(huisnummer);
-			attribute<string>   huisletter;
-			attribute<string>   toevoeging;
-			attribute<string>   woonplaatsnaam;
-			attribute<string>   nummeraanduiding_id;
+			attribute<string> straatnaam;
+			attribute<string> postcode;
+			attribute<int32>  huisnummer;
+			attribute<string> huisnummer_str := string(huisnummer);
+			attribute<string> huisletter;
+			attribute<string> toevoeging;
+			attribute<string> woonplaatsnaam;
+			attribute<string> nummeraanduiding_id;
 
 			attribute<point_rd> geometry;
 		}
@@ -41,8 +41,7 @@ container BAG
 		container woonplaatsnaam := Templates/uniformeer_string(adres_met_xy, adres_met_xy/woonplaatsnaam);
 	}
 
-	unit<uint32> adres:= impl/adres_met_xy
-	,	FreeData = "False"
+	unit<uint32> adres:= impl/adres_met_xy, FreeData = "False"
 	{
 		attribute<string> straatnaam          := impl/straatnaam/resultaat;
 		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,vervangingen/postcodes_missend/label));
@@ -59,13 +58,13 @@ container BAG
 
 		attribute<string> nummeraanduiding_id := impl/adres_met_xy/nummeraanduiding_id;
 
-		attribute<point_rd> locatie           := point(X,Y,point_rd);
+		attribute<point_rd> geometry          := point(X,Y,point_rd);
 
-		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(locatie, CBS/buurt/Geometry[point_rd]);
-		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(locatie, CBS/wijk/Geometry[point_rd]);
-		attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(locatie, CBS/gemeente/Geometry[point_rd]);
-		//attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(locatie, NVM/regio/Geometry[point_rd]);
-		//attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(locatie, NVM/afdeling/Geometry[point_rd]);
+		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(geometry, CBS/buurt/Geometry[point_rd]);
+		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(geometry, CBS/wijk/Geometry[point_rd]);
+		attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(geometry, CBS/gemeente/Geometry[point_rd]);
+		//attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(geometry, NVM/regio/Geometry[point_rd]);
+		//attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(geometry, NVM/afdeling/Geometry[point_rd]);
 
 		container keys:=
 			for_each_nedv(
@@ -74,7 +73,7 @@ container BAG
 				,adres
 				,string
 			)
-		,	KeepData = "True";
+		, KeepData = "True";
 	}
 
 	container aggregaties :=

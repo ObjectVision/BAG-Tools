@@ -3,14 +3,12 @@
 //                                                                                    //
 //                     Configuratie voor BAG Geocodeer Module                         //
 //                                                                                    //
-//                              Object Vision 2015                                    //
+//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2023               //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-//   Configuratiebestande op basis van een beslisboom XY coordinaten met relevante    //
-//   meta informatie te koppelen aan een bronbestand met adresvelden                  //
 //                                                                                    //
-// De koppeling vindt plaats aan de BAG adressen en verschillende aggregaties daarvan //
+// Lezen van bronbestand met TableChopper iv, performance en opsplitsen adres velden  //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
