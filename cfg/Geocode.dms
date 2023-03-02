@@ -3,7 +3,7 @@
 //                                                                                    //
 //                     Configuratie voor BAG Geocodeer Module                         //
 //                                                                                    //
-//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2018               //
+//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2023               //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
@@ -30,165 +30,16 @@ container Geocode
 		parameter<string> legehuistoevoeging := 'geen';
 	}
 
-	unit<uint32> niveau: nrofrows = 17
-	{
-		attribute<int8> code: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,-1];
-		attribute<string> volgorde:
-		[
-			 'postcode, straatnaam, huisnummer, huistoevoeging, woonplaatsnaam'
-			,'postcode, straatnaam, huisnummer, huistoevoeging'
-			,'postcode, huisnummer, huistoevoeging, woonplaatsnaam'
-			,'postcode, huisnummer, huistoevoeging'
-			,'straatnaam, huisnummer, huistoevoeging, woonplaatsnaam'
-			,'postcode, straatnaam, huisnummer, woonplaatsnaam'
-			,'straatnaam, huisnummer, woonplaatsnaam'
-			,'postcode, huisnummer, woonplaatsnaam'
-			,'postcode, huisnummer, straatnaam'
-			,'postcode, huisnummer'
-			,'postcode, straatnaam, woonplaatsnaam'
-			,'straatnaam, woonplaatsnaam'
-			,'postcode'
-			,'postcode5'
-			,'postcode4'
-			,'woonplaatsnaam'
-			,'geen koppeling mogelijk'
-		];
-		attribute<string> naam:
-		[
-			 'pc_st_hn_ht_wp'
-			,'pc_st_hn_ht'
-			,'pc_hn_ht_wp'
-			,'pc_hn_ht'
-			,'st_hn_ht_wp'
-			,'pc_st_hn_wp'
-			,'st_hn_wp'
-			,'pc_hn_wp'
-			,'pc_hn_st'
-			,'pc_hn'
-			,'pc_st_wp'
-			,'st_wp'
-			,'pc'
-			,'pc5'
-			,'pc4'
-			,'wp'
-			,'geen_koppeling'
-		];
-		attribute<uint8> aggtype: // 0 = mean, 1= median 
-		[
-			 0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,0
-			,1
-			,1
-			,1
-			,1
-			,0
-		];
-	}
+	#include<niveau.dms>
 
-	unit<uint32> stap:= subset(niveau/code > int8(0))
+	unit<uint32> stap := select_many(niveau, niveau/code > int8(0))
 	{
-		attribute<int8>   code     := niveau/code[nr_OrgEntity];
-		attribute<string> volgorde := niveau/volgorde[nr_OrgEntity];
-		attribute<string> naam     := niveau/naam[nr_OrgEntity];
-		attribute<uint8>  aggtype  := niveau/aggtype[nr_OrgEntity];
-
 		attribute<string> expr_key := replace(volgorde,', ',' + ''_'' + ');
 	}
 
-	container BAG
-	{
-		container impl
-		{
-			parameter<string> SnapshotDir:= '%SourceDataDir%/BAG20/snapshots.ext/20210701';
-
-			unit<uint32> adres
-			:	StorageName     = "=SnapshotDir + '/adres.fss'"
-			,	StorageReadOnly = "True"
-			{
-				attribute<string>   straatnaam;
-				attribute<string>   postcode;
-				attribute<int32>    huisnummer;
-				attribute<string>   huisletter;
-				attribute<string>   toevoeging;
-				attribute<string>   woonplaatsnaam;
-				attribute<string>   nummeraanduiding_id;
-
-				attribute<point_rd> geometry;
-			}
-			unit<uint32> adres_met_xy := subset(isDefined(adres/geometry))
-			{
-				attribute<string>   straatnaam          := adres/straatnaam[nr_OrgEntity];
-				attribute<string>   postcode            := adres/postcode[nr_OrgEntity];
-				attribute<int32>    huisnummer          := adres/huisnummer[nr_OrgEntity];
-				attribute<string>   huisnummer_str      := string(huisnummer);
-				attribute<string>   huisletter          := adres/huisletter[nr_OrgEntity];
-				attribute<string>   toevoeging          := adres/toevoeging[nr_OrgEntity];
-				attribute<string>   woonplaatsnaam      := adres/woonplaatsnaam[nr_OrgEntity];
-				attribute<string>   nummeraanduiding_id := adres/nummeraanduiding_id[nr_OrgEntity];
-
-				attribute<point_rd> geometry            := adres/geometry[nr_OrgEntity];
-			}
-
-			container straatnaam     := Templates/uniformeer_string_straatnaam(adres_met_xy, adres_met_xy/straatnaam);
-			container postcode       := Templates/uniformeer_string(adres_met_xy, adres_met_xy/postcode);
-			container huisnummer     := Templates/uniformeer_string(adres_met_xy, string(adres_met_xy/huisnummer));
-			container huistoevoeging := Templates/uniformeer_string(adres_met_xy, adres_met_xy/huisletter + adres_met_xy/toevoeging);
-			container woonplaatsnaam := Templates/uniformeer_string(adres_met_xy, adres_met_xy/woonplaatsnaam);
-		}
-		unit<uint32> adres:= impl/adres_met_xy
-		,	FreeData = "False"
-		{
-			attribute<string> straatnaam          := impl/straatnaam/resultaat;
-			attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,vervangingen/postcodes_missend/label));
-			attribute<string> postcode            := isMissingPC ? string( 0 / 0) : impl/postcode/resultaat;
-			attribute<string> huisnummer          := impl/huisnummer/resultaat;
-			attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/resultaat, stringparams/legehuistoevoeging);
-			attribute<string> woonplaatsnaam      := impl/woonplaatsnaam/resultaat;
-
-			attribute<string> postcode5           := substr(postcode,0,5);
-			attribute<string> postcode4           := substr(postcode,0,4);
-
-			attribute<float32> X                  := PointCol(impl/adres_met_xy/geometry);
-			attribute<float32> Y                  := PointRow(impl/adres_met_xy/geometry);
-
-			attribute<string> nummeraanduiding_id := impl/adres_met_xy/nummeraanduiding_id;
-
-			attribute<point_rd> locatie           := point(X,Y,point_rd);
-
-			attribute<CBS/buurt>    buurt_rel     := point_in_polygon(locatie, CBS/buurt/Geometry[point_rd]);
-			attribute<CBS/wijk>     wijk_rel      := point_in_polygon(locatie, CBS/wijk/Geometry[point_rd]);
-			attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(locatie, CBS/gemeente/Geometry[point_rd]);
-			attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(locatie, NVM/regio/Geometry[point_rd]);
-			attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(locatie, NVM/afdeling/Geometry[point_rd]);
-
-			container keys:=
-				for_each_nedv(
-					 stap/naam
-					,stap/expr_key
-					,adres
-					,string
-				)
-			,	KeepData = "True";
-		}
-		container aggregaties:=
-			for_each_ne(
-				 stap/naam
-				,'Templates/maak_aggregatie_entiteit(' + quote(string(stap/code)) + ', adres/keys/' + stap/naam + ',' + string(stap/aggtype) + 'b)'
-			);
-	}
-
+	#include<BAG.dms>
 	#include<CBS.dms>
-	#include<NVM.dms>
+	//#include<NVM.dms>
 
 	container vervangingen
 	{
@@ -334,7 +185,6 @@ container Geocode
 			attribute<string> txt (domain);
 			// eind case parameters
 
-			
 			container vervangstappen :=
 				for_each_ne(
 					 'step_' + vervangingen/sets/number_str
@@ -357,10 +207,10 @@ container Geocode
 					container ter_controle
 					{
 						attribute<bool> is_aangepast (domain) := txt <> staptype/resultaat;
-						unit<uint32> aangepast := subset(is_aangepast)
+						unit<uint32> aangepast := select_afew(staptype, is_aangepast)
 						{
-							attribute<string> voor := txt[Nr_OrgEntity];
-							attribute<string> na   := staptype/resultaat[Nr_OrgEntity];
+							attribute<string> voor := txt[org_rel];
+							attribute<string> na   := resultaat;
 						}
 						unit<uint32> aangepast_uniek := unique(aangepast/voor)
 						{
@@ -384,11 +234,7 @@ container Geocode
 			parameter<uint32>            lengte_TeVervangen;
 
 			// eind case parameters
-			unit<uint32> lookup_table := subset(vervangingen/table/set == set)
-			{
-				attribute<string> TeVervangen   := vervangingen/table/TeVervangen[nr_OrgEntity]; 
-				attribute<string> VervangenDoor := vervangingen/table/VervangenDoor [nr_OrgEntity]; 
-			}
+			unit<uint32> lookup_table := select_many(vervangingen/table, vervangingen/table/set == set);
 
 			parameter<string> staptype_expr :=
 				switch(
@@ -402,10 +248,10 @@ container Geocode
 			container ter_controle
 			{
 				attribute<bool> is_aangepast (domain) := src <> staptype/resultaat;
-				unit<uint32> aangepast := subset(is_aangepast)
+				unit<uint32> aangepast := select_afew(staptype, is_aangepast)
 				{
-					attribute<string> voor := src[Nr_OrgEntity];
-					attribute<string> na   := staptype/resultaat[Nr_OrgEntity];
+					attribute<string> voor := src[org_rel];
+					attribute<string> na   := resultaat[org_rel];
 				}
 				unit<uint32> aangepast_uniek := Unique(aangepast/voor)
 				{
@@ -507,7 +353,7 @@ container Geocode
 				attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(locatie, /CBS/gemeente/geometry_rd)];
 			}
 		}
-		
+
 		Template vervang_ongewenste_scheidingstekens
 		{
 			// begin case parameters
@@ -636,16 +482,9 @@ container Geocode
 				attribute<string>  woonplaatsnaam   (bronDomein) := ReadElems(bag_key_replaced, string, huistoevoeging/readPos);
 			}
 
-			unit<uint32> geen_nummeraanduiding := subset(strlen(trim(TeGeocoderen/koppel_aan_bag_aggregaties/nummeraanduiding_id)) < 2)
+			unit<uint32> geen_nummeraanduiding := select_afew(koppel_aan_bag_aggregaties, strlen(trim(TeGeocoderen/koppel_aan_bag_aggregaties/nummeraanduiding_id)) < 2)
 			{
-				attribute<string> bron_adres         := TeGeocoderen/bron/TableChopper/BodyLines[nr_OrgEntity];
-
-				attribute<string> postcode_bag       := bag_postcode[nr_OrgEntity];
-				attribute<string> straatnaam_bag     := bag_straatnaam [nr_OrgEntity];
-				attribute<string> huisnummer_bag     := bag_huisnummer [nr_OrgEntity];
-				attribute<string> huisletter_bag     := bag_huisletter [nr_OrgEntity];
-				attribute<string> toevoeging_bag     := bag_toevoeging [nr_OrgEntity];
-				attribute<string> woonplaatsnaam_bag := bag_woonplaatsnaam[nr_OrgEntity];
+				attribute<string> bron_adres         := TeGeocoderen/bron/TableChopper/BodyLines[org_rel];
 			}
 			
 			container metainformatie
@@ -670,9 +509,9 @@ container Geocode
 						);
 					
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					,	IntegrityCheck = "GeoDmsVersion() >= 7.123" // i.v.m. variantie berekening
-					,	StorageName    = "%LocalDataProjDir%/resultaat_meta.csv"
-					,	StorageType    = "str";
+					, IntegrityCheck = "GeoDmsVersion() >= 7.123" // i.v.m. variantie berekening
+					, StorageName    = "%LocalDataProjDir%/resultaat_meta.csv"
+					, StorageType    = "str";
 				}
 
 				unit<uint32> buurt := CBS/buurt
@@ -684,8 +523,8 @@ container Geocode
 					parameter<string> Body     := AsList(BU_CODE + ';' + BU_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), stringparams/newline);
 
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					,	StorageName    = "%LocalDataProjDir%/resultaat_per_buurt.csv"
-					,	StorageType    = "str";
+					, StorageName    = "%LocalDataProjDir%/resultaat_per_buurt.csv"
+					, StorageType    = "str";
 				}
 
 				unit<uint32> wijk := CBS/wijk
@@ -697,8 +536,8 @@ container Geocode
 					parameter<string> Body     := AsList(WK_CODE + ';' + WK_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), stringparams/newline);
 
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					,	StorageName    = "%LocalDataProjDir%/resultaat_per_wijk.csv"
-					,	StorageType    = "str";
+					, StorageName    = "%LocalDataProjDir%/resultaat_per_wijk.csv"
+					, StorageType    = "str";
 				}
 
 				unit<uint32> gemeente := CBS/gemeente
@@ -710,8 +549,8 @@ container Geocode
 					parameter<string> Body     := AsList(GM_CODE + ';' + GM_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), stringparams/newline);
 
 					parameter<string> resultaat := Kopregel + stringparams/newline + Body
-					,	StorageName    = "%LocalDataProjDir%/resultaat_per_gemeente.csv"
-					,	StorageType    = "str";
+					, StorageName    = "%LocalDataProjDir%/resultaat_per_gemeente.csv"
+					, StorageType    = "str";
 				}
 
 				unit<uint32> nvm_afd:= nvm/afdeling
@@ -735,8 +574,8 @@ container Geocode
 						;
 
 					parameter<string> resultaat:= Kopregel + stringparams/newline + AsList(BodyLines, stringparams/newline)
-					,	StorageName    = "%LocalDataProjDir%/resultaat_per_nvmafdeling.csv"
-					,	StorageType    = "str";
+					, StorageName    = "%LocalDataProjDir%/resultaat_per_nvmafdeling.csv"
+					, StorageType    = "str";
 				}
 			}
 		}
@@ -779,7 +618,7 @@ container Geocode
 								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;"
 								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/nvm_afd/resultaat";
 	}
-	
+
 	container analyses
 	{
 		#include<adresveld_wel_in_bron_niet_in_BAG.dms>

@@ -1,0 +1,77 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                                                                    //
+//                     Configuratie voor BAG Geocodeer Module                         //
+//                                                                                    //
+//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2023               //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//          Niveaus waarop gekoppeld kan worden                                       //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+unit<uint32> niveau: nrofrows = 17
+{
+	attribute<int8> code: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,-1];
+	attribute<string> volgorde:
+	[
+		 'postcode, straatnaam, huisnummer, huistoevoeging, woonplaatsnaam'
+		,'postcode, straatnaam, huisnummer, huistoevoeging'
+		,'postcode, huisnummer, huistoevoeging, woonplaatsnaam'
+		,'postcode, huisnummer, huistoevoeging'
+		,'straatnaam, huisnummer, huistoevoeging, woonplaatsnaam'
+		,'postcode, straatnaam, huisnummer, woonplaatsnaam'
+		,'straatnaam, huisnummer, woonplaatsnaam'
+		,'postcode, huisnummer, woonplaatsnaam'
+		,'postcode, huisnummer, straatnaam'
+		,'postcode, huisnummer'
+		,'postcode, straatnaam, woonplaatsnaam'
+		,'straatnaam, woonplaatsnaam'
+		,'postcode'
+		,'postcode5'
+		,'postcode4'
+		,'woonplaatsnaam'
+		,'geen koppeling mogelijk'
+	];
+	attribute<string> naam:
+	[
+		 'pc_st_hn_ht_wp'
+		,'pc_st_hn_ht'
+		,'pc_hn_ht_wp'
+		,'pc_hn_ht'
+		,'st_hn_ht_wp'
+		,'pc_st_hn_wp'
+		,'st_hn_wp'
+		,'pc_hn_wp'
+		,'pc_hn_st'
+		,'pc_hn'
+		,'pc_st_wp'
+		,'st_wp'
+		,'pc'
+		,'pc5'
+		,'pc4'
+		,'wp'
+		,'geen_koppeling'
+	];
+	attribute<uint8> aggtype: // 0 = mean, 1= median 
+	[
+		 0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,0
+		,1
+		,1
+		,1
+		,1
+		,0
+	];
+}

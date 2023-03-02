@@ -1,0 +1,85 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                                                                    //
+//                     Configuratie voor BAG Geocodeer Module                         //
+//                                                                                    //
+//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2023               //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//          Inlezen BAG en bepalen aggregaties                                        //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+container BAG
+{
+	container impl
+	{
+		parameter<string> SnapshotDir:= '%SourceDataDir%/BAG20/snapshots.ext/20220701';
+
+		unit<uint32> adres
+		:	StorageName     = "=SnapshotDir + '/adres.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<string>   straatnaam;
+			attribute<string>   postcode;
+			attribute<int32>    huisnummer;
+			attribute<string>   huisnummer_str := string(huisnummer);
+			attribute<string>   huisletter;
+			attribute<string>   toevoeging;
+			attribute<string>   woonplaatsnaam;
+			attribute<string>   nummeraanduiding_id;
+
+			attribute<point_rd> geometry;
+		}
+		unit<uint32> adres_met_xy := select_many(adres, isDefined(adres/geometry));
+
+		container straatnaam     := Templates/uniformeer_string_straatnaam(adres_met_xy, adres_met_xy/straatnaam);
+		container postcode       := Templates/uniformeer_string(adres_met_xy, adres_met_xy/postcode);
+		container huisnummer     := Templates/uniformeer_string(adres_met_xy, string(adres_met_xy/huisnummer));
+		container huistoevoeging := Templates/uniformeer_string(adres_met_xy, adres_met_xy/huisletter + adres_met_xy/toevoeging);
+		container woonplaatsnaam := Templates/uniformeer_string(adres_met_xy, adres_met_xy/woonplaatsnaam);
+	}
+
+	unit<uint32> adres:= impl/adres_met_xy
+	,	FreeData = "False"
+	{
+		attribute<string> straatnaam          := impl/straatnaam/resultaat;
+		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,vervangingen/postcodes_missend/label));
+		attribute<string> postcode            := isMissingPC ? string( 0 / 0) : impl/postcode/resultaat;
+		attribute<string> huisnummer          := impl/huisnummer/resultaat;
+		attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/resultaat, stringparams/legehuistoevoeging);
+		attribute<string> woonplaatsnaam      := impl/woonplaatsnaam/resultaat;
+
+		attribute<string> postcode5           := substr(postcode,0,5);
+		attribute<string> postcode4           := substr(postcode,0,4);
+
+		attribute<float32> X                  := PointCol(impl/adres_met_xy/geometry);
+		attribute<float32> Y                  := PointRow(impl/adres_met_xy/geometry);
+
+		attribute<string> nummeraanduiding_id := impl/adres_met_xy/nummeraanduiding_id;
+
+		attribute<point_rd> locatie           := point(X,Y,point_rd);
+
+		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(locatie, CBS/buurt/Geometry[point_rd]);
+		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(locatie, CBS/wijk/Geometry[point_rd]);
+		attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(locatie, CBS/gemeente/Geometry[point_rd]);
+		//attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(locatie, NVM/regio/Geometry[point_rd]);
+		//attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(locatie, NVM/afdeling/Geometry[point_rd]);
+
+		container keys:=
+			for_each_nedv(
+				 stap/naam
+				,stap/expr_key
+				,adres
+				,string
+			)
+		,	KeepData = "True";
+	}
+
+	container aggregaties :=
+		for_each_ne(
+			 stap/naam
+			,'Templates/maak_aggregatie_entiteit(' + quote(string(stap/code)) + ', adres/keys/' + stap/naam + ',' + string(stap/aggtype) + 'b)'
+		);
+}
