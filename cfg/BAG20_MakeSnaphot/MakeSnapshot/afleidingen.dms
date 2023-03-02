@@ -59,7 +59,6 @@ container afleidingen: Using = "eenheden"
 			, DialogType = "Map"
 			, DialogData = "geometry_mm"
 			{
-				attribute<geometries/rdc_mm> geometry_mm (poly) := pand/result/geometry_mm[nr_OrgEntity];
 				attribute<geometries/rdc_mm> NW := lower_bound(geometry_mm);
 				attribute<geometries/rdc_mm> SE := upper_bound(geometry_mm);
 
