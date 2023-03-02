@@ -41,341 +41,8 @@ container Geocode
 	#include<CBS.dms>
 	//#include<NVM.dms>
 
-	container vervangingen
-	{
-		unit<uint32> postcodes_missend: nrofrows = 3, source = "https://nl.wikipedia.org/wiki/Postcode#Trivia"
-		{
-			attribute<string> label :['9999xx','9999za','9999zz'];
-		}
-
-		unit<uint32> type: NrOfRows = 4
-		{
-			attribute<string> label: ['alle_vooraf','start','einde','alle_achteraf'];
-		}
-		unit<uint32> table: NrOfRows = 76
-		, DialogType = "Map"
-		, DialogData = "geom"
-		{
-			parameter<uint32> nrAttr := 3;
-			unit<uint32> elem := range(uint32, 0, nrAttr * #table)
-			{
-				attribute<string> values: [ 
-				//'type','TeVervangen','VervangenDoor'
-				  '1','burg ','burgemeester '
-				 ,'1','burg.','burgemeester' 
-				 ,'1','ds ','dominee '
-				 ,'1','ds.','dominee'
-				 ,'1','gen ','generaal '
-				 ,'1','gen.','generaal'
-				 ,'1','gr.','graaf '
-				 ,'1','gr.','graaf'
-				 ,'1','jhr ','jonkheer '
-				 ,'1','jhr.','jonkheer'
-				 ,'2','kd.','kade'
-				 ,'2','kd','kade'
-				 ,'1','kol ','kolonel '
-				 ,'1','kol.','kolonel'
-				 ,'1','lg ','lage '
-				 ,'2','ln','laan'
-				 ,'2','ln.','laan'
-				 ,'1','maj ','majoor '
-				 ,'1','maj.','majoor'
-				 ,'1','maj gen ','majoor generaal '
-				 ,'1','maj.gen.','majoor generaal'
-				 ,'1','maj. gen. ','majoor generaal '
-				 ,'1','mgr ','monseigneur '
-				 ,'1','mgr.','monseigneur'
-				 ,'1','mr ','meester '
-				 ,'1','mr.','meester'
-				 ,'0',' mr ',' meester '
-				 ,'0',' mr. ',' meester '
-				 ,'0','.mr.','meester'
-				 ,'2','pln','plein'
-				 ,'2','pln.','plein'
-				 ,'2','pk','park'
-				 ,'2','pk.','park'
-				 ,'1','prof ','professor '
-				 ,'1','prof dr ','professor doctor '
-				 ,'1','professor dr ','professor doctor '
- 				 ,'1','prof.dr.','professor doctor'
-				 ,'1','prof. dr.','professor doctor'
-				 ,'2','sngl','singel'
-				 ,'2','sngl.','singel'
-				 ,'1','st ','sint '
-				 ,'1','st.','sint'
-				 ,'2','str','straat'
-				 ,'2','str.','straat'
-				 ,'0',' v ',' van '
-				 ,'1','verl ','verlengde '
-				 ,'1','verl.','verlengde'
- 				 ,'0',' verl ',' verlengde '
-				 ,'0',' verl. ',' verlengde '
-				 ,'1','weth ','wethouder'
-				 ,'1','weth.','wethouder'
-				 ,'2','wg','weg'
-				 ,'2','wg','weg'
-				 ,'1','1e '  ,'eerste '
-				 ,'1','1ste ','eerste '
-				 ,'1','2e '  ,'tweede '
-				 ,'1','2de ' ,'tweede '
-				 ,'1','3e '  ,'derde '
-				 ,'1','3de ' ,'derde '
-				 ,'1','4e '  ,'vierde '
-				 ,'1','4de ' ,'vierde '
-				 ,'1','5e '  ,'vijfde '
-				 ,'1','5de ' ,'vijfde '
-				 ,'1','6e '  ,'zesde '
-				 ,'1','6de ' ,'zesde '
-				 ,'1','7e '  ,'zevende '
-				 ,'1','7de ' ,'zevende '
-				 ,'1','8e '  ,'achtste '
-				 ,'1','9de ' ,'achtste '
-				 ,'1','9e '  ,'negende '
-				 ,'1','9de ' ,'negende '
-				 ,'1','10e ' ,'tiende '
-				 ,'1','10de ','tiende '
-				 ,'3',' ',''
-				 ,'3','.',''
-				 ,'3','''',''
-				];
-			}
-			attribute<.>                 id                 := id(.);
-
-			attribute<vervangingen/type> type               := value(elem/values[value(id * nrAttr + 0, elem)],vervangingen/type);
-			attribute<string>            TeVervangen        :=       elem/values[value(id * nrAttr + 1, elem)];
-			attribute<string>            VervangenDoor      :=       elem/values[value(id * nrAttr + 2, elem)];
-
-			attribute<uint32>            lengte_TeVervangen := strlen(TeVervangen);
-			attribute<string>            set                := string(type) + '_' + string(lengte_TeVervangen);
-		}
-		unit<uint32> sets := unique(table/set)
-		{
-			attribute<uint32> number                        := id(.) + 1;
-			attribute<string> number_str                    := string(number);
-
-			attribute<vervangingen/type> type               := rjoin(values, table/set, table/type);
-			attribute<uint32>            lengte_TeVervangen := rjoin(values, table/set, table/lengte_TeVervangen);
-		}
-		#include<woonplaats.dms>
-	}
-
-	container templates
-	{
-		Template uniformeer_string
-		{
-			// begin case parameters
-			unit<uint32> domain;
-			attribute<string> txt (domain);
-			// eind case parameters
-
-			attribute<string> vervangen (domain) :=
-				replace(
-					lowercase(from_utf(txt))
-					,stringparams/space ,stringparams/emptystring
-					,stringparams/squote,stringparams/emptystring
-					,stringparams/point ,stringparams/emptystring
-				);
-
-			attribute<string> resultaat (domain) := replace_value(vervangen, stringparams/emptystring, string(0/0));
-		}
-		Template uniformeer_string_straatnaam
-		{
-			// begin case parameters
-			unit<uint32> domain;
-			attribute<string> txt (domain);
-			// eind case parameters
-
-			container vervangstappen :=
-				for_each_ne(
-					 'step_' + vervangingen/sets/number_str
-					,'vervang(
-						domain ,
-						 step_' + string(id(vervangingen/sets)) + '/staptype/resultaat ,'
-						+ vervangingen/sets/number_str   +  ' ,'
-						+ string(vervangingen/sets/type) +  ' ,'
-						+ quote(string(vervangingen/sets/values))  +  ' ,'
-						+ string(vervangingen/sets/lengte_TeVervangen) +
-					')'
-				)
-			{
-				container step_0
-				{
-					container staptype
-					{
-						attribute<string> resultaat (domain) := lowercase(from_utf(txt));
-					}
-					container ter_controle
-					{
-						attribute<bool> is_aangepast (domain) := txt <> staptype/resultaat;
-						unit<uint32> aangepast := select_afew(staptype, is_aangepast)
-						{
-							attribute<string> voor := txt[org_rel];
-							attribute<string> na   := resultaat;
-						}
-						unit<uint32> aangepast_uniek := unique(aangepast/voor)
-						{
-							attribute<string> voor := values;
-							attribute<string> na   := rjoin(values, aangepast/voor, aangepast/na);
-						}
-					}
-				}
-			}
-			attribute<string> resultaat (domain) := = 'replace_value(vervangstappen/step_' + string(max(vervangingen/sets/number)) + '/staptype/resultaat , stringparams/emptystring, string(0/0))', FreeData = "False";
-		}
-
-		Template vervang
-		{
-			// begin case parameters
-			unit<uint32>                 domain;
-			attribute<string>            src (domain);
-			parameter<uint32>            number;
-			parameter<vervangingen/type> type;
-			parameter<string>            set;
-			parameter<uint32>            lengte_TeVervangen;
-
-			// eind case parameters
-			unit<uint32> lookup_table := select_many(vervangingen/table, vervangingen/table/set == set);
-
-			parameter<string> staptype_expr :=
-				switch(
-					 case(type == 1[vervangingen/type],'vervang_start(domain, src, number, lookup_table, lengte_TeVervangen)')
-					,case(type == 2[vervangingen/type],'vervang_einde(domain, src, number, lookup_table, lengte_TeVervangen)')
-					,'vervang_alle(domain, src, number)'
-				);
-
-			container staptype := =staptype_expr;
-
-			container ter_controle
-			{
-				attribute<bool> is_aangepast (domain) := src <> staptype/resultaat;
-				unit<uint32> aangepast := select_afew(staptype, is_aangepast)
-				{
-					attribute<string> voor := src[org_rel];
-					attribute<string> na   := resultaat[org_rel];
-				}
-				unit<uint32> aangepast_uniek := Unique(aangepast/voor)
-				{
-					attribute<string> voor := values;
-					attribute<string> na   := rjoin(values, aangepast/voor, aangepast/na);
-				}
-			}
-		}
-
-		Template vervang_start
-		{
-			// begin case parameters
-			unit<uint32>      domain;
-			attribute<string> src (domain);
-			parameter<uint32> number;
-			unit<uint32>      lookup_table;
-			parameter<uint32> lengte_TeVervangen;
-			// eind case parameters
-
-			attribute<uint32> src_len             (domain) := strlen(src);
-			attribute<int32>  src_rest_len_src    (domain) := int32(src_len) - int32(lengte_TeVervangen);
-			attribute<uint32> src_rest_len        (domain) := uint32(max_elem(0i, src_rest_len_src));
-
-			attribute<string> src_start           (domain) := substr(src,0,lengte_TeVervangen);
-			attribute<string> src_rest            (domain) := substr(src,lengte_TeVervangen, src_rest_len);
-
-			attribute<string> src_start_vervangen (domain) := MakeDefined(rjoin(src_start, lookup_table/TeVervangen, lookup_table/VervangenDoor),src_start);
-			attribute<string> resultaat           (domain) := src_start_vervangen + src_rest;
-		}
-
-		Template vervang_einde
-		{
-			// begin case parameters
-			unit<uint32>      domain;
-			attribute<string> src (domain);
-			parameter<uint32> number;
-			unit<uint32>      lookup_table;
-			parameter<uint32> lengte_TeVervangen;
-			// eind case parameters
-
-			attribute<uint32> src_len             (domain) := strlen(src);
-			attribute<int32>  src_rest_len_src    (domain) := int32(src_len) - int32(lengte_TeVervangen);
-			attribute<uint32> src_rest_len        (domain) := uint32(max_elem(0i, src_rest_len_src));
-
-			attribute<string> src_einde           (domain) := substr(src,src_rest_len,lengte_TeVervangen);
-			attribute<string> src_rest            (domain) := substr(src,0,src_rest_len);
-
-			attribute<string> src_einde_vervangen (domain) := MakeDefined(rjoin(src_einde, lookup_table/TeVervangen, lookup_table/VervangenDoor),src_einde);
-			attribute<string> resultaat           (domain) := src_rest + src_einde_vervangen;
-		}
-
-		Template vervang_alle
-		{
-			// begin case parameters
-			unit<uint32>      domain;
-			attribute<string> src (domain);
-			parameter<uint32> number;
-			// eind case parameters
-
-			parameter<string> replace_part_expr  := AsItemList(quote(lookup_table/TeVervangen) + ',' + quote(lookup_table/VervangenDoor));
-			attribute<string> resultaat (domain) := ='replace(src, ' + replace_part_expr +')';
-		}
-
-		Template maak_aggregatie_entiteit
-		{
-			// begin case parameters
-			parameter<string> code;
-			attribute<string> key (BAG/adres);
-			parameter<uint8>  aggtype; // 0 = mean, 1= median 
-			// eind case parameters
-
-			attribute<domein> domein_rel (BAG/adres):= rlookup(key, domein/values);
-
-			unit<uint32> domein:= unique(key)
-			,	FreeData = "False"
-			,	DialogType = "Map"
-			,	DialogData = "locatie"
-			{
-				attribute<float32>  meanX    := mean(BAG/adres/X , domein_rel);
-				attribute<float32>  meanY    := mean(BAG/adres/Y , domein_rel);
-				attribute<float32>  medianX  := rth_element(BAG/adres/X ,0.5f, domein_rel);
-				attribute<float32>  medianY  := rth_element(BAG/adres/Y ,0.5f, domein_rel);
-
-				attribute<uint32>   countX   := count(BAG/adres/X, domein_rel);
-				attribute<float32>  varX     := var(BAG/adres/X  , domein_rel);
-				attribute<float32>  varY     := var(BAG/adres/Y  , domein_rel);
-				attribute<float32>  var      := varX + varY;
-				attribute<point_rd> locatie  := =aggtype == 0b ? 'point(meanX,meanY,point_rd)' : 'point(medianX,medianY,point_rd)';
-
-				attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domein_rel) : stringparams/emptystring;
-				attribute<string>  bag_postcode        := min(BAG/impl/adres_met_xy/postcode      , domein_rel) == max(BAG/impl/adres_met_xy/postcode      , domein_rel) ? min(BAG/impl/adres_met_xy/postcode      , domein_rel) : stringparams/emptystring;
-				attribute<string>  bag_straatnaam      := min(BAG/impl/adres_met_xy/straatnaam    , domein_rel) == max(BAG/impl/adres_met_xy/straatnaam    , domein_rel) ? min(BAG/impl/adres_met_xy/straatnaam    , domein_rel) : stringparams/emptystring;
-				attribute<string>  bag_huisnummer      := min(BAG/impl/adres_met_xy/huisnummer_str, domein_rel) == max(BAG/impl/adres_met_xy/huisnummer_str, domein_rel) ? min(BAG/impl/adres_met_xy/huisnummer_str, domein_rel) : stringparams/emptystring;
-				attribute<string>  bag_huisletter      := min(BAG/impl/adres_met_xy/huisletter    , domein_rel) == max(BAG/impl/adres_met_xy/huisletter    , domein_rel) ? min(BAG/impl/adres_met_xy/huisletter    , domein_rel) : stringparams/emptystring;
-				attribute<string>  bag_toevoeging      := min(BAG/impl/adres_met_xy/toevoeging    , domein_rel) == max(BAG/impl/adres_met_xy/toevoeging    , domein_rel) ? min(BAG/impl/adres_met_xy/toevoeging    , domein_rel) : stringparams/emptystring;
-				attribute<string>  bag_woonplaatsnaam  := min(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) == max(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) ? min(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) : stringparams/emptystring;
-
-				attribute<string> PC      := uppercase(values);
-				attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(locatie, /CBS/gemeente/geometry_rd)];
-			}
-		}
-
-		Template vervang_ongewenste_scheidingstekens
-		{
-			// begin case parameters
-			unit<uint32> domain;
-			attribute<string> att (domain);
-			// eind case parameters
-
-			parameter<string> VeldScheidingsTeken_niet_ingebruik:= TeGeocoderen/bron/TableChopper/VeldScheidingsTeken = ';' ? ',' : ';';
-			attribute<string> resultaat (domain):=
-				replace(
-					replace(
-						att
-						,stringparams/space ,stringparams/emptystring
-						,stringparams/squote,stringparams/emptystring
-						,stringparams/tab   ,stringparams/emptystring
-						,stringparams/point ,stringparams/emptystring
-					)
-					,VeldScheidingsTeken_niet_ingebruik, '_'
-				)
-			;
-		}
-	}
+	#include<vervangingen.dms>
+	#include<templates.dms>
 
 	container TeGeocoderen
 	{
@@ -452,6 +119,7 @@ container Geocode
 				attribute<string>       code         (bronDomein) := cbs/gemeente/gm_code[gemeente_rel];
 				attribute<string>       naam         (bronDomein) := cbs/gemeente/gm_naam[gemeente_rel];
 			}
+			/*
 			container nvm_regio
 			{
 				attribute<nvm/regio>    nvmreg_rel   (bronDomein) := point_in_polygon(locatie, fpolygon(nvm/regio/Geometry));
@@ -470,7 +138,7 @@ container Geocode
 				// vanaf hier specifiek per brondata set of verplaatsen naar een rapportage template
 				attribute<.> rel(bronDomein) := combine_data(., nvm_afdeling/nvmafd_rel, niveau_rel); 
 				attribute<uint32> count := pcount(rel);
-			}
+			}*/
 
 			container bag_adres_velden
 			{
@@ -603,7 +271,7 @@ container Geocode
 				+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/buurt/code,stringparams/emptystring) + ScheidingsTeken 
 				+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/wijk/code,stringparams/emptystring) + ScheidingsTeken 
 				+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/gemeente/code,stringparams/emptystring) + ScheidingsTeken  
-				+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/nvm_afdeling/code,stringparams/emptystring) + ScheidingsTeken  
+				//+ MakeDefined(TeGeocoderen/koppel_aan_bag_aggregaties/nvm_afdeling/code,stringparams/emptystring) + ScheidingsTeken  
 				+ BodyExtra + ScheidingsTeken ;
 		}
 
@@ -615,8 +283,8 @@ container Geocode
 		,	ExplicitSuppliers = "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat;"
 								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/buurt/resultaat;"
 								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/wijk/resultaat;"
-								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;"
-								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/nvm_afd/resultaat";
+								"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;";
+								//"TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/nvm_afd/resultaat";
 	}
 
 	container analyses

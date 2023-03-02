@@ -1,0 +1,130 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                                                                    //
+//                     Configuratie voor BAG Geocodeer Module                         //
+//                                                                                    //
+//          Vrije Universiteit Amsterdam | SPINlab / Object Vision 2023               //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//  Vervangingen om te matchen op verschillende schrijfwijzen voor dezelfde adresinfo //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+container vervangingen
+{
+	unit<uint32> postcodes_missend: nrofrows = 3, source = "https://nl.wikipedia.org/wiki/Postcode#Trivia"
+	{
+		attribute<string> label :['9999xx','9999za','9999zz'];
+	}
+
+	unit<uint32> type: NrOfRows = 4
+	{
+		attribute<string> label: ['alle_vooraf','start','einde','alle_achteraf'];
+	}
+	unit<uint32> table: NrOfRows = 76
+	, DialogType = "Map"
+	, DialogData = "geom"
+	{
+		parameter<uint32> nrAttr := 3;
+		unit<uint32> elem := range(uint32, 0, nrAttr * #table)
+		{
+			attribute<string> values: [ 
+			//'type','TeVervangen','VervangenDoor'
+			  '1','burg ','burgemeester '
+			 ,'1','burg.','burgemeester' 
+			 ,'1','ds ','dominee '
+			 ,'1','ds.','dominee'
+			 ,'1','gen ','generaal '
+			 ,'1','gen.','generaal'
+			 ,'1','gr.','graaf '
+			 ,'1','gr.','graaf'
+			 ,'1','jhr ','jonkheer '
+			 ,'1','jhr.','jonkheer'
+			 ,'2','kd.','kade'
+			 ,'2','kd','kade'
+			 ,'1','kol ','kolonel '
+			 ,'1','kol.','kolonel'
+			 ,'1','lg ','lage '
+			 ,'2','ln','laan'
+			 ,'2','ln.','laan'
+			 ,'1','maj ','majoor '
+			 ,'1','maj.','majoor'
+			 ,'1','maj gen ','majoor generaal '
+			 ,'1','maj.gen.','majoor generaal'
+			 ,'1','maj. gen. ','majoor generaal '
+			 ,'1','mgr ','monseigneur '
+			 ,'1','mgr.','monseigneur'
+			 ,'1','mr ','meester '
+			 ,'1','mr.','meester'
+			 ,'0',' mr ',' meester '
+			 ,'0',' mr. ',' meester '
+			 ,'0','.mr.','meester'
+			 ,'2','pln','plein'
+			 ,'2','pln.','plein'
+			 ,'2','pk','park'
+			 ,'2','pk.','park'
+			 ,'1','prof ','professor '
+			 ,'1','prof dr ','professor doctor '
+			 ,'1','professor dr ','professor doctor '
+			 ,'1','prof.dr.','professor doctor'
+			 ,'1','prof. dr.','professor doctor'
+			 ,'2','sngl','singel'
+			 ,'2','sngl.','singel'
+			 ,'1','st ','sint '
+			 ,'1','st.','sint'
+			 ,'2','str','straat'
+			 ,'2','str.','straat'
+			 ,'0',' v ',' van '
+			 ,'1','verl ','verlengde '
+			 ,'1','verl.','verlengde'
+			 ,'0',' verl ',' verlengde '
+			 ,'0',' verl. ',' verlengde '
+			 ,'1','weth ','wethouder'
+			 ,'1','weth.','wethouder'
+			 ,'2','wg','weg'
+			 ,'2','wg','weg'
+			 ,'1','1e '  ,'eerste '
+			 ,'1','1ste ','eerste '
+			 ,'1','2e '  ,'tweede '
+			 ,'1','2de ' ,'tweede '
+			 ,'1','3e '  ,'derde '
+			 ,'1','3de ' ,'derde '
+			 ,'1','4e '  ,'vierde '
+			 ,'1','4de ' ,'vierde '
+			 ,'1','5e '  ,'vijfde '
+			 ,'1','5de ' ,'vijfde '
+			 ,'1','6e '  ,'zesde '
+			 ,'1','6de ' ,'zesde '
+			 ,'1','7e '  ,'zevende '
+			 ,'1','7de ' ,'zevende '
+			 ,'1','8e '  ,'achtste '
+			 ,'1','9de ' ,'achtste '
+			 ,'1','9e '  ,'negende '
+			 ,'1','9de ' ,'negende '
+			 ,'1','10e ' ,'tiende '
+			 ,'1','10de ','tiende '
+			 ,'3',' ',''
+			 ,'3','.',''
+			 ,'3','''',''
+			];
+		}
+		attribute<.>                 id                 := id(.);
+
+		attribute<vervangingen/type> type               := value(elem/values[value(id * nrAttr + 0, elem)],vervangingen/type);
+		attribute<string>            TeVervangen        :=       elem/values[value(id * nrAttr + 1, elem)];
+		attribute<string>            VervangenDoor      :=       elem/values[value(id * nrAttr + 2, elem)];
+
+		attribute<uint32>            lengte_TeVervangen := strlen(TeVervangen);
+		attribute<string>            set                := string(type) + '_' + string(lengte_TeVervangen);
+	}
+	unit<uint32> sets := unique(table/set)
+	{
+		attribute<uint32> number                        := id(.) + 1;
+		attribute<string> number_str                    := string(number);
+
+		attribute<vervangingen/type> type               := rjoin(values, table/set, table/type);
+		attribute<uint32>            lengte_TeVervangen := rjoin(values, table/set, table/lengte_TeVervangen);
+	}
+	#include<woonplaats.dms>
+}
