@@ -14,11 +14,10 @@
 
 container bron
 {
+	parameter<string> BestandsNaam := '%SourceDataDir%/adres/to_be_geocoded.csv';
+
 	container TableChopper // Deze wordt gebruikt ipv de gdal.vect storage manager omdat de TableChopper substantieel veel sneller is
 	{
-		parameter<string> BestandsNaam := 'E:/tmp/ToBeGeocoded.csv';
-//		parameter<string> BestandsNaam := '%SourceDataDir%/DUO/02-alle-vestigingen-vo.csv';
-
 		parameter<uint32> nrElems      := strcount(FileData,stringparams/newline)-1;
 		unit<uint32>      Domein       := range(uint32,0,nrElems);
 
