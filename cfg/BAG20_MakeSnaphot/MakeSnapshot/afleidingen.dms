@@ -19,13 +19,13 @@ container afleidingen: Using = "eenheden"
 		container hoogte
 		{
 			unit<uint32> PHN
-			: StorageName     = "%SourceDataDir%/PHN/PHN_20210101.fss" //, te downloaden via: https://www.geodms.nl/downloads/PHN/PHN_20210101.fss.zip, unzip het bestand en plaats het in de %SourceDataDir%/PHN folder
+			: StorageName     = "%SourceDataDir%/PHN/PHN_20230101.fss" //, te downloaden via: https://www.geodms.nl/downloads/PHN/PHN_20210101.fss.zip, unzip het bestand en plaats het in de %SourceDataDir%/PHN folder
 			, StorageReadOnly = "true"
 			{
 				attribute<string>    identificatie;
 				attribute<uint16>    AHN_inwinjaar; // uint16
 				attribute<cm_uint16> hoogte;        // uint16
-				attribute<bool>      isAHN3;
+				attribute<bool>      isAHN4;
 			}
 
 			attribute<eenheden/cm_uint16> AHN_hoogte    (pand/result) := rjoin(pand/result/identificatie, PHN/identificatie, PHN/hoogte);
