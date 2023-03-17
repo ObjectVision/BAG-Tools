@@ -20,6 +20,7 @@ template MakeSnapshot
 	parameter<bool>           met_vreemde_waarden_sel;
 	parameter<bool>           met_pandhoogte_attributen;
 	parameter<string>         format_export;
+	parameter<bool>           met_woonpand_typeringen;
 	// end case parameters
 
 	parameter<string> SnapshotGeoDirPart := met_geo_sel ? geo_selectie/Label + '/' : '';
@@ -320,8 +321,10 @@ template MakeSnapshot
 
 				container woningtype
 				{
-					attribute<uint32>                                              nr_buurpanden  (..) := afleidingen/pand_attributen/geometrie/results/nr_buurpanden;
-					attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE  (..) := afleidingen/pand_attributen/geometrie/results/type_woonpand_rel;
+					attribute<uint32>                                              nr_buurpanden   (..) := afleidingen/pand_attributen/geometrie/results/nr_buurpanden;
+					attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE0  (..) := afleidingen/pand_attributen/geometrie/results/type_woonpand_rel;
+					attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE   (..) := =met_woonpand_typeringen ? 'WOONPAND_TYPE0' : 'const(0b/0b, ..)';
+					
 				}
 				
 				attribute<string>                                              key                       := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";

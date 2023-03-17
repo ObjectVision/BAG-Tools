@@ -27,13 +27,14 @@
 container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS version should be 8.6.x or later
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20230113';
-	parameter<string> Snapshot_Date_Input := '20230101';
+	parameter<string> BAG_Date            := '20221208';
+	parameter<string> Snapshot_Date_Input := '20221201';
 	//
+	// parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
+	parameter<string> FSSDir              := 'D:/SourceData_backup/BAG/' + BAG_Date + '/fss';
 
-	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
-
-	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
+	// parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
+	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG/snapshots.ext';
 
 	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
 	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
@@ -43,14 +44,150 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 
 	container snapshots
 	{
-		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format)
-		container nl_status_sel_with_strangevalues_no_height_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'')';
-		container geo_sel_status_sel_with_strangevalues_with_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'')';
-		container geo_sel_status_sel_with_strangevalues_no_heigth_fss   := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,False          ,''FSS'')';
-		container nl_status_all_with_strangevalues_no_heigth_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'')';
+		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format , met WP typeringen)
+		container nl_status_sel_with_strangevalues_no_height_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'' , TRUE)';
+		container geo_sel_status_sel_with_strangevalues_with_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'' , TRUE)';
+		container geo_sel_status_sel_with_strangevalues_no_heigth_fss   := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,False          ,''FSS'' , TRUE)';
+		container nl_status_all_with_strangevalues_no_heigth_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'' , TRUE)';
 
-		container nl_geoparaat_gpkg                                     := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'')';
-		container geosel_geoparaat_gpkg                                 := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False,          ''GPKG'')';
+		container nl_geoparaat_gpkg                                     := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'', TRUE)';
+		container geosel_geoparaat_gpkg                                 := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False          ,''GPKG'', TRUE)';
+		
+		container Ruimtescanner_status_all_zonder_WP                    := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,False             ,True           ,''FSS'' , FALSE)';
+		container Ruimtescanner_status_sel_met_WP                       := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,False             ,True           ,''FSS'' , TRUE)';
+		container Ruimtescanner                                         := Merge_Ruimtescanner_Snapshots_T(Ruimtescanner_status_all_zonder_WP,Ruimtescanner_status_sel_met_WP);
+		
+		Template Merge_Ruimtescanner_Snapshots_T
+		{
+			container AllStatus_zonderWP0;
+			container StatusSec_metWP0;
+			
+			container AllStatus_zonderWP := Read_Snapshot_data_T(AllStatus_zonderWP0);
+			container StatusSec_metWP    := Read_Snapshot_data_T(StatusSec_metWP0);
+			
+			parameter<string> SuppliersExprAll := 
+				isValidFSSDir
+					? 'merge/pand;'
+						'merge/vbo;'
+						'merge/adres'
+					: ''; 
+
+			parameter<string> MaakVolledigeSnapshot_metWPopVoorraadNiveau := 
+				isValidFSSDir 
+					? 'ready' 
+					: 'Folder : ' + expand(., FSSDir) + ' bevat geen volledige set van FSS bestanden'
+			,  ExplicitSuppliers = "= SuppliersExprAll";
+					
+			
+			container Merge
+			{
+				container AllStatus_zonderWP := ../AllStatus_zonderWP/SnapshotData;
+				container StatusSec_metWP    := ../StatusSec_metWP/SnapshotData;
+				
+				parameter<string> SnapshotDir        := SnapshotBaseDir + '/' +string(Snapshot_Date)+ '_RS.new';
+
+				unit<uint32> pand := AllStatus_zonderWP/pand
+				,  StorageName = "= SnapshotDir + '/pand.fss'"
+				{
+					attribute<geometries/rdc_mm>        geometry_mm (poly) := AllStatus_zonderWP/pand/geometry_mm;
+					attribute<string>                   identificatie      := AllStatus_zonderWP/pand/identificatie;
+					attribute<int16>                    bouwjaar           := AllStatus_zonderWP/pand/bouwjaar;
+					attribute<typeringen/type_woonpand> woonpand_type      := rjoin(identificatie, StatusSec_metWP/pand/identificatie, StatusSec_metWP/pand/WOONPAND_TYPE);
+					attribute<string>                   status             := AllStatus_zonderWP/pand/meta/status;
+					
+					attribute<eenheden/cm_uint16>       AHN_hoogte         := AllStatus_zonderWP/pand/AHN_hoogte; 
+					attribute<uint16>                   AHN_inwinjaar      := AllStatus_zonderWP/pand/AHN_inwinjaar;
+				}
+				
+				unit<uint32> vbo := AllStatus_zonderWP/vbo
+				,  StorageName = "= SnapshotDir + '/vbo.fss'"
+				{
+					attribute<geometries/rdc_mm>   geometry_mm             := AllStatus_zonderWP/vbo/geometry_mm;
+					attribute<string>              identificatie           := AllStatus_zonderWP/vbo/identificatie;
+					attribute<int32>               oppervlakte             := AllStatus_zonderWP/vbo/oppervlakte;
+					attribute<string>              nummeraanduiding_id     := AllStatus_zonderWP/vbo/nummeraanduiding_id;
+					attribute<string>              pand_id                 := AllStatus_zonderWP/vbo/pand_id;
+					attribute<string>              status                  := AllStatus_zonderWP/vbo/meta/status;
+					
+					container gebruiksdoelen := 
+						for_each_nedv(
+							typeringen/gebruiksdoel_vbo/name
+							, 'AllStatus_zonderWP/vbo/gebruiksdoelen/'+typeringen/gebruiksdoel_vbo/name
+							, vbo
+							, bool
+						);
+				}
+				
+				unit<uint32> adres := AllStatus_zonderWP/adres
+				,  StorageName = "= SnapshotDir + '/adres.fss'"
+				{
+					attribute<string>     straatnaam          := AllStatus_zonderWP/adres/straatnaam;
+					attribute<string>     postcode            := AllStatus_zonderWP/adres/postcode;
+					attribute<int32>      huisnummer          := AllStatus_zonderWP/adres/huisnummer;
+					attribute<string>     huisletter          := AllStatus_zonderWP/adres/huisletter;
+					attribute<string>     toevoeging          := AllStatus_zonderWP/adres/toevoeging;
+					attribute<string>     woonplaatsnaam      := AllStatus_zonderWP/adres/woonplaatsnaam;
+					attribute<string>     nummeraanduiding_id := AllStatus_zonderWP/adres/nummeraanduiding_id;
+				}
+			}
+			
+			Template Read_Snapshot_data_T
+			{
+				container SnapshotBron;
+				//
+				container SnapshotData := SnapshotBron
+				{
+					unit<uint32> ligplaats := select_afew(Object/ligplaats/Result, const(true,Object/ligplaats/Result))
+					{
+						container    meta       := relate_attr(Object/ligplaats/Result/meta, ., org_rel);
+						unit<uint32> nevenadres := select_afew(Object/ligplaats/Result/nevenadres, const(true,Object/ligplaats/Result/nevenadres));
+					}
+					
+					unit<uint32> standplaats := select_afew(Object/standplaats/Result, const(true,Object/standplaats/Result))
+					{
+						container    meta       := relate_attr(Object/standplaats/Result/meta, ., org_rel);
+						unit<uint32> nevenadres := select_afew(Object/standplaats/Result/nevenadres, const(true,Object/standplaats/Result/nevenadres));
+					}
+					
+					unit<uint32> pand := select_afew(Object/pand/Result, const(true,Object/pand/Result))
+					{
+						attribute<typeringen/type_woonpand> WOONPAND_TYPE   := Object/pand/Result/woningtype/WOONPAND_TYPE[org_rel];
+						container                           meta            := relate_attr(Object/pand/Result/meta, ., org_rel);
+						container                           gebruiksdoelen  := relate_attr(Object/pand/Result/gebruiksdoelen, ., org_rel);
+						
+						attribute<eenheden/cm_uint16>       AHN_hoogte         := Object/pand/Impl/phn/AHN_hoogte[org_rel];
+						attribute<uint16>                   AHN_inwinjaar      := Object/pand/Impl/phn/AHN_inwinjaar[org_rel];
+					}
+					
+					unit<uint32> vbo := select_afew(Object/vbo/Result, const(true,Object/vbo/Result))
+					{
+						container    meta             := relate_attr(Object/vbo/Result/meta, ., org_rel);
+						container    gebruiksdoelen   := relate_attr(Object/vbo/Result/gebruiksdoelen, ., org_rel);
+						unit<uint32> gerelateerdPand  := select_afew(Object/vbo/Result/gerelateerdPand, const(true,Object/vbo/Result/gerelateerdPand));
+						unit<uint32> nevenadres       := select_afew(Object/vbo/Result/nevenadres, const(true,Object/vbo/Result/nevenadres));
+					}
+					
+					unit<uint32> nummeraanduiding := select_afew(Object/nummeraanduiding/Result, const(true,Object/nummeraanduiding/Result))
+					{
+						container    meta := relate_attr(Object/nummeraanduiding/Result/meta, ., org_rel);
+					}
+					
+					unit<uint32> openbareruimte := select_afew(Object/openbareruimte/Result, const(true,Object/openbareruimte/Result))
+					{ 
+						container    meta := relate_attr(Object/openbareruimte/Result/meta, ., org_rel);
+					}
+					
+					unit<uint32> woonplaats := select_afew(Object/woonplaats/Result, const(true,Object/woonplaats/Result))
+					{
+						container    meta := relate_attr(Object/woonplaats/Result/meta, ., org_rel);
+					}
+
+					unit<uint32> adres := select_many(Object/afleidingen/adres, const(true, Object/afleidingen/adres));
+				}
+			}
+			
+			
+		}
 	}
 
 	container eenheden
@@ -106,6 +243,14 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 
 	container typeringen
 	{
+		unit<uint8> type_woonpand: nrofrows = 6
+		{
+			attribute<string> label : ['geen woonpand','vrijstaand','twee onder 1 kap','hoekwoning','tussenwoning','meergezinspand'], DialogType = "LabelText";
+			attribute<string> name  := replace(label, ' ', '_');
+			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
+		}
+
+	
 		unit<uint8> objecttypes: nrofrows = 7
 		{
 			attribute<string> name:
