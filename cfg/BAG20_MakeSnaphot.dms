@@ -24,7 +24,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS version should be 8.6.x or later
+container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08" // GeoDMS version should be 8.6.x or later
 { 
 	// te configureren
 	parameter<string> BAG_Date            := '20230113';
@@ -32,6 +32,7 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 	//
 
 	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
+//	parameter<string> FSSDir              := 'D:/SourceData/BAG20/20230113/fss';
 
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
 
@@ -44,13 +45,13 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 	container snapshots
 	{
 		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format)
-		container nl_status_sel_with_strangevalues_no_height_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'')';
-		container geo_sel_status_sel_with_strangevalues_with_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'')';
-		container geo_sel_status_sel_with_strangevalues_no_heigth_fss   := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,False          ,''FSS'')';
-		container nl_status_all_with_strangevalues_no_heigth_fss        := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'')';
+		container nl_status_sel_with_strangevalues_no_height_fss         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'')';
+		container geo_sel_status_sel_with_strangevalues_with_heigth_fss  := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'')';
+		container geo_sel_status_sel_without_strangevalues_no_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,True              ,False          ,''FSS'')';
+		container nl_status_all_with_strangevalues_no_heigth_fss         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'')';
 
-		container nl_geoparaat_gpkg                                     := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'')';
-		container geosel_geoparaat_gpkg                                 := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False,          ''GPKG'')';
+		container nl_geoparaat_gpkg                                      := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'')';
+		container geosel_geoparaat_gpkg                                  := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False,          ''GPKG'')';
 	}
 
 	container eenheden
@@ -96,9 +97,9 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 // 	}
 
 	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
-	:	StorageName     = "%ProjDir%/data/geo_sel.shp"
-	,	StorageType     = "gdal.vect"
-	,	StorageReadOnly = "True"
+	: StorageName     = "%ProjDir%/data/geo_sel.shp"
+	, StorageType     = "gdal.vect"
+	, StorageReadOnly = "True"
 	{
 		parameter<string>         Label := 'Geo_Selectie';
 		attribute<geometries/rdc> geometry (poly);
@@ -200,20 +201,21 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 		attribute<bool> WasGestart   (domain) := domain/meta/BEGINDATUM <= prik_datum;
 		attribute<bool> WasBeeindigd (domain) := domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
 
-		unit<uint32> selectie :=
-			= 'select_afew(src, WasGestart && not(WasBeeindigd) ' +
+		attribute<bool> conditie     (domain) := = 'WasGestart && not(WasBeeindigd) ' +
 				(met_status_sel 
 					? '&& domain/Meta/status_sel ' 
 					: '') +
 				(overig_filter_actief 
 					? '&& overig_filter' 
-					: '') 
-			+ ')'
-		,	DialogType = "Map"
-		,	DialogData = "geometry_mm"
+					: '');
+
+		unit<uint32> selectie := select_afew(src, conditie)
+		, DialogType = "Map"
+		, DialogData = "geometry_mm"
 		{
 			container meta := relate_attr(src/meta, selectie, selectie/org_rel);
 		}
+
 	}
 
 	Template polygon_selectie

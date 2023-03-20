@@ -127,6 +127,7 @@ container afleidingen: Using = "eenheden"
 				{
 					attribute<geometries/rdc_mm> geometry_mm (poly) := functioneel_pand/geometry_mm[org_rel];
 				}
+
 				attribute<geometries/rdc_mm> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry_mm, inflate_size);
 				attribute<geometries/rdc_mm> i4HV_mm_new (domain, polygon) := bg_buffer_multi_polygon(domain/geometry_mm, 10.0, 4b); // for future use
 
