@@ -103,13 +103,13 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie, .);
 
-				unit<uint32> nevenadres := select_many(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
 				{
 					attribute<string> identificatie := src/identificatie[mutatie_rel];
 				}
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.fss'"
 			{
 				attribute<uint32> count  : DisableStorage = "True";
 				attribute<string> values : DisableStorage = "True";
@@ -117,7 +117,7 @@ template MakeSnapshot
 
 				container meta := relate_attr(result/meta, result_fss, org_rel);
 
-				unit<uint32> nevenadres := select_afew(result/nevenadres, const(true,result/nevenadres));
+				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
 		}
 
@@ -169,20 +169,20 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie, .);
 
-				unit<uint32> nevenadres := select_many(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
 				{
 					attribute<string> identificatie := src/identificatie[mutatie_rel];
 				}
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.fss'"
 			{
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
 				container meta := relate_attr(result/meta, result_fss, org_rel);
 
-				unit<uint32> nevenadres := select_afew(result/nevenadres, const(true,result/nevenadres));
+				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
 		}
 
@@ -269,7 +269,7 @@ template MakeSnapshot
 
 				attribute<bool>           geen_zeer_grote_panden_in_NL (src) := oppervlakte < 100000000[m2] && lengte < 5000[eenheden/m] && breedte < 5000[eenheden/m] && in_NL;
 
-				unit<uint32> selectie := select_afew(src, geen_zeer_grote_panden_in_NL);
+				unit<uint32> selectie := select_with_attr_by_org_rel(src, geen_zeer_grote_panden_in_NL);
 			}
 			container overig_filter
 			{
@@ -337,7 +337,7 @@ template MakeSnapshot
 					);
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.fss'"
 			{
 				attribute<uint32> sel_count: DisableStorage = "True";
 				attribute<uint32> vbo_count: DisableStorage = "True";
@@ -529,7 +529,7 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie,.);
 
-				unit<uint32> gerelateerdPand := select_many(src/gerelateerdPand,
+				unit<uint32> gerelateerdPand := select_with_attr_by_cond(src/gerelateerdPand,
 					IsDefined(
 						rlookup(  string(src/gerelateerdPand/fileset_rel)        + '_' + string(src/gerelateerdPand/mutatie_rel)
 								, string(src/fileset_rel[impl/selectie/org_rel]) + '_' + string(src/mutatie_rel[impl/selectie/org_rel])
@@ -546,7 +546,7 @@ template MakeSnapshot
 						, src/identificatie);
 				}
 
-				unit<uint32> nevenadres := Select_many(src/nevenadres,  // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres,  // is een 1->0..n relatie
 					IsDefined(
 						rlookup(  string(src/nevenadres/fileset_rel)             + '_' + string(src/nevenadres/mutatie_rel)
 								, string(src/fileset_rel[impl/selectie/org_rel]) + '_' + string(src/mutatie_rel[impl/selectie/org_rel])
@@ -563,7 +563,7 @@ template MakeSnapshot
 						, src/identificatie);
 				}
 			}
-			unit<uint32> result_fss := select_afew(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.fss'"
 			{
 				attribute<uint32>      count:    DisableStorage = "True";
 				attribute<pand/result> pand_rel: DisableStorage = "True";
@@ -573,13 +573,13 @@ template MakeSnapshot
 
 				container gebruiksdoelen:= relate_attr(result/gebruiksdoelen, result_fss, org_rel);
 
-				unit<uint32> gerelateerdPand := select_afew(result/gerelateerdPand, const(true,result/gerelateerdPand))
+				unit<uint32> gerelateerdPand := select_with_attr_by_org_rel(result/gerelateerdPand, const(true,result/gerelateerdPand))
 				{
 					attribute<uint32> mutatie_rel: DisableStorage = "True";
 					attribute<uint32> fileset_rel: DisableStorage = "True";
 				}
 
-				unit<uint32> nevenadres := select_afew(result/nevenadres, const(true,result/nevenadres))
+				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres))
 				{
 					attribute<uint32> mutatie_rel: DisableStorage = "True";
 					attribute<uint32> fileset_rel: DisableStorage = "True";
@@ -639,7 +639,7 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie, .);
 			}
-			unit<uint32> result_fss := select_afew(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.fss'"
 			{
 				attribute<uint32> key: DisableStorage = "True";
 				attribute<result> org_rel:   DisableStorage = "True";
@@ -690,7 +690,7 @@ template MakeSnapshot
 				container meta := meta_template(impl/selectie, .);
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.fss'"
 			{
 				attribute<string> values : DisableStorage = "True";
 				attribute<uint32> key:     DisableStorage = "True";
@@ -745,7 +745,7 @@ template MakeSnapshot
 				container meta := meta_template(impl/selectie, .);
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.fss'"
 			{
 				attribute<uint32> count:   DisableStorage = "True";
 				attribute<string> values:  DisableStorage = "True";

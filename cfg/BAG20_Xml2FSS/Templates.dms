@@ -88,7 +88,7 @@ container Templates: IsHidden = "True"
 
 			unit<uint32> coordinates := sequence2points(union_data(posListUnit, f64_sequence));
 
-			unit<uint32> p := select_afew(coordinates, coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/SequenceNr] == 0)
+			unit<uint32> p := select_with_attr_by_org_rel(coordinates, coordinates/ordinal % posListUnit/nrCoordPerPoint[coordinates/SequenceNr] == 0)
 			{
 				attribute<float64>     x    := point;
 				attribute<float64>     y    := coordinates/point[org_rel + 1];

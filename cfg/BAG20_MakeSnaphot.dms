@@ -32,7 +32,6 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08" // GeoD
 	//
 
 	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
-//	parameter<string> FSSDir              := 'D:/SourceData/BAG20/20230113/fss';
 
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
 
@@ -209,11 +208,11 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08" // GeoD
 					? '&& overig_filter' 
 					: '');
 
-		unit<uint32> selectie := select_afew(src, conditie)
+		unit<uint32> selectie := select_with_attr_by_org_rel(src, conditie)
 		, DialogType = "Map"
 		, DialogData = "geometry_mm"
 		{
-			container meta := relate_attr(src/meta, selectie, selectie/org_rel);
+			container meta := collect_attr_by_org_rel(src/meta, selectie, selectie/org_rel);
 		}
 
 	}

@@ -46,17 +46,17 @@ container XML
 				attribute<bool>   isxmlfile := strcount(inhoud,'.XML') > 0;
 			}
 
-			unit<uint32> xml_regels := select_many(alle_regels, alle_regels/isxmlfile);
+			unit<uint32> xml_regels := select_with_attr_by_cond(alle_regels, alle_regels/isxmlfile);
 
 			container xml_bestanden
 			{
-				unit<uint32> ligplaats        := select_many(xml_regels, strcount(xml_regels/inhoud,'LIG') > 0);
-				unit<uint32> standplaats      := select_many(xml_regels, strcount(xml_regels/inhoud,'STA') > 0);
-				unit<uint32> pand             := select_many(xml_regels, strcount(xml_regels/inhoud,'PND') > 0);
-				unit<uint32> vbo              := select_many(xml_regels, strcount(xml_regels/inhoud,'VBO') > 0);
-				unit<uint32> nummeraanduiding := select_many(xml_regels, strcount(xml_regels/inhoud,'NUM') > 0);
-				unit<uint32> openbareruimte   := select_many(xml_regels, strcount(xml_regels/inhoud,'OPR') > 0);
-				unit<uint32> woonplaats       := select_many(xml_regels, strcount(xml_regels/inhoud,'WPL') > 0 && strcount(xml_regels/inhoud,'GEM-WPL-RELATIE') == 0);
+				unit<uint32> ligplaats        := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'LIG') > 0);
+				unit<uint32> standplaats      := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'STA') > 0);
+				unit<uint32> pand             := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'PND') > 0);
+				unit<uint32> vbo              := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'VBO') > 0);
+				unit<uint32> nummeraanduiding := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'NUM') > 0);
+				unit<uint32> openbareruimte   := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'OPR') > 0);
+				unit<uint32> woonplaats       := select_with_attr_by_cond(xml_regels, strcount(xml_regels/inhoud,'WPL') > 0 && strcount(xml_regels/inhoud,'GEM-WPL-RELATIE') == 0);
 			}
 		}
 	}

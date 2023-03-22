@@ -14,7 +14,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container Geocode: IntegrityCheck = "GeoDmsVersion() >= 8.060" // i.v.m. select_afew/many
+container Geocode: IntegrityCheck = "GeoDmsVersion() >= 8.0680" // i.v.m. select_afew/select_with_attr_by_org_rel
 {
 	unit<fpoint> point_rd := range(fpoint, point(300000f,0f), point(625000f,280000f));
 
@@ -32,7 +32,7 @@ container Geocode: IntegrityCheck = "GeoDmsVersion() >= 8.060" // i.v.m. select_
 
 	#include<niveau.dms>
 
-	unit<uint32> stap := select_many(niveau, niveau/code > int8(0))
+	unit<uint32> stap := select_with_attr_by_cond(niveau, niveau/code > int8(0))
 	{
 		attribute<string> expr_key := replace(volgorde,', ',' + ''_'' + ');
 	}
@@ -151,7 +151,7 @@ container Geocode: IntegrityCheck = "GeoDmsVersion() >= 8.060" // i.v.m. select_
 				attribute<string>  woonplaatsnaam   (bronDomein) := ReadElems(bag_key_replaced, string, huistoevoeging/readPos);
 			}
 
-			unit<uint32> geen_nummeraanduiding := select_afew(koppel_aan_bag_aggregaties, strlen(trim(TeGeocoderen/koppel_aan_bag_aggregaties/nummeraanduiding_id)) < 2)
+			unit<uint32> geen_nummeraanduiding := select_with_attr_by_org_rel(koppel_aan_bag_aggregaties, strlen(trim(TeGeocoderen/koppel_aan_bag_aggregaties/nummeraanduiding_id)) < 2)
 			{
 				attribute<string> bron_adres         := TeGeocoderen/bron/TableChopper/BodyLines[org_rel];
 			}
