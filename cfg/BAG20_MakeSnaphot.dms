@@ -24,7 +24,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08" // GeoDMS version should be 8.6.x or later
+container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS version should be 8.81 or later
 { 
 	// te configureren
 	parameter<string> BAG_Date            := '20230113';
@@ -96,11 +96,12 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08" // GeoD
 // 	}
 
 	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
-	: StorageName     = "%ProjDir%/data/geo_sel.shp"
+	//: StorageName     = "%ProjDir%/data/geo_sel.shp"
+	: StorageName     = "E:/SourceData/BredaEO/geo_sel.shp"
 	, StorageType     = "gdal.vect"
 	, StorageReadOnly = "True"
 	{
-		parameter<string>         Label := 'Geo_Selectie';
+		parameter<string>         Label := 'BredaEO';
 		attribute<geometries/rdc> geometry (poly);
 	}
 
