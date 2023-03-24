@@ -282,7 +282,7 @@ container XML
 			parameter<uint32> fileset_rel;
 			// end case parameters
 
-			unit<uint32>      File := Select_many(FilesAll, FilesAll/fileset_rel = fileset_rel);
+			unit<uint32>      File := select_with_attr_by_cond(FilesAll, FilesAll/fileset_rel = fileset_rel);
 
 			attribute<string> FileName (File) := File/FileName;
 			attribute<string> XmlData  (File)
@@ -409,7 +409,7 @@ container XML
 			parameter<fileset> fileset_rel;
 			// end case parameters
 
-			unit<uint32>      File := Select_many(FilesAll, FilesAll/fileset_rel = fileset_rel);
+			unit<uint32>      File := select_with_attr_by_cond(FilesAll, FilesAll/fileset_rel = fileset_rel);
 
 			attribute<string> FileName (File) := File/FileName;
 			attribute<string> XmlData  (File)
@@ -657,7 +657,7 @@ container XML
 			parameter<fileset> fileset_rel;
 			// end case parameters
 
-			unit<uint32>      File := Select_many(FilesAll, FilesAll/fileset_rel = fileset_rel);
+			unit<uint32>      File := select_with_attr_by_cond(FilesAll, FilesAll/fileset_rel = fileset_rel);
 
 			attribute<string> FileName (File) := File/FileName;
 			attribute<string> XmlData  (File)

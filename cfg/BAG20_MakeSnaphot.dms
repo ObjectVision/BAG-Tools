@@ -96,8 +96,7 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 // 	}
 
 	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
-	//: StorageName     = "%ProjDir%/data/geo_sel.shp"
-	: StorageName     = "E:/SourceData/BredaEO/geo_sel.shp"
+	: StorageName     = "%ProjDir%/data/geo_sel.shp"
 	, StorageType     = "gdal.vect"
 	, StorageReadOnly = "True"
 	{

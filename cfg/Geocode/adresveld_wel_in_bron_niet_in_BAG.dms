@@ -39,11 +39,11 @@ container adresveld_wel_in_bron_niet_in_BAG
 				attribute<bool>   base_neq_values := base <> values;
 			}
 
-			unit<uint32> utf8_diff := select_many(BAG_voorkomend_uniek, BAG_voorkomend_uniek/base_neq_values);
+			unit<uint32> utf8_diff := select_with_attr_by_cond(BAG_voorkomend_uniek, BAG_voorkomend_uniek/base_neq_values);
 
 			attribute<BAG/adres> BAG_adres_rel (TeGeocoderen/bron/TableChopper/domein) := ='rlookup(TeGeocoderen/bron/' + veld + '/resultaat, BAG_voorkomend_uniek/values)';
 
-			unit<uint32> nietvoorkomend := select_orgrel(impl, isNull(BAG_adres_rel))
+			unit<uint32> nietvoorkomend := select_with_org_rel(impl, isNull(BAG_adres_rel))
 			{
 				attribute<string> na_bewerking   := ='TeGeocoderen/bron/' + veld + '/resultaat[org_rel]';
 				attribute<string> voor_bewerking := ='TeGeocoderen/bron/' + veld + '/txt[org_rel]';

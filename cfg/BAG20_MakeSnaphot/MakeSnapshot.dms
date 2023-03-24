@@ -115,7 +115,7 @@ template MakeSnapshot
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
 				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
@@ -180,7 +180,7 @@ template MakeSnapshot
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
 				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
@@ -345,9 +345,9 @@ template MakeSnapshot
 				
 				attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE [org_rel];
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
-				container gebruiksdoelen:= relate_attr(result/gebruiksdoelen, result_fss, org_rel);
+				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
 			}
 		}
 
@@ -497,7 +497,7 @@ template MakeSnapshot
 					attribute<result> result_rel := rlookup(identificatie,result/identificatie);
 					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 
-					container gebruiksdoelen := relate_attr(src/gebruiksdoelen, selectie, selectie/org_rel);
+					container gebruiksdoelen := collect_attr_by_org_rel(src/gebruiksdoelen, selectie, selectie/org_rel);
 				}
 
 				unit<uint32> result_base := unique(selectie/identificatie);
@@ -569,9 +569,9 @@ template MakeSnapshot
 				attribute<pand/result> pand_rel: DisableStorage = "True";
 				attribute<result>      org_rel:  DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
-				container gebruiksdoelen:= relate_attr(result/gebruiksdoelen, result_fss, org_rel);
+				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
 
 				unit<uint32> gerelateerdPand := select_with_attr_by_org_rel(result/gerelateerdPand, const(true,result/gerelateerdPand))
 				{
@@ -644,7 +644,7 @@ template MakeSnapshot
 				attribute<uint32> key: DisableStorage = "True";
 				attribute<result> org_rel:   DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 			}
 		}
 
@@ -696,7 +696,7 @@ template MakeSnapshot
 				attribute<uint32> key:     DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 			}
 		}
 
@@ -752,7 +752,7 @@ template MakeSnapshot
 				attribute<uint32> key:     DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 			}
 		}
 		#include<afleidingen.dms>
