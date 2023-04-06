@@ -487,7 +487,7 @@ template MakeSnapshot
 					attribute<geometries/rdc_mm> geometry_mm_raw_or_centroid := MakeDefined(domain/geometry_mm, domain/centroid_mm)[selectie/org_rel]; // Op snapshot moment willen we alleen punt geometrien hebben voor vbo's
 					attribute<int32> X := PointCol(geometry_mm_raw_or_centroid);
 					attribute<int32> Y := PointRow(geometry_mm_raw_or_centroid);
-					attribute<geometries/rdc_mm> geometry_mm :=
+					attribute<geometries/rdc_mm> geometry_mm_in_nl :=
 						   X >=  -8000000i &&  X <= 300000000i
 						&& Y >= 289000000i &&  Y <= 629000000i
 							? geometry_mm_raw_or_centroid
@@ -509,7 +509,7 @@ template MakeSnapshot
 			{
 				attribute<uint32>            count               := pcount(impl/selectie/result_rel), DisableStorage = "True";
 
-				attribute<geometries/rdc_mm> geometry_mm         := rjoin(identificatie, impl/selectie/identificatie, impl/selectie/geometry_mm);
+				attribute<geometries/rdc_mm> geometry_mm         := rjoin(identificatie, impl/selectie/identificatie, impl/selectie/geometry_mm_in_nl);
 				attribute<string>            identificatie       := impl/result_base/values[mapping(result, impl/result_base)];
 				attribute<int32>             oppervlakte         := last(impl/selectie/oppervlakte, impl/selectie/result_rel);
 				attribute<string>            nummeraanduiding_id := last(impl/selectie/nummeraanduiding_id, impl/selectie/result_rel);
