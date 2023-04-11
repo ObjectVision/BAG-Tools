@@ -36,7 +36,7 @@
 container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS version should be 8.81 or later
 {
 	// te configureren
-	parameter<string> date     := '20230113';
+	parameter<string> date     := '20230411';
 	//
 
 	parameter<string> date_dir := '%SourceDataDir%/BAG20/' + date;
