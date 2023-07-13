@@ -408,4 +408,6 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 		attribute<eenheden/mm>       y_min      (domain) := PointRow(lowerbound)[eenheden/mm];
 		attribute<eenheden/mm>       y_max      (domain) := PointRow(upperbound)[eenheden/mm];
 	}
+	
+	#include<ExportSettings.dms>
 }
