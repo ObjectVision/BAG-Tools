@@ -27,11 +27,12 @@
 container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoDMS version should be 8.6.x or later
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20221208';
-	parameter<string> Snapshot_Date_Input := '20221201';
+	parameter<string> BAG_Date            := '20230113';
+	parameter<string> Snapshot_Date_Input := '20190101';
 	//
-	// parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
-	parameter<string> FSSDir              := 'D:/SourceData_backup/BAG/' + BAG_Date + '/fss';
+	parameter<string> FSSDir              := '%SourceDataDir%/BAG/' + BAG_Date + '/fss';
+	// parameter<string> FSSDir              := 'D:/SourceData_backup/BAG/' + BAG_Date + '/fss';
+	// parameter<string> FSSDir              := 'E:/SourceData/BAG20/' + BAG_Date + '/fss';
 
 	// parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG/snapshots.ext';
@@ -210,29 +211,8 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 		unit<ipoint> rdc_mm := gridset(rdc, point(0.001,0.001), point(0.0, 0.0), ipoint);
 	}
 
+	
 	unit<uint32> geo_selectie
-// 	:	nrofrows = 1
-// 	{
-// 		// Voorbeeld voor het configureren van een geo_selectie met een rechthoek, pas de pointset/X en pointset/Y attributen aan voor een nieuwe rechthoek
-// 		parameter<string>         Label           := 'NieuwegeinRechthoek';
-// 		attribute<geometries/rdc> geometry (poly) := points2sequence(pointset/point, pointset/sequence, pointset/ordinal);
-
-// 		unit<uint32> pointset: nrofrows = 5
-// 		{
-// 			parameter<eenheden/m>     X_min    := 132750[eenheden/m];
-// 			parameter<eenheden/m>     X_max    := 133750[eenheden/m];
-// 			parameter<eenheden/m>     Y_min    := 410750[eenheden/m];
-// 			parameter<eenheden/m>     Y_max    := 412000[eenheden/m];
-
-// 			attribute<eenheden/m>     X        := union_data(., X_min, X_max, X_max, X_min, X_min);
-// 			attribute<eenheden/m>     Y        := union_data(., Y_min, Y_min, Y_max, Y_max, Y_min);
-// 			attribute<geometries/rdc> point    := point(Y, X, geometries/rdc);
-// 			attribute<geo_selectie>   sequence := const(0[geo_selectie],.);
-// 			attribute<.>              ordinal  := id(.);
-// 		}
-// 	}
-
-	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
 	:	StorageName     = "%ProjDir%/data/geo_sel.shp"
 	,	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
@@ -272,7 +252,7 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.06" // GeoD
 	}
 
 	#include<MakeSnapshot.dms>
-
+	
 	template meta_src_template // Voor het inlezen van de generieke BAG attributen
 	{
 		// begin case parameters

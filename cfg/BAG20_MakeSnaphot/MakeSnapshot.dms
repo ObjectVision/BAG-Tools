@@ -297,10 +297,10 @@ template MakeSnapshot
 				unit<uint32> result_base := unique(impl/selectie/identificatie);
 
 				unit<uint32> phn := result
-				,	StorageName = "= SnapshotDir + '/pand.fss'"
-				,	DialogType  = "Map"
+				// ,	StorageName = "= SnapshotDir + '/pand.fss'"
+				// ,	DialogType  = "Map"
 				,	DialogData  = "geometry_mm"
-				,	FreeData    = "False"
+				// ,	FreeData    = "False"
 				{
 					attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte;
 					attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar;

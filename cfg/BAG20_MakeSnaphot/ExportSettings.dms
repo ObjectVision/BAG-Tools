@@ -1,15 +1,10 @@
 container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
 {
-	container SvnImpl
-	{
-		parameter<String> RevisionInfoCmd := Replace(Expand(., 'SubWCRev %projDir% > %projDir%/SubWCRevData.str'), '/', '\\');
-		parameter<uint32> WriteCode := exec_ec(Expand(., '%env:ComSpec%'), '/c ' + RevisionInfoCmd, Expand(., '%projdir%'));
-	}
-	
 	container MetaInfo 
 	{
 		parameter<string> FileName : ='%storageBaseName%.xml';
 		parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
+		
 		container Contents
 		{
 			container Software
@@ -26,10 +21,6 @@ container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.a
 				parameter<string> Processor    := expand(., '%env:PROCESSOR_IDENTIFIER%');
 				parameter<string> User         := expand(., '%env:USERNAME%');
 				parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
-			}
-			container Svn
-			{
-				parameter<string> RevisionInfo: Storagename = "=(SvnImpl/WriteCode==0)?'%projDir%/SubWCRevData.str':'Error '+String(SvnImpl/WriteCode)+' while producing %projDir%/SubWCRevData.str'";
 			}
 			container parameters
 			{
