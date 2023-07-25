@@ -39,7 +39,7 @@ template MakeSnapshot
 				'object/woonplaats/result_fss;'
 				'object/afleidingen/adres_fss;'
 				'object/overzichten/impl/genereer_rapport' 
-				+ (met_pandhoogte_attributen ? ';object/pand/impl/phn' : '')
+				+ (met_pandhoogte_attributen ? ';object/pand/phn_fss' : '')
 			: 'gdalwrite_vect_export/result/make_geopackage '
 		: ''; 
 
@@ -296,10 +296,6 @@ template MakeSnapshot
 				unit<uint32> result_base := unique(impl/selectie/identificatie);
 
 				unit<uint32> phn := result
-				,	StorageName = "= SnapshotDir + '/pand.fss'"
-				,	DialogType  = "Map"
-				,	DialogData  = "geometry_mm"
-				,	FreeData    = "False"
 				{
 					attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte;
 					attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar;
@@ -348,6 +344,16 @@ template MakeSnapshot
 				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
 				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
+			}
+
+			unit<uint32> phn_fss := result_fss
+			,	StorageName = "= SnapshotDir + '/pand.fss'"
+			,	DialogType  = "Map"
+			,	DialogData  = "geometry_mm"
+			,	FreeData    = "False"
+			{
+				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte[result_fss/org_rel];
+				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar[result_fss/org_rel];
 			}
 		}
 
