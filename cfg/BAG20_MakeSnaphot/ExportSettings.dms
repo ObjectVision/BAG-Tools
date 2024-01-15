@@ -1,6 +1,7 @@
 container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.adms'"
 {
-	container MetaInfo {
+	container MetaInfo 
+	{
 		parameter<string> FileName : ='%storageBaseName%.xml';
 		parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
 		
@@ -21,11 +22,13 @@ container ExportSettings: url = "='#'+ExportSettings/Docdata +'/ExportSettings.a
 				parameter<string> User         := expand(., '%env:USERNAME%');
 				parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
 			}
-
-			container Parameters
+			container parameters
 			{
-				parameter<string> BAG_Date                                := string(/BAG_Date);
-				parameter<string> Snapshot_Date_Input                     := string(/Snapshot_Date_Input);
+				parameter<string> BAG_Date            := /BAG_Date;
+				parameter<string> Snapshot_Date_Input := /Snapshot_Date_Input;
+				parameter<string> FSSDir              := /FSSDir;
+				parameter<string> SnapshotBaseDir     := /SnapshotBaseDir;
+				parameter<string> Snapshot_Date       := /Snapshot_Date;
 			}
 		}
 	}
