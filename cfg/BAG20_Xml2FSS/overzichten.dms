@@ -27,7 +27,7 @@ container overzichten: IsHidden = "True"
 		unit<uint32> rapport_items_expr := SubTree_PropValues(rapport,'expr');
 		unit<uint32> rapport_items_name := SubTree_PropValues(rapport,'name');
 
-		unit<uint32> rapport_items_sel := select_many(rapport_items, strcount(rapport_items/FullName,'impl') == 0)
+		unit<uint32> rapport_items_sel := select_with_attr_by_cond(rapport_items, strcount(rapport_items/FullName,'impl') == 0)
 		{
 			attribute<uint32> level    := strcount(fullname, '/') - 3;
 

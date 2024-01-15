@@ -40,7 +40,7 @@ template MakeSnapshot
 				'object/woonplaats/result_fss;'
 				'object/afleidingen/adres_fss;'
 				'object/overzichten/impl/genereer_rapport' 
-				+ (met_pandhoogte_attributen ? ';object/pand/impl/phn' : '')
+				+ (met_pandhoogte_attributen ? ';object/pand/phn_fss' : '')
 			: 'gdalwrite_vect_export/result/make_geopackage '
 		: ''; 
 
@@ -104,21 +104,21 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie, .);
 
-				unit<uint32> nevenadres := select_many(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
 				{
 					attribute<string> identificatie := src/identificatie[mutatie_rel];
 				}
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.fss'"
 			{
 				attribute<uint32> count  : DisableStorage = "True";
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
-				unit<uint32> nevenadres := select_afew(result/nevenadres, const(true,result/nevenadres));
+				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
 		}
 
@@ -170,20 +170,20 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie, .);
 
-				unit<uint32> nevenadres := select_many(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
 				{
 					attribute<string> identificatie := src/identificatie[mutatie_rel];
 				}
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.fss'"
 			{
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
-				unit<uint32> nevenadres := select_afew(result/nevenadres, const(true,result/nevenadres));
+				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
 		}
 
@@ -270,7 +270,7 @@ template MakeSnapshot
 
 				attribute<bool>           geen_zeer_grote_panden_in_NL (src) := oppervlakte < 100000000[m2] && lengte < 5000[eenheden/m] && breedte < 5000[eenheden/m] && in_NL;
 
-				unit<uint32> selectie := select_afew(src, geen_zeer_grote_panden_in_NL);
+				unit<uint32> selectie := select_with_attr_by_org_rel(src, geen_zeer_grote_panden_in_NL);
 			}
 			container overig_filter
 			{
@@ -340,7 +340,7 @@ template MakeSnapshot
 					);
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.fss'"
 			{
 				attribute<uint32> sel_count: DisableStorage = "True";
 				attribute<uint32> vbo_count: DisableStorage = "True";
@@ -348,9 +348,19 @@ template MakeSnapshot
 				
 				attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE [org_rel];
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
-				container gebruiksdoelen:= relate_attr(result/gebruiksdoelen, result_fss, org_rel);
+				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
+			}
+
+			unit<uint32> phn_fss := result_fss
+			,	StorageName = "= SnapshotDir + '/pand.fss'"
+			,	DialogType  = "Map"
+			,	DialogData  = "geometry_mm"
+			,	FreeData    = "False"
+			{
+				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte[result_fss/org_rel];
+				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar[result_fss/org_rel];
 			}
 		}
 
@@ -490,7 +500,7 @@ template MakeSnapshot
 					attribute<geometries/rdc_mm> geometry_mm_raw_or_centroid := MakeDefined(domain/geometry_mm, domain/centroid_mm)[selectie/org_rel]; // Op snapshot moment willen we alleen punt geometrien hebben voor vbo's
 					attribute<int32> X := PointCol(geometry_mm_raw_or_centroid);
 					attribute<int32> Y := PointRow(geometry_mm_raw_or_centroid);
-					attribute<geometries/rdc_mm> geometry_mm :=
+					attribute<geometries/rdc_mm> geometry_mm_in_nl :=
 						   X >=  -8000000i &&  X <= 300000000i
 						&& Y >= 289000000i &&  Y <= 629000000i
 							? geometry_mm_raw_or_centroid
@@ -500,7 +510,7 @@ template MakeSnapshot
 					attribute<result> result_rel := rlookup(identificatie,result/identificatie);
 					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 
-					container gebruiksdoelen := relate_attr(src/gebruiksdoelen, selectie, selectie/org_rel);
+					container gebruiksdoelen := collect_attr_by_org_rel(src/gebruiksdoelen, selectie, selectie/org_rel);
 				}
 
 				unit<uint32> result_base := unique(selectie/identificatie);
@@ -512,7 +522,7 @@ template MakeSnapshot
 			{
 				attribute<uint32>            count               := pcount(impl/selectie/result_rel), DisableStorage = "True";
 
-				attribute<geometries/rdc_mm> geometry_mm         := rjoin(identificatie, impl/selectie/identificatie, impl/selectie/geometry_mm);
+				attribute<geometries/rdc_mm> geometry_mm         := rjoin(identificatie, impl/selectie/identificatie, impl/selectie/geometry_mm_in_nl);
 				attribute<string>            identificatie       := impl/result_base/values[mapping(result, impl/result_base)];
 				attribute<int32>             oppervlakte         := last(impl/selectie/oppervlakte, impl/selectie/result_rel);
 				attribute<string>            nummeraanduiding_id := last(impl/selectie/nummeraanduiding_id, impl/selectie/result_rel);
@@ -532,7 +542,7 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie,.);
 
-				unit<uint32> gerelateerdPand := select_many(src/gerelateerdPand,
+				unit<uint32> gerelateerdPand := select_with_attr_by_cond(src/gerelateerdPand,
 					IsDefined(
 						rlookup(  string(src/gerelateerdPand/fileset_rel)        + '_' + string(src/gerelateerdPand/mutatie_rel)
 								, string(src/fileset_rel[impl/selectie/org_rel]) + '_' + string(src/mutatie_rel[impl/selectie/org_rel])
@@ -549,7 +559,7 @@ template MakeSnapshot
 						, src/identificatie);
 				}
 
-				unit<uint32> nevenadres := Select_many(src/nevenadres,  // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres,  // is een 1->0..n relatie
 					IsDefined(
 						rlookup(  string(src/nevenadres/fileset_rel)             + '_' + string(src/nevenadres/mutatie_rel)
 								, string(src/fileset_rel[impl/selectie/org_rel]) + '_' + string(src/mutatie_rel[impl/selectie/org_rel])
@@ -566,23 +576,23 @@ template MakeSnapshot
 						, src/identificatie);
 				}
 			}
-			unit<uint32> result_fss := select_afew(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.fss'"
 			{
 				attribute<uint32>      count:    DisableStorage = "True";
 				attribute<pand/result> pand_rel: DisableStorage = "True";
 				attribute<result>      org_rel:  DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
-				container gebruiksdoelen:= relate_attr(result/gebruiksdoelen, result_fss, org_rel);
+				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
 
-				unit<uint32> gerelateerdPand := select_afew(result/gerelateerdPand, const(true,result/gerelateerdPand))
+				unit<uint32> gerelateerdPand := select_with_attr_by_org_rel(result/gerelateerdPand, const(true,result/gerelateerdPand))
 				{
 					attribute<uint32> mutatie_rel: DisableStorage = "True";
 					attribute<uint32> fileset_rel: DisableStorage = "True";
 				}
 
-				unit<uint32> nevenadres := select_afew(result/nevenadres, const(true,result/nevenadres))
+				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres))
 				{
 					attribute<uint32> mutatie_rel: DisableStorage = "True";
 					attribute<uint32> fileset_rel: DisableStorage = "True";
@@ -642,12 +652,12 @@ template MakeSnapshot
 
 				container meta := meta_template(impl/selectie, .);
 			}
-			unit<uint32> result_fss := select_afew(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.fss'"
 			{
 				attribute<uint32> key: DisableStorage = "True";
 				attribute<result> org_rel:   DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 			}
 		}
 
@@ -693,13 +703,13 @@ template MakeSnapshot
 				container meta := meta_template(impl/selectie, .);
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.fss'"
 			{
 				attribute<string> values : DisableStorage = "True";
 				attribute<uint32> key:     DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 			}
 		}
 
@@ -748,14 +758,14 @@ template MakeSnapshot
 				container meta := meta_template(impl/selectie, .);
 			}
 
-			unit<uint32> result_fss := select_afew(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.fss'"
+			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.fss'"
 			{
 				attribute<uint32> count:   DisableStorage = "True";
 				attribute<string> values:  DisableStorage = "True";
 				attribute<uint32> key:     DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := relate_attr(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 			}
 		}
 		#include<afleidingen.dms>

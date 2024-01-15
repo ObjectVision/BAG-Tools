@@ -32,7 +32,7 @@ container BAG
 
 			attribute<point_rd> geometry;
 		}
-		unit<uint32> adres_met_xy := select_many(adres, isDefined(adres/geometry));
+		unit<uint32> adres_met_xy := select_with_attr_by_cond(adres, isDefined(adres/geometry));
 
 		container straatnaam     := Templates/uniformeer_string_straatnaam(adres_met_xy, adres_met_xy/straatnaam);
 		container postcode       := Templates/uniformeer_string(adres_met_xy, adres_met_xy/postcode);

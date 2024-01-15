@@ -39,7 +39,7 @@ container overzichten
 		unit<uint32> rapport_items_name       := SubTree_PropValues(rapport,'name');
 		unit<uint32> rapport_items_valuesunit := SubTree_PropValues(rapport,'valuesunit');
 
-		unit<uint32> rapport_items_sel := select_many(rapport_items, strcount(lowercase(rapport_items/FullName),'impl') == 0 && lowercase(rapport_items/name) <> 'per_objecttype')
+		unit<uint32> rapport_items_sel := select_with_attr_by_cond(rapport_items, strcount(lowercase(rapport_items/FullName),'impl') == 0 && lowercase(rapport_items/name) <> 'per_objecttype')
 		{
 			attribute<bool>   isDataItem := strcount(lowercase(valuesunit),'unknown') == 0;
 			attribute<uint32> level      := strcount(fullname, '/') - 4;

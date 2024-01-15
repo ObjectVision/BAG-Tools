@@ -60,7 +60,7 @@ container templates
 				container ter_controle
 				{
 					attribute<bool> is_aangepast (domain) := txt <> staptype/resultaat;
-					unit<uint32> aangepast := select_afew(staptype, is_aangepast)
+					unit<uint32> aangepast := select_with_attr_by_org_rel(staptype, is_aangepast)
 					{
 						attribute<string> voor := txt[org_rel];
 						attribute<string> na   := resultaat;
@@ -88,7 +88,7 @@ container templates
 		parameter<uint32>            lengte_TeVervangen;
 
 		// eind case parameters
-		unit<uint32> lookup_table := select_many(vervangingen/table, vervangingen/table/set == set);
+		unit<uint32> lookup_table := select_with_attr_by_cond(vervangingen/table, vervangingen/table/set == set);
 
 		parameter<string> staptype_expr :=
 			switch(
@@ -102,7 +102,7 @@ container templates
 		container ter_controle
 		{
 			attribute<bool> is_aangepast (domain) := src <> staptype/resultaat;
-			unit<uint32> aangepast := select_afew(staptype, is_aangepast)
+			unit<uint32> aangepast := select_with_attr_by_org_rel(staptype, is_aangepast)
 			{
 				attribute<string> voor := src[org_rel];
 				attribute<string> na   := resultaat[org_rel];
