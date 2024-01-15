@@ -322,8 +322,8 @@ template MakeSnapshot
 				container woningtype
 				{
 					attribute<uint32>                                              nr_buurpanden   (..) := afleidingen/pand_attributen/geometrie/results/nr_buurpanden;
-					attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE0  (..) := afleidingen/pand_attributen/geometrie/results/type_woonpand_rel;
-					attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE   (..) := =met_woonpand_typeringen ? 'WOONPAND_TYPE0' : 'const(0b/0b, ..)';
+					attribute<typeringen/type_woonpand> WOONPAND_TYPE0  (..) := afleidingen/pand_attributen/geometrie/results/type_woonpand_rel;
+					attribute<typeringen/type_woonpand> WOONPAND_TYPE   (..) := =met_woonpand_typeringen ? 'WOONPAND_TYPE0' : 'const(0b/0b, ..)[typeringen/type_woonpand]';
 					
 				}
 				
@@ -346,7 +346,7 @@ template MakeSnapshot
 				attribute<uint32> vbo_count: DisableStorage = "True";
 				attribute<result> org_rel:   DisableStorage = "True";
 				
-				attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE [org_rel];
+				attribute<typeringen/type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE [org_rel];
 
 				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
 
