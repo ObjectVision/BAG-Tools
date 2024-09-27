@@ -12,7 +12,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container afleidingen: Using = "eenheden"
+container afleidingen: Using = "eenheden;geometries"
 {
 	container pand_attributen
 	{
@@ -91,14 +91,14 @@ container afleidingen: Using = "eenheden"
 
 			parameter<uint32>  nr_x         :=   7;
 			parameter<uint32>  nr_y         :=  13;
-			parameter<Float64> inflate_size := 200.0;
+			parameter<mm>      inflate_size := 200[mm];
 
 			unit<uint32> rectangle := range(uint32, 0, nr_x * nr_y)
 			{
 				attribute<uint32> seq_y  := id(.) / nr_x;
 				attribute<uint32> seq_x  := id(.) % nr_x;
 				attribute<string> name   := 'R'+string(seq_y)+'_C'+string(seq_x);
-
+				attribute<string> label  := name;
 				parameter<uint32> size_x := uint32(pointcol(BoundRange(geometries/rdc_mm))) / uint32(nr_x);
 				parameter<uint32> size_y := uint32(pointrow(BoundRange(geometries/rdc_mm))) / uint32(nr_y);
 
@@ -106,13 +106,27 @@ container afleidingen: Using = "eenheden"
 				attribute<uint32> max_x  := min_x + size_x;
 				attribute<uint32> min_y  := uint32(pointrow(lowerbound(geometries/rdc_mm))) + seq_y * size_y;
 				attribute<uint32> max_y  := min_y + size_y;
+				
+				attribute<rdc_mm> geometry (poly) := points2sequence(point_set/point, point_set/sequence_rel); //, point_set/ordinal);
+				
+				
+				attribute<rdc_mm> top_left     := point_xy(int32(min_x), int32(max_y), rdc_mm); 
+				attribute<rdc_mm> top_right    := point_xy(int32(max_x), int32(max_y), rdc_mm);
+				attribute<rdc_mm> bottom_left  := point_xy(int32(min_x), int32(min_y), rdc_mm);
+				attribute<rdc_mm> bottom_right := point_xy(int32(max_x), int32(min_y), rdc_mm);
+				
+				unit<uint32> point_set := union_unit(.,.,.,.,.)
+				{
+					attribute<rdc_mm>  point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+					attribute<..>      sequence_rel := union_data(., id(..), id(..), id(..), id(..), id(..));
+				}
 			}
 
 			container rectangles := for_each_ne(rectangle/name, 'connect_neighbours('+string(ID(rectangle))+')');
 
 			template connect_neighbours
 			{
-				// begin case parameters
+				// begin case parameters 
 				parameter<rectangle> rectangle_sel;
 				// end case parameters
 
@@ -125,23 +139,22 @@ container afleidingen: Using = "eenheden"
 					)
 					, DialogType = "Map", DialogData = "geometry_mm";
 
-				attribute<geometries/rdc_mm> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry_mm, inflate_size);
-				attribute<geometries/rdc_mm> i4HV_mm_new (domain, polygon) := bg_buffer_multi_polygon(domain/geometry_mm, 10.0, 4b); // for future use
+				// attribute<geometries/rdc_mm> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry_mm, float64(inflate_size));
+				// attribute<geometries/rdc_mm> i8D_mm     (domain, polygon) := polygon_I8D(domain/geometry_mm, float64(inflate_size));
+				attribute<geometries/rdc_mm> buffer_8_mm     (domain, polygon) := bg_buffer_multi_polygon(domain/geometry_mm, float64(inflate_size), 8b); // for future use
 
-				unit<uint32> neighbours := polygon_connectivity(i4HV_mm)
+				unit<uint32> neighbours := bg_polygon_connectivity(buffer_8_mm)
 				{
-					attribute<upoint> coded_pair := point(domain/org_rel[F1], domain/org_rel[F2]);
-
-					// nice to see
+					attribute<upoint> coded_pair := point_yx(domain/org_rel[first_rel], domain/org_rel[second_rel]);
 					attribute<geometries/rdc_mm> joint(., arc):=
 						points2sequence_ps(
-							union_data(combine(., bool), centroid(domain/geometry_mm)[F1], centroid(domain/geometry_mm)[F2]),
+							union_data(combine(., bool), centroid(domain/geometry_mm)[first_rel], centroid(domain/geometry_mm)[second_rel]),
 							union_data(combine(., bool), id(.), id(.))
 						);
 				}
 
 				// results collection
-				unit<uint32> unique_neighbour_pair := unique(neighbours/coded_pair), FreeData = "False", DialogType = "Map", DialogData = "joint"
+				unit<uint32> unique_neighbour_pair := unique(neighbours/coded_pair), DialogType = "Map", DialogData = "joint"
 				{
 					attribute<functioneel_pand> F1 := pointrow(values)[functioneel_pand];
 					attribute<functioneel_pand> F2 := pointcol(values)[functioneel_pand];
@@ -244,7 +257,7 @@ container afleidingen: Using = "eenheden"
 					   X >=  -8000000i &&  X <= 300000000i
 					&& Y >= 289000000i &&  Y <= 629000000i
 						? point_src
-						: point(0i/0i, 0i/0i, geometries/rdc_mm);
+						: point_yx(0i/0i, 0i/0i, geometries/rdc_mm);
 			}
 			container sp // standplaatsen
 			{
@@ -255,7 +268,7 @@ container afleidingen: Using = "eenheden"
 					   X >=  -8000000i &&  X <= 300000000i
 					&& Y >= 289000000i &&  Y <= 629000000i
 						? point_src
-						: point(0i/0i, 0i/0i, geometries/rdc_mm);
+						: point_yx(0i/0i, 0i/0i, geometries/rdc_mm);
 			}
 
 			attribute<geometries/rdc_mm> geometry_mm := MakeDefined(MakeDefined(MakeDefined(vbo_point,lp/point),sp/point));
