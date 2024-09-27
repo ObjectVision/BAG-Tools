@@ -34,7 +34,7 @@ container status
 		container V := for_each_nedv(lowercase(name), 'value('+string(id(.))+', ..)', void, .);
 	}
 	unit<uint8> standplaats := ligplaats;
-	unit<uint8> pand: nrofrows = 11
+	unit<uint8> pand: nrofrows = 11, URL = "https://www.cbs.nl/-/media/_pdf/2023/41/afleiden_woonvoorraad.pdf", Descr = "selectie van voorraad volgens CBS"
 	{
 		unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
 		{
@@ -47,10 +47,10 @@ container status
 				,'bouw gestart'                     ,'False'
 				,'pand in gebruik (niet ingemeten)' ,'True'
 				,'pand in gebruik'                  ,'True'
-				,'sloopvergunning verleend'         ,'True'
+				,'sloopvergunning verleend'         ,'False'
 				,'pand gesloopt'                    ,'False'
 				,'pand buiten gebruik'              ,'False'
-				,'verbouwing pand'                  ,'False'
+				,'verbouwing pand'                  ,'True'
 				,'pand ten onrechte opgevoerd'      ,'False'
 				
 			];
@@ -62,7 +62,7 @@ container status
 
 		container V := for_each_nedv(lowercase(name), 'value('+string(id(.))+', ..)', void, .);
 	}
-	unit<uint8> vbo : nrofrows = 9
+	unit<uint8> vbo : nrofrows = 9, URL = "https://www.cbs.nl/-/media/_pdf/2023/41/afleiden_woonvoorraad.pdf", Descr = "selectie van voorraad volgens CBS"
 	{
 		unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
 		{
@@ -76,7 +76,7 @@ container status
 				,'verblijfsobject in gebruik'                  ,'True'
 				,'verblijfsobject ingetrokken'                 ,'False'
 				,'verblijfsobject buiten gebruik'              ,'False'
-				,'verbouwing verblijfsobject'                  ,'False'
+				,'verbouwing verblijfsobject'                  ,'True'
 				,'verblijfsobject ten onrechte opgevoerd'      ,'False'
 			];
 		}
