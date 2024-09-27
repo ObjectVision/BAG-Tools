@@ -58,7 +58,7 @@ container BAG
 
 		attribute<string> nummeraanduiding_id := impl/adres_met_xy/nummeraanduiding_id;
 
-		attribute<point_rd> geometry          := point(X,Y,point_rd);
+		attribute<point_rd> geometry          := point_xy(X,Y,point_rd);
 
 		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(geometry, CBS/buurt/Geometry[point_rd]);
 		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(geometry, CBS/wijk/Geometry[point_rd]);

@@ -27,13 +27,13 @@
 container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS version should be 8.81 or later
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20230113';
-	parameter<string> Snapshot_Date_Input := '20230101';
+	parameter<string> BAG_Date            := '20240708';
+	parameter<string> Snapshot_Date_Input := '20240101';
 	//
 
-	parameter<string> FSSDir              := '%SourceDataDir%/BAG20/' + BAG_Date + '/fss';
+	parameter<string> FSSDir              := '%SourceDataDir%/BAG/' + BAG_Date + '/fss';
 
-	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG20/snapshots.ext';
+	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG/snapshots.ext';
 
 	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
 	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
@@ -45,6 +45,7 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 	{
 		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format)
 		container nl_status_sel_with_strangevalues_no_height_fss         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'')';
+		container nl_status_sel_without_strangevalues_no_height_fss      := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,True              ,False          ,''FSS'')', Descr = "oa gebruikt voor Vesta";
 		container geo_sel_status_sel_with_strangevalues_with_heigth_fss  := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'')';
 		container geo_sel_status_sel_without_strangevalues_no_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,True              ,False          ,''FSS'')';
 		container nl_status_all_with_strangevalues_no_heigth_fss         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'')';
@@ -66,43 +67,42 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 	{
 		#include <wmts_layer.dms>
 
-		unit<fpoint> rdc_base
-		: format     = "EPSG:28992"
-		, DialogData = "wmts_layer";
-		unit<fpoint> rdc    := range(rdc_base, point(300000f,0f), point(625000f,280000f));
-		unit<ipoint> rdc_mm := gridset(rdc, point(0.001,0.001), point(0.0, 0.0), ipoint);
+		unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "wmts_layer";
+		unit<fpoint> rdc      := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
+		unit<ipoint> rdc_cm   := gridset(rdc, point_yx(0.01,0.01), point_yx(0.0, 0.0), ipoint);
+		unit<ipoint> rdc_mm   := gridset(rdc, point_yx(0.001,0.001), point_yx(0.0, 0.0), ipoint);
 	}
 
 	unit<uint32> geo_selectie
-// 	:	nrofrows = 1
-// 	{
-// 		// Voorbeeld voor het configureren van een geo_selectie met een rechthoek, pas de pointset/X en pointset/Y attributen aan voor een nieuwe rechthoek
-// 		parameter<string>         Label           := 'NieuwegeinRechthoek';
-// 		attribute<geometries/rdc> geometry (poly) := points2sequence(pointset/point, pointset/sequence, pointset/ordinal);
+	:	nrofrows = 1
+	{
+		// Voorbeeld voor het configureren van een geo_selectie met een rechthoek, pas de pointset/X en pointset/Y attributen aan voor een nieuwe rechthoek
+		parameter<string>         Label           := 'NieuwegeinRechthoek';
+		attribute<geometries/rdc> geometry (poly) := points2sequence(pointset/point, pointset/sequence, pointset/ordinal);
 
-// 		unit<uint32> pointset: nrofrows = 5
-// 		{
-// 			parameter<eenheden/m>     X_min    := 132750[eenheden/m];
-// 			parameter<eenheden/m>     X_max    := 133750[eenheden/m];
-// 			parameter<eenheden/m>     Y_min    := 410750[eenheden/m];
-// 			parameter<eenheden/m>     Y_max    := 412000[eenheden/m];
+		unit<uint32> pointset: nrofrows = 5
+		{
+			parameter<eenheden/m>     X_min    := 111250[eenheden/m]; 
+			parameter<eenheden/m>     X_max    := 127163[eenheden/m];
+			parameter<eenheden/m>     Y_min    := 480608[eenheden/m];
+			parameter<eenheden/m>     Y_max    := 490285[eenheden/m];
 
-// 			attribute<eenheden/m>     X        := union_data(., X_min, X_max, X_max, X_min, X_min);
-// 			attribute<eenheden/m>     Y        := union_data(., Y_min, Y_min, Y_max, Y_max, Y_min);
-// 			attribute<geometries/rdc> point    := point(Y, X, geometries/rdc);
-// 			attribute<geo_selectie>   sequence := const(0[geo_selectie],.);
-// 			attribute<.>              ordinal  := id(.);
-// 		}
-// 	}
+			attribute<eenheden/m>     X        := union_data(., X_min, X_max, X_max, X_min, X_min);
+			attribute<eenheden/m>     Y        := union_data(., Y_min, Y_min, Y_max, Y_max, Y_min);
+			attribute<geometries/rdc> point    := point(Y, X, geometries/rdc);
+			attribute<geo_selectie>   sequence := const(0[geo_selectie],.);
+			attribute<.>              ordinal  := id(.);
+		}
+	}
 
 	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
-	: StorageName     = "%ProjDir%/data/geo_sel.shp"
-	, StorageType     = "gdal.vect"
-	, StorageReadOnly = "True"
-	{
-		parameter<string>         Label := 'BredaEO';
-		attribute<geometries/rdc> geometry (poly);
-	}
+	// : StorageName     = "%ProjDir%/data/geo_sel.shp"
+	// , StorageType     = "gdal.vect"
+	// , StorageReadOnly = "True"
+	// {
+		// parameter<string>         Label := 'BredaEO';
+		// attribute<geometries/rdc> geometry (poly);
+	// }
 
 	container typeringen
 	{
@@ -226,10 +226,10 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 
 		container bbox := bbox_min_max(domain,geometry_mm);
 
-		attribute<geometries/rdc> x_min_y_min (domain) := point(bbox/y_min[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> x_min_y_max (domain) := point(bbox/y_max[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> x_max_y_max (domain) := point(bbox/y_max[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> x_max_y_min (domain) := point(bbox/y_min[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_min_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_min_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_max_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_max_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
 		attribute<geometries/rdc> centroid    (domain) := centroid(geometry_mm)[geometries/rdc];
 
 		attribute<bool> result (domain) :=
@@ -264,4 +264,6 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 		attribute<eenheden/mm>       y_min      (domain) := PointRow(lowerbound)[eenheden/mm];
 		attribute<eenheden/mm>       y_max      (domain) := PointRow(upperbound)[eenheden/mm];
 	}
+	
+	#include<ExportSettings.dms>
 }

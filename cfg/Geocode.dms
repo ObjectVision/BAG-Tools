@@ -16,7 +16,7 @@
 
 container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS version should be 8.81 or later
 {
-	unit<fpoint> point_rd := range(fpoint, point(300000f,0f), point(625000f,280000f));
+	unit<fpoint> point_rd := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f));
 
 	container stringparams
 	{
@@ -100,7 +100,7 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 			attribute<string>  bag_toevoeging      (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_toevoeging')      + ', ' + quote(stringparams/emptystring) + ')';
 			attribute<string>  bag_woonplaatsnaam  (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_woonplaatsnaam ') + ', ' + quote(stringparams/emptystring) + ')';
 
-			attribute<point_rd> geometry           (bronDomein) := point(X,Y,point_rd);
+			attribute<point_rd> geometry           (bronDomein) := point_xy(X,Y,point_rd);
 
 			container buurt
 			{

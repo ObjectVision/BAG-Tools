@@ -305,7 +305,6 @@ template MakeSnapshot
 			unit<uint32> result :=  TiledUnit(1000000[impl/result_base])
 			, DialogType  = "Map"
 			, DialogData  = "geometry_mm"
-			, FreeData    = "False"
 			{
 				attribute<uint32>                                              sel_count             := pcount(impl/selectie/result_rel) , DisableStorage = "True";
 				attribute<uint32>                                              vbo_count             := pcount(vbo/result/pand_rel)      , DisableStorage = "True";
@@ -350,7 +349,6 @@ template MakeSnapshot
 			,	StorageName = "= SnapshotDir + '/pand.fss'"
 			,	DialogType  = "Map"
 			,	DialogData  = "geometry_mm"
-			,	FreeData    = "False"
 			{
 				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte[result_fss/org_rel];
 				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar[result_fss/org_rel];
@@ -497,7 +495,7 @@ template MakeSnapshot
 						   X >=  -8000000i &&  X <= 300000000i
 						&& Y >= 289000000i &&  Y <= 629000000i
 							? geometry_mm_raw_or_centroid
-							: point(0i/0i, 0i/0i, geometries/rdc_mm);
+							: point_xy(0i/0i, 0i/0i, geometries/rdc_mm);
 					// Op snapshot moment willen we alleen geometrien in NL (https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten), dit ten behoeve van gemiddelde bepalingen (denk aan coordinaten voor geocode)
 
 					attribute<result> result_rel := rlookup(identificatie,result/identificatie);

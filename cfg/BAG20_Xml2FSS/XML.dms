@@ -493,7 +493,7 @@ container XML
 				{
 					attribute<uint32> ReadPos (vbo); // expliciete configuratie is noodzakelijk, anders wordt domain unit vbo niet gevonden
 				}
-				attribute<rdc_mm> geometry_mm := point(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
+				attribute<rdc_mm> geometry_mm := point_yx(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
 
 				unit<uint32> polygon := vbo/gml_Polygon
 				{

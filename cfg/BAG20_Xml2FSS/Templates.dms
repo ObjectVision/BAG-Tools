@@ -92,7 +92,7 @@ container Templates: IsHidden = "True"
 			{
 				attribute<float64>     x    := point;
 				attribute<float64>     y    := coordinates/point[org_rel + 1];
-				attribute<rdc_mm>      p_mm := point(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
+				attribute<rdc_mm>      p_mm := point_yx(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
 				attribute<posListUnit> s    := SequenceNr;
 				attribute<uint32>      fo   := ordinal / posListUnit/nrCoordPerPoint[s]; // forward winding
 				attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding*/

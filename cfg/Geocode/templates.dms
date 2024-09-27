@@ -190,7 +190,7 @@ container templates
 			attribute<float32>  varX     := var(BAG/adres/X  , domein_rel);
 			attribute<float32>  varY     := var(BAG/adres/Y  , domein_rel);
 			attribute<float32>  var      := varX + varY;
-			attribute<point_rd> geometry := =aggtype == 0b ? 'point(meanX,meanY,point_rd)' : 'point(medianX,medianY,point_rd)';
+			attribute<point_rd> geometry := =aggtype == 0b ? 'point_xy(meanX,meanY,point_rd)' : 'point_xy(medianX,medianY,point_rd)';
 
 			attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domein_rel) : stringparams/emptystring;
 			attribute<string>  bag_postcode        := min(BAG/impl/adres_met_xy/postcode      , domein_rel) == max(BAG/impl/adres_met_xy/postcode      , domein_rel) ? min(BAG/impl/adres_met_xy/postcode      , domein_rel) : stringparams/emptystring;
