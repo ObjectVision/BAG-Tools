@@ -73,8 +73,8 @@ container templates
 				}
 			}
 		}
-		attribute<string> resultaat (domain) := = 'replace_value(vervangstappen/step_' + string(max(vervangingen/sets/number)) + '/staptype/resultaat , stringparams/emptystring, string(0/0))'
-		, FreeData = "False";
+		attribute<string> resultaat0  (domain) := = 'replace_value(vervangstappen/step_' + string(max(vervangingen/sets/number)) + '/staptype/resultaat , stringparams/emptystring, string(0/0))';
+		attribute<string> resultaat   (domain) := replace(resultaat0, ';', '');
 	}
 
 	Template vervang
@@ -193,15 +193,18 @@ container templates
 			attribute<point_rd> geometry := =aggtype == 0b ? 'point_xy(meanX,meanY,point_rd)' : 'point_xy(medianX,medianY,point_rd)';
 
 			attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domein_rel) : stringparams/emptystring;
-			attribute<string>  bag_postcode        := min(BAG/impl/adres_met_xy/postcode      , domein_rel) == max(BAG/impl/adres_met_xy/postcode      , domein_rel) ? min(BAG/impl/adres_met_xy/postcode      , domein_rel) : stringparams/emptystring;
-			attribute<string>  bag_straatnaam      := min(BAG/impl/adres_met_xy/straatnaam    , domein_rel) == max(BAG/impl/adres_met_xy/straatnaam    , domein_rel) ? min(BAG/impl/adres_met_xy/straatnaam    , domein_rel) : stringparams/emptystring;
-			attribute<string>  bag_huisnummer      := min(BAG/impl/adres_met_xy/huisnummer_str, domein_rel) == max(BAG/impl/adres_met_xy/huisnummer_str, domein_rel) ? min(BAG/impl/adres_met_xy/huisnummer_str, domein_rel) : stringparams/emptystring;
-			attribute<string>  bag_huisletter      := min(BAG/impl/adres_met_xy/huisletter    , domein_rel) == max(BAG/impl/adres_met_xy/huisletter    , domein_rel) ? min(BAG/impl/adres_met_xy/huisletter    , domein_rel) : stringparams/emptystring;
-			attribute<string>  bag_toevoeging      := min(BAG/impl/adres_met_xy/toevoeging    , domein_rel) == max(BAG/impl/adres_met_xy/toevoeging    , domein_rel) ? min(BAG/impl/adres_met_xy/toevoeging    , domein_rel) : stringparams/emptystring;
-			attribute<string>  bag_woonplaatsnaam  := min(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) == max(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) ? min(BAG/impl/adres_met_xy/woonplaatsnaam, domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_postcode        := min(BAG/adres/postcode      , domein_rel) == max(BAG/adres/postcode      , domein_rel) ? min(BAG/adres/postcode      , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_straatnaam      := min(BAG/adres/straatnaam    , domein_rel) == max(BAG/adres/straatnaam    , domein_rel) ? min(BAG/adres/straatnaam    , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_huisnummer      := min(BAG/adres/huisnummer_str, domein_rel) == max(BAG/adres/huisnummer_str, domein_rel) ? min(BAG/adres/huisnummer_str, domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_huisletter      := min(BAG/adres/huisletter    , domein_rel) == max(BAG/adres/huisletter    , domein_rel) ? min(BAG/adres/huisletter    , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_toevoeging      := min(BAG/adres/toevoeging    , domein_rel) == max(BAG/adres/toevoeging    , domein_rel) ? min(BAG/adres/toevoeging    , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_woonplaatsnaam  := min(BAG/adres/woonplaats    , domein_rel) == max(BAG/adres/woonplaats    , domein_rel) ? min(BAG/adres/woonplaats    , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_pand_footprint  := min(BAG/adres/pand_footprint, domein_rel) == max(BAG/adres/pand_footprint, domein_rel) ? min(BAG/adres/pand_footprint, domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_vbo_oppervlak   := min(BAG/adres/vbo_oppervlak , domein_rel) == max(BAG/adres/vbo_oppervlak , domein_rel) ? min(BAG/adres/vbo_oppervlak , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_pand_bouwjaar   := min(BAG/adres/pand_bouwjaar , domein_rel) == max(BAG/adres/pand_bouwjaar , domein_rel) ? min(BAG/adres/pand_bouwjaar , domein_rel) : stringparams/emptystring;
 
 			attribute<string> PC      := uppercase(values);
-			attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(geometry, /CBS/gemeente/geometry_rd)];
+			attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(geometry, /CBS/gemeente/geometry)];
 		}
 	}
 
@@ -226,4 +229,50 @@ container templates
 			)
 		;
 	}
+	
+	template datum_selectie
+	{
+		// begin case parameters
+		unit<uint32>              domain;
+		parameter<int32>          prik_datum;
+		attribute<bool>           overig_filter (domain);
+		// einde case parameters
+
+		attribute<bool> WasGestart   (domain) := domain/meta/BEGINDATUM <= prik_datum;
+		attribute<bool> WasBeeindigd (domain) := domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
+
+		attribute<bool> conditie     (domain) := ='WasGestart && not(WasBeeindigd) && domain/Meta/status_sel && overig_filter';
+
+		unit<uint32> selectie := select_with_attr_by_org_rel(import, conditie)
+		, DialogType = "Map"
+		, DialogData = "geometry_mm"
+		{
+			container meta := collect_attr_by_org_rel(import/meta, selectie, selectie/org_rel);
+		}
+	}
+	
+	template meta_src_template // Voor het inlezen van de generieke BAG attributen
+	{
+		// begin case parameters
+		unit<uint32> domain;
+		unit<uint8>  statustype;
+		// end case parameters
+
+		attribute<string>     STATUS                 (domain);
+		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), statustype/label);
+		attribute<bool>       status_sel             (domain) := statustype/IsSelected[status_rel];
+
+		attribute<int32>      BEGINDATUM             (domain);
+		attribute<int32>      EINDDATUM              (domain);
+		attribute<uint32>     VOORKOMENIDENTIFICATIE (domain);
+
+		attribute<string>     TIJDSTIPREGISTRATIE    (domain);
+		attribute<string>     EINDREGISTRATIE        (domain);
+
+		attribute<int32>      DOCUMENTDATUM          (domain);
+		attribute<string>     DOCUMENTNUMMER         (domain);
+
+		attribute<bool>       IS_GECONSTATEERD       (domain);
+	}
+	
 }

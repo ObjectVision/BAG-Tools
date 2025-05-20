@@ -14,7 +14,7 @@
 
 container bron
 {
-	parameter<string> BestandsNaam := '%SourceDataDir%/adres/to_be_geocoded.csv';
+	parameter<string> BestandsNaam := Parameters/PathToFileToBeGeocoded+'/'+Parameters/FileToBeGeocoded+'.csv';
 
 	container TableChopper // Deze wordt gebruikt ipv de gdal.vect storage manager omdat de TableChopper substantieel veel sneller is
 	{
@@ -49,18 +49,17 @@ container bron
 					 BodyLinesVervangen/resultaat
 					,string
 					,'+MakeDefined(
-						 Veld/Name[ID(Veld)-1]+'/ReadPos'
+						 Veld/Name[sub_or_null(ID(Veld),1)]+'/ReadPos'
 						,'const(0,Domein)'
 					)+'
 				)'
 				,Domein
 				,string
 			);
-		//, FreeData = "False"; // DEBUG, UITZETTEN BIJ OPLEVEREN;
 		container postcode_org:= Templates/uniformeer_string(TableChopper/Domein, substr(Data/postcode, 0, 6));
 		attribute<bool>   isMissingPC          (TableChopper/Domein):= isDefined(rlookup(postcode_org/resultaat,vervangingen/postcodes_missend/label));
 		attribute<string> postcode             (TableChopper/Domein):= isMissingPC ? string( 0 / 0) : postcode_org/resultaat;
-		attribute<uint32> huisnummer           (TableChopper/Domein):= uint32(data/HUISNUMMER_TOEVOEGING );
+		attribute<uint32> huisnummer           (TableChopper/Domein):= uint32(data/huisnummertoevoeging );
 //		attribute<string> woonplaats_vervangen (TableChopper/Domein):= 
 //			MakeDefined(
 //				rjoin(trim(data/woonplaats),vervangingen/woonplaats/table/TeVervangen, vervangingen/woonplaats/table/VervangenDoor)
@@ -70,22 +69,27 @@ container bron
 
 	// hiermee worden de bronvelden vertaald in de BAG adres veldnamen
 	container straatnaam     :=
-		Templates/uniformeer_string_straatnaam(TableChopper/Domein, const('',TableChopper/Domein));
-		//Templates/uniformeer_string_straatnaam(TableChopper/Domein, adres_splitsen/straatnaam);
+		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/straatnaam));
+		// Templates/uniformeer_string_straatnaam(TableChopper/Domein, adres_splitsen/straatnaam);
 
 	container huisnummer     :=
-		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/huisnummer));
+		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/huisnummer));
 		//Templates/uniformeer_string_straatnaam(TableChopper/Domein, adres_splitsen/huisnummer);
 
-	container huistoevoeging :=  Templates/uniformeer_string(TableChopper/Domein, const('',TableChopper/Domein));
-		// Templates/uniformeer_string(TableChopper/Domein, TableChopper/data/HUISLETTER);
+	container huistoevoeging :=  
+		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/huisnummertoevoeging));
 		//Templates/uniformeer_string(TableChopper/Domein, adres_splitsen/huistoevoeging);
 
-	container woonplaatsnaam := Templates/uniformeer_string(TableChopper/Domein, const('',TableChopper/Domein));
-	container postcode
-	{
-		attribute<string> resultaat (TableChopper/Domein) := TableChopper/postcode;
-	}
+	container woonplaatsnaam := 
+		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/woonplaats));
+		// Templates/uniformeer_string(TableChopper/Domein, const('',TableChopper/Domein));
+	
+	container postcode := 
+		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/postcode));
+	// container postcode
+	// {
+		// attribute<string> resultaat (TableChopper/Domein) := TableChopper/postcode;
+	// }
 	container postcode5
 	{
 		attribute<string> resultaat (TableChopper/Domein) := substr(postcode/resultaat,0,5);

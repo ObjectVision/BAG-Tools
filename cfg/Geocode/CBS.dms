@@ -13,21 +13,43 @@
 
 container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-regionaal/publicaties/geografische-data/archief/2015/wijk-en-buurtkaart-2014-art.htm"
 {
-	unit<uint32> buurt:
-		StorageName     = "%SourceDataDir%/CBS/2021/buurt_2021_simplified.shp"
-	,	StorageType     = "gdal.vect"
-	,	StorageReadOnly = "True";
-
-	unit<uint32> wijk:
-		StorageName     = "%SourceDataDir%/CBS/2021/wijk_2021_simplified.shp"
-	,	StorageType     = "gdal.vect"
-	,	StorageReadOnly = "True";
-
-	unit<uint32> gemeente:
-		StorageName     = "%SourceDataDir%/CBS/2021/gem_2021_simplified.shp"
-	,	StorageType     = "gdal.vect"
+	parameter<string> gegeneraliseerd_str := '_niet_gegeneraliseerd';
+	
+	container gpkg
+	:	StorageName     = "='%SourceDataDir%/CBS/cbsgebiedsindelingen'+Parameters/CBS_RegioIndelingenJaar+'.gpkg'"
+	, 	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
+	,	SyncMode        = "alltables"
+	,	DialogData      = "point_rd"
+	,	URL             = "https://www.cbs.nl/nl-nl/dossier/nederland-regionaal/geografische-data/cbs-gebiedsindelingen"
+	,	KeepData        = "true"
 	{
-		attribute<point_rd> geometry_rd (polygon) := geometry[point_rd];
 	}
+	
+	unit<uint32> Buurt     := ='gpkg/buurt'+gegeneraliseerd_str
+	{
+		attribute<point_rd>  geometry                                 (poly) := ='gpkg/buurt'+gegeneraliseerd_str+'/geometry[point_rd]';
+		attribute<string>    label                                           := statnaam;
+		attribute<string>    name                                            := AsItemName(statnaam);
+		attribute<string>    BU_CODE                                         := statcode;
+		attribute<string>    BU_NAAM                                         := name;
+	}
+	unit<uint32> Wijk      := ='gpkg/wijk'+gegeneraliseerd_str
+	{
+		attribute<point_rd>  geometry                                 (poly) := ='gpkg/wijk'+gegeneraliseerd_str+'/geometry[point_rd]';
+		attribute<string>    label                                           := statnaam;
+		attribute<string>    name                                            := AsItemName(statnaam);
+		attribute<string>    WK_CODE                                         := statcode;
+		attribute<string>    WK_NAAM                                         := name;
+	}
+	unit<uint32> Gemeente  := ='gpkg/gemeente'+gegeneraliseerd_str
+	{
+		attribute<point_rd>  geometry                                 (poly) := ='gpkg/gemeente'+gegeneraliseerd_str+'/geometry[point_rd]';
+		attribute<string>    label                                           := statnaam;
+		attribute<string>    name                                            := AsItemName(statnaam);
+		attribute<uint32>    gem_nr                                          := uint32(right(statcode, 4));
+		attribute<string>    GM_CODE                                         := statcode;
+		attribute<string>    GM_NAAM                                         := name;
+	}
+	
 }
