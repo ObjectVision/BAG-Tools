@@ -89,7 +89,7 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 
 			attribute<eenheden/m>     X        := union_data(., X_min, X_max, X_max, X_min, X_min);
 			attribute<eenheden/m>     Y        := union_data(., Y_min, Y_min, Y_max, Y_max, Y_min);
-			attribute<geometries/rdc> point    := point(Y, X, geometries/rdc);
+			attribute<geometries/rdc> point    := point_yx(Y, X, geometries/rdc);
 			attribute<geo_selectie>   sequence := const(0[geo_selectie],.);
 			attribute<.>              ordinal  := id(.);
 		}
