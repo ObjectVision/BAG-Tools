@@ -61,6 +61,7 @@ container BAG : using = "units;classifications"
 				attribute<point_rd>   geometry        := vbos/vbo/geometry[vbo_rel];
 				attribute<meter2>     pand_footprint  := vbos/vbo/pand_footprint[vbo_rel];
 				attribute<uint16>     pand_bouwjaar   := vbos/vbo/pand_bouwjaar[vbo_rel];
+				attribute<uint16>     pand_hoogte     := vbos/vbo/pand_hoogte[vbo_rel];
 				attribute<int32>      vbo_oppervlak   := vbos/vbo/oppervlakte[vbo_rel];
 				attribute<bool>       IsInNederland   := IsDefined(point_in_polygon(geometry, /CBS/Gemeente/geometry));
 				container meta := Templates/meta_src_template(., nummeraanduiding_status);
@@ -90,6 +91,7 @@ container BAG : using = "units;classifications"
 				attribute<point_rd> geometry                := last(datum_selectie/selectie/geometry                , datum_selectie/selectie/result_rel);
 				attribute<string>   pand_footprint          := string(last(datum_selectie/selectie/pand_footprint   , datum_selectie/selectie/result_rel));
 				attribute<string>   pand_bouwjaar           := string(last(datum_selectie/selectie/pand_bouwjaar    , datum_selectie/selectie/result_rel));
+				attribute<string>   pand_hoogte             := string(last(datum_selectie/selectie/pand_hoogte      , datum_selectie/selectie/result_rel));
 				attribute<string>   vbo_oppervlak           := string(last(datum_selectie/selectie/vbo_oppervlak    , datum_selectie/selectie/result_rel));
 			}
 			
@@ -135,6 +137,7 @@ container BAG : using = "units;classifications"
 				attribute<int32>                      begindatum                := import/meta/BEGINDATUM == 0i ? Parameters/MaxDatum : import/meta/BEGINDATUM;
 				attribute<int32>                      einddatum                 := import/meta/EINDDATUM == 0i ? Parameters/MaxDatum : import/meta/EINDDATUM;
 				attribute<uint16>                     pand_bouwjaar             := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/bouwjaar_trunc);
+				attribute<uint16>                     pand_hoogte               := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/pand_hoogte);
 				attribute<meter2>                     pand_footprint            := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/footprint);
 				attribute<bool>                       IsVoorraad                := vbo_status/isVoorraad[status_rel];
 				
@@ -174,6 +177,11 @@ container BAG : using = "units;classifications"
 				attribute<uint16>                      bouwjaar_trunc               := =replace(parameters/bouwjaar_truncation_expr, '@YYYY@', parameters/max_bouwjaar);
 				attribute<meter2>                      footprint                    := area(geometry, meter2);
 				attribute<bool>                        IsVoorraad                   := pand_status/isVoorraad[status_rel];
+				
+				attribute<BAG/impl/pand_hoogte>        PHN_rel                      := rlookup(pand_bag_nr, BAG/impl/pand_hoogte/pand_bag_nr);
+				attribute<cm>                          pand_hoogte                  := BAG/impl/pand_hoogte/hoogte_cm[PHN_rel];
+				attribute<cm>                          pand_hoogte_maaiveld         := BAG/impl/pand_hoogte/hoogte_maaiveld[PHN_rel];
+
 				
 				attribute<point_rd>                    geometry (poly)              := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_org);
 				// attribute<point_rd>                    geometry_simpl (poly)        := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_simpl_org);
@@ -220,6 +228,22 @@ container BAG : using = "units;classifications"
 				
 			unit<uint32> pand := select_with_attr_by_org_rel(src, src/Impl/pand_selection_condition);
 			
+		}
+		
+		// parameter<String> pand_hoogte_jaar := uint32(Parameters/BAG_year) >= 2020 ? string(Parameters/BAG_year) : string(2020);
+		parameter<String> pand_hoogte_jaar := '2023';
+		
+		unit<UInt32> pand_hoogte
+		:	StorageName     = "='%RSo_DataDir%/Vastgoed/PHN_'+pand_hoogte_jaar+'0101.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<point_rd>  geometry (poly)   := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/geometry);
+			attribute<String>    identificatie;
+			attribute<uint64>    pand_bag_nr       := uint64(identificatie);
+			attribute<UInt16>    hoogte; 
+			attribute<cm>        hoogte_cm         := hoogte[cm]; 
+			attribute<cm>        hoogte_maaiveld; 
+			attribute<Int16>     AHN_inwinjaar; 
 		}
 	}
 

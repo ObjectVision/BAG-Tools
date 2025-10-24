@@ -22,17 +22,19 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		parameter<string> BAG_SnapshotDir          := '%SourceDataDir%/BAG/VolledigeTabel_'+BAG_date;
 		parameter<string> CBS_RegioIndelingenJaar  := '2024';
 		parameter<string> PathToFileToBeGeocoded   := '%SourceDataDir%/BAG/xy_source'; 
-		parameter<string> FileToBeGeocoded         := 'NVM_1985_2023_20250519_cleaned_slim'; //.csv wordt er later aangeplakt.
+		parameter<string> FileToBeGeocoded         := 'NVM_1985_2023_20251024_cleaned_slim'; //.csv wordt er later aangeplakt.
 		parameter<string> bouwjaar_truncation_expr := 'bouwjaar <= 1005w || bouwjaar > uint16(@YYYY@) ? null_w : bouwjaar < 1500w ? 1500w : bouwjaar';
-		parameter<string> max_bouwjaar             := '2025';
+		parameter<string> BAG_year                 := substr(BAG_date, 0, 4);
+		parameter<string> max_bouwjaar             := BAG_year;
 		parameter<int32>  MaxDatum                 := 20500101i;
 		
 	}
 	
 	container Units
 	{
-		unit<Float32> Meter := BaseUnit('m', float32);
+		unit<Float32> Meter    := BaseUnit('m', float32);
 		unit<Float32> Meter2   := Meter * Meter;
+		unit<uint16>  cm       := uint16(0.01 * meter);
 	}
 	
 	container Classifications
@@ -145,6 +147,7 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 			attribute<string>  bag_pand_footprint  (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_footprint ') + ', ' + quote(stringparams/emptystring) + ')';
 			attribute<string>  bag_vbo_oppervlak   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_vbo_oppervlak ') + ', ' + quote(stringparams/emptystring) + ')';
 			attribute<string>  bag_pand_bouwjaar   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_bouwjaar ') + ', ' + quote(stringparams/emptystring) + ')';
+			attribute<string>  bag_pand_hoogte     (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_hoogte ') + ', ' + quote(stringparams/emptystring) + ')';
 
 			attribute<point_rd> geometry           (bronDomein) := point_xy(X,Y,point_rd);
 
@@ -297,9 +300,9 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 
 	container export
 	{
-		unit<uint32> extra_velden: nrofrows = 15
+		unit<uint32> extra_velden: nrofrows = 16
 		{
-			attribute<string> naam     :  ['niveau_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak','bag_pand_bouwjaar'];
+			attribute<string> naam     :  ['niveau_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak','bag_pand_bouwjaar','bag_pand_hoogte'];
 			attribute<string> ItemNaam := 'TeGeocoderen/koppel_aan_bag_aggregaties/' + naam;
 		}
 
@@ -336,56 +339,65 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		#include<adresveld_wel_in_bron_niet_in_BAG.dms>
 	}
 	
-container ExportSettings
-{
-	container GitImpl
+	container ExportSettings
 	{
-		parameter<string> PD               := expand(., '%projDir%');
-		parameter<string> DOS_PD           := replace(PD, '/', '\\');
-
-		parameter<string> SwitchDriveCmd   := substr(DOS_PD, 0, 2);
-		parameter<string> CdCmd            := 'cd '+DOS_PD;
-		parameter<string> DescrCmd         := 'git describe --all > git.txt';
-		parameter<string> StatusCmd        := 'git status >> git.txt';
-		parameter<string> HashCmd          := 'git rev-parse HEAD >> git.txt';
-		parameter<string> RevisionInfoCmds := SwitchDriveCmd + ' && ' + CdCmd + ' && ' + DescrCmd + ' && ' + StatusCmd + ' && ' + HashCmd;
-		parameter<uint32> WriterCode       := exec_ec(Expand(., '%env:ComSpec%'), '/c ' + RevisionInfoCmds, PD);
-	}
-	container MetaInfo
-	{
-		parameter<string> FileName : ='%storageBaseName%.xml';
-		parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
-		
-		container Contents
+		container GitImpl
 		{
-			container Software
-			{
-				parameter<string> GeoDMSVersion := string(GeoDmsMajorVersionNumber()) + '.' +  string(GeoDmsMinorVersionNumber())  +'.'  +  string(GeoDmsPatchNumber());
-			}
+			parameter<string> PD               := expand(., '%projDir%');
+			parameter<string> DOS_PD           := replace(PD, '/', '\\');
+
+			parameter<string> SwitchDriveCmd   := substr(DOS_PD, 0, 2);
+			parameter<string> CdCmd            := 'cd '+DOS_PD;
+			parameter<string> DescrCmd         := 'git describe --all > git.txt';
+			parameter<string> StatusCmd        := 'git status >> git.txt';
+			parameter<string> HashCmd          := 'git rev-parse HEAD >> git.txt';
+			parameter<string> RevisionInfoCmds := SwitchDriveCmd + ' && ' + CdCmd + ' && ' + DescrCmd + ' && ' + StatusCmd + ' && ' + HashCmd;
+			parameter<uint32> WriterCode       := exec_ec(Expand(., '%env:ComSpec%'), '/c ' + RevisionInfoCmds, PD);
+		}
+		container MetaInfo
+		{
+			parameter<string> FileName : ='%storageBaseName%.xml';
+			parameter<string> FileType : ='xml'; // default is 'ini' but ini files cannot be used well to store multi-line properties such as error messages of inproperly configured properties
 			
-			container Config
+			container Contents
 			{
-				parameter<string> FullName := '=PropValue(this, '+Quote('FullName')+')';
-				parameter<string> Expr     := '=PropValue(this, '+Quote('Expr'    )+')';
-				parameter<string> RunFile  := expand(.,'%configDir%')+'.dms';
-			}
-			
-			container Environment
-			{
-				parameter<string> Processor    := expand(., '%env:PROCESSOR_IDENTIFIER%');
-				parameter<string> User         := expand(., '%env:USERNAME%');
-				parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
-			}
-			
-			container Git
-			{
-				parameter<string> RevisionInfo : Storagename = "=(GitImpl/WriterCode==0)?'%projDir%/git.txt':'Error '+String(GitImpl/WriterCode)+' while producing %projDir%/git.txt'", StorageType = "str";
-			}
-			container Parameters
-			{
-				parameter<string> BAG_date                      := /Parameters/BAG_date;
-				parameter<string> CBS_RegioIndelingenJaar       := /Parameters/CBS_RegioIndelingenJaar;
+				container Software
+				{
+					parameter<string> GeoDMSVersion := string(GeoDmsMajorVersionNumber()) + '.' +  string(GeoDmsMinorVersionNumber())  +'.'  +  string(GeoDmsPatchNumber());
+				}
+				
+				container Config
+				{
+					parameter<string> FullName := '=PropValue(this, '+Quote('FullName')+')';
+					parameter<string> Expr     := '=PropValue(this, '+Quote('Expr'    )+')';
+					parameter<string> RunFile  := expand(.,'%configDir%')+'.dms';
+				}
+				
+				container Environment
+				{
+					parameter<string> Processor    := expand(., '%env:PROCESSOR_IDENTIFIER%');
+					parameter<string> User         := expand(., '%env:USERNAME%');
+					parameter<string> ComputerName := expand(., '%env:COMPUTERNAME%');
+				}
+				
+				container Git
+				{
+					parameter<string> RevisionInfo : Storagename = "=(GitImpl/WriterCode==0)?'%projDir%/git.txt':'Error '+String(GitImpl/WriterCode)+' while producing %projDir%/git.txt'", StorageType = "str";
+				}
+				container Parameters
+				{
+					parameter<string> BAG_date                      := /Parameters/BAG_date;
+					parameter<string> CBS_RegioIndelingenJaar       := /Parameters/CBS_RegioIndelingenJaar;
+				}
 			}
 		}
 	}
-}}
+	
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			parameter<String> RSo_DataDir := '%sourceDataDir%/RSopen';
+		}
+	}
+}

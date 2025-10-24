@@ -202,6 +202,7 @@ container templates
 			attribute<string>  bag_pand_footprint  := min(BAG/adres/pand_footprint, domein_rel) == max(BAG/adres/pand_footprint, domein_rel) ? min(BAG/adres/pand_footprint, domein_rel) : stringparams/emptystring;
 			attribute<string>  bag_vbo_oppervlak   := min(BAG/adres/vbo_oppervlak , domein_rel) == max(BAG/adres/vbo_oppervlak , domein_rel) ? min(BAG/adres/vbo_oppervlak , domein_rel) : stringparams/emptystring;
 			attribute<string>  bag_pand_bouwjaar   := min(BAG/adres/pand_bouwjaar , domein_rel) == max(BAG/adres/pand_bouwjaar , domein_rel) ? min(BAG/adres/pand_bouwjaar , domein_rel) : stringparams/emptystring;
+			attribute<string>  bag_pand_hoogte     := min(BAG/adres/pand_hoogte   , domein_rel) == max(BAG/adres/pand_hoogte   , domein_rel) ? min(BAG/adres/pand_hoogte   , domein_rel) : stringparams/emptystring;
 
 			attribute<string> PC      := uppercase(values);
 			attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(geometry, /CBS/gemeente/geometry)];
