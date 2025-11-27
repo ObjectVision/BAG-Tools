@@ -56,10 +56,10 @@ container ReadSnapshot
 	,	StorageReadOnly = "True"
 	{
 		attribute<geografie/rdc_mm>         geometry_mm (polygon);
-		attribute<geografie/rdc   >         geometry    (polygon) := geometry_mm[geografie/rdc];
+		attribute<geografie/rdc>         geometry    (polygon) := geometry_mm[geografie/rdc];
 		
-		attribute<geografie/rdc   >         geometry_cleaned    (polygon) := (geometry_mm * geometry_mm)[geografie/rdc];
-		attribute<geografie/rdc   >         buffer_m1    (polygon) := bg_buffer_multi_polygon(geometry_cleaned[dpoint], 1.0, 8b)[geografie/rdc];
+		attribute<geografie/rdc>         geometry_cleaned    (polygon) := (geometry_mm * geometry_mm)[geografie/rdc];
+		attribute<geografie/rdc>         buffer_m1    (polygon) := geos_buffer_multi_polygon(geometry_cleaned[dpoint], 1.0, 8b)[geografie/rdc];
 
 
 		attribute<string>                   identificatie;

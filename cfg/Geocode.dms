@@ -22,7 +22,7 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		parameter<string> BAG_SnapshotDir          := '%SourceDataDir%/BAG/VolledigeTabel_'+BAG_date;
 		parameter<string> CBS_RegioIndelingenJaar  := '2024';
 		parameter<string> PathToFileToBeGeocoded   := '%SourceDataDir%/BAG/xy_source'; 
-		parameter<string> FileToBeGeocoded         := 'NVM_1985_2023_20251024_cleaned_slim'; //.csv wordt er later aangeplakt.
+		parameter<string> FileToBeGeocoded         := 'apothekersregister20251120_cleaned'; //.csv wordt er later aangeplakt.
 		parameter<string> bouwjaar_truncation_expr := 'bouwjaar <= 1005w || bouwjaar > uint16(@YYYY@) ? null_w : bouwjaar < 1500w ? 1500w : bouwjaar';
 		parameter<string> BAG_year                 := substr(BAG_date, 0, 4);
 		parameter<string> max_bouwjaar             := BAG_year;
@@ -32,8 +32,8 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 	
 	container Units
 	{
-		unit<Float32> Meter    := BaseUnit('m', float32);
-		unit<Float32> Meter2   := Meter * Meter;
+		unit<Float64> Meter    := BaseUnit('m', Float64);
+		unit<Float64> Meter2   := Meter * Meter;
 		unit<uint16>  cm       := uint16(0.01 * meter);
 	}
 	
@@ -59,7 +59,7 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		}
 	}
 
-	unit<fpoint> point_rd    := range(fpoint, point_yx(300000f,0f), point_yx(625000f,280000f));
+	unit<dpoint> point_rd    := range(dpoint, point_yx(300000d,0d), point_yx(625000d,280000d));
 	unit<ipoint> point_rd_mm := gridset(point_rd,  point_yx(0.001, 0.001), point_yx(0.0, 0.0), ipoint);
 	
 	container stringparams
@@ -130,10 +130,10 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 
 			parameter<string> X_sub_expr := AsItemList('case(niveau_code == int8(' + string(stap/code) + '), BAG/aggregaties/' + stap/naam  + '/domein/meanX[rlookups/' + stap/naam  + '])');
 
-			attribute<float32> X                   (bronDomein) := = 'switch(' + X_sub_expr + ', 0f / 0f )';
-			attribute<float32> Y                   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','meanY')     + ', 0f / 0f )';
+			attribute<Float64> X                   (bronDomein) := = 'switch(' + X_sub_expr + ', 0d / 0d )';
+			attribute<Float64> Y                   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','meanY')     + ', 0d / 0d )';
 			attribute<uint32>  count               (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','countX')    + ', 0  / 0  )';
-			attribute<float32> var                 (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','var')       + ', 0f / 0f )';
+			attribute<Float64> var                 (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','var')       + ', 0d / 0d )';
 
 			attribute<string>  nummeraanduiding_id (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','nummeraanduiding_id') + ', ' + quote(stringparams/emptystring) + ')';
 
@@ -153,19 +153,19 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 
 			container buurt
 			{
-				attribute<cbs/buurt> buurt_rel (bronDomein) := point_in_polygon(geometry, fpolygon(cbs/buurt/Geometry));
+				attribute<cbs/buurt> buurt_rel (bronDomein) := point_in_polygon(geometry, cbs/buurt/Geometry);
 				attribute<string>    code      (bronDomein) := cbs/buurt/bu_code[buurt_rel];
 				attribute<string>    naam      (bronDomein) := cbs/buurt/bu_naam[buurt_rel];
 			}
 			container wijk
 			{
-				attribute<cbs/wijk> wijk_rel (bronDomein) := point_in_polygon(geometry, fpolygon(cbs/wijk/Geometry));
+				attribute<cbs/wijk> wijk_rel (bronDomein) := point_in_polygon(geometry, cbs/wijk/Geometry);
 				attribute<string>   code     (bronDomein) := cbs/wijk/wk_code[wijk_rel];
 				attribute<string>   naam     (bronDomein) := cbs/wijk/wk_naam[wijk_rel];
 			}
 			container gemeente
 			{
-				attribute<cbs/gemeente> gemeente_rel (bronDomein) := point_in_polygon(geometry, fpolygon(cbs/gemeente/Geometry));
+				attribute<cbs/gemeente> gemeente_rel (bronDomein) := point_in_polygon(geometry, cbs/gemeente/Geometry);
 				attribute<string>       code         (bronDomein) := cbs/gemeente/gm_code[gemeente_rel];
 				attribute<string>       naam         (bronDomein) := cbs/gemeente/gm_naam[gemeente_rel];
 			}
@@ -209,10 +209,10 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 			{
 				attribute<niveau>  niveau_rel            (bronDomein) := ../niveau_rel;
 				attribute<uint32>  niveau_count          (niveau)     := pcount(niveau_rel);
-				attribute<float32> gemiddelde_aantal     (niveau)     := MakeDefined(mean(float32(count), niveau_rel),0f);
-				attribute<float32> gemiddelde_variantie  (niveau)     := MakeDefined(mean(var, niveau_rel),0f);
-				attribute<float32> percentage            (niveau)     := float32(niveau_count) / float32(#(bronDomein)) * 100f;
-				attribute<float32> percentage_cumulatief (niveau)     := cumulate(percentage);
+				attribute<Float64> gemiddelde_aantal     (niveau)     := MakeDefined(mean(Float64(count), niveau_rel),0d);
+				attribute<Float64> gemiddelde_variantie  (niveau)     := MakeDefined(mean(var, niveau_rel),0d);
+				attribute<Float64> percentage            (niveau)     := Float64(niveau_count) / Float64(#(bronDomein)) * 100d;
+				attribute<Float64> percentage_cumulatief (niveau)     := cumulate(percentage);
 				attribute<string>  aggregatie_type       (niveau)     := /niveau/aggtype == 0b ? 'mean' : 'median';
 
 				container bestand

@@ -60,15 +60,15 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 		unit<int16>   jaar;
 		unit<int32>   mm        := int32(0.001 * m);
 		unit<uint16>  cm_uint16 := uint16(0.01 * m);
-		unit<float32> m         := baseunit('m', float32);
+		unit<float64> m         := baseunit('m', float64);
 	}
 
 	container geometries
 	{
 		#include <wmts_layer.dms>
 
-		unit<fpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "wmts_layer";
-		unit<fpoint> rdc      := range(rdc_base, point_yx(300000f,0f), point_yx(625000f,280000f));
+		unit<dpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "wmts_layer";
+		unit<dpoint> rdc      := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
 		unit<ipoint> rdc_cm   := gridset(rdc, point_yx(0.01,0.01), point_yx(0.0, 0.0), ipoint);
 		unit<ipoint> rdc_mm   := gridset(rdc, point_yx(0.001,0.001), point_yx(0.0, 0.0), ipoint);
 	}

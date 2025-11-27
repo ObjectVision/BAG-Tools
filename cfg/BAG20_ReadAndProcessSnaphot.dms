@@ -29,10 +29,10 @@ container BAG20_ReadAndProcessSnapshot
 		unit<int16>   jaar       : cdf ="klassificaties/bouwjaar_5K/ClassBreak";
 		unit<int32>   mm         := int32(0.001 * m);
 		unit<uint16>  cm_uint16  := uint16(0.01 * m);
-		unit<float32> m          := baseunit('m', float32);
-		unit<float32> m2         := m * m; 
+		unit<float64> m          := baseunit('m', float64);
+		unit<float64> m2         := m * m; 
 		unit<int32>   m2_int32   := int32(m2), cdf ="klassificaties/oppervlakte_11K/ClassBreak";
-		unit<float32> percentage := 100 * m / m;
+		unit<float64> percentage := 100 * m / m;
 	}
 
 	#include <geografie.dms>

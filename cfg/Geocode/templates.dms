@@ -181,15 +181,15 @@ container templates
 
 		unit<uint32> domein := unique(key), FreeData = "False"
 		{
-			attribute<float32>  meanX    := mean(BAG/adres/X , domein_rel);
-			attribute<float32>  meanY    := mean(BAG/adres/Y , domein_rel);
-			attribute<float32>  medianX  := rth_element(BAG/adres/X ,0.5f, domein_rel);
-			attribute<float32>  medianY  := rth_element(BAG/adres/Y ,0.5f, domein_rel);
+			attribute<Float64>  meanX    := mean(BAG/adres/X , domein_rel);
+			attribute<Float64>  meanY    := mean(BAG/adres/Y , domein_rel);
+			attribute<Float64>  medianX  := rth_element(BAG/adres/X ,0.5f, domein_rel);
+			attribute<Float64>  medianY  := rth_element(BAG/adres/Y ,0.5f, domein_rel);
 
 			attribute<uint32>   countX   := count(BAG/adres/X, domein_rel);
-			attribute<float32>  varX     := var(BAG/adres/X  , domein_rel);
-			attribute<float32>  varY     := var(BAG/adres/Y  , domein_rel);
-			attribute<float32>  var      := varX + varY;
+			attribute<Float64>  varX     := var(BAG/adres/X  , domein_rel);
+			attribute<Float64>  varY     := var(BAG/adres/Y  , domein_rel);
+			attribute<Float64>  var      := varX + varY;
 			attribute<point_rd> geometry := =aggtype == 0b ? 'point_xy(meanX,meanY,point_rd)' : 'point_xy(medianX,medianY,point_rd)';
 
 			attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domein_rel) : stringparams/emptystring;

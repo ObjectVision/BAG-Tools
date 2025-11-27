@@ -146,16 +146,16 @@ container overzichten
 				container impl
 				{
 					unit<uint32>      ligplaats_pointset  := Sequence2Points(ligplaats/result/geometry_mm);
-					attribute<uint32> ligplaats_nr_points (ligplaats/result) := max(ligplaats_pointset/ordinal, ligplaats_pointset/SequenceNr) + 1;
+					attribute<uint32> ligplaats_nr_points (ligplaats/result) := max(ligplaats_pointset/ordinal, ligplaats_pointset/Sequence_rel) + 1;
 
 					unit<uint32>      standplaats_pointset  := Sequence2Points(standplaats/result/geometry_mm);
-					attribute<uint32> standplaats_nr_points (standplaats/result) := max(standplaats_pointset/ordinal, standplaats_pointset/SequenceNr) + 1;
+					attribute<uint32> standplaats_nr_points (standplaats/result) := max(standplaats_pointset/ordinal, standplaats_pointset/Sequence_rel) + 1;
 
 					unit<uint32>      pand_pointset  := Sequence2Points(pand/result/geometry_mm);
-					attribute<uint32> pand_nr_points (pand/result) := max(pand_pointset/ordinal, pand_pointset/SequenceNr) + 1;
+					attribute<uint32> pand_nr_points (pand/result) := max(pand_pointset/ordinal, pand_pointset/Sequence_rel) + 1;
 
 					unit<uint32>      woonplaats_pointset  := Sequence2Points(woonplaats/result/geometry_mm);
-					attribute<uint32> woonplaats_nr_points (woonplaats/result) := max(woonplaats_pointset/ordinal, woonplaats_pointset/SequenceNr) + 1;
+					attribute<uint32> woonplaats_nr_points (woonplaats/result) := max(woonplaats_pointset/ordinal, woonplaats_pointset/Sequence_rel) + 1;
 				}
 			}
 		}

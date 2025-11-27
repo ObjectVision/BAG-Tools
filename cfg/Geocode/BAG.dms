@@ -143,9 +143,9 @@ container BAG : using = "units;classifications"
 				
 				unit<uint32> impl := .
 				{
-					attribute<float32>    x                         := PointCol(geometry);
-					attribute<float32>    y                         := PointRow(geometry);
-					attribute<bool>       vbo_selection_condition   := x < 300000f && x > 0f && y < 620000f && y > 300000f; //binnen NL
+					attribute<Float64>    x                         := PointCol(geometry);
+					attribute<Float64>    y                         := PointRow(geometry);
+					attribute<bool>       vbo_selection_condition   := x < 300000d && x > 0d && y < 620000d && y > 300000d; //binnen NL
 				}
 			}
 			unit<uint32> vbo := select_with_attr_by_cond(src, src/impl/vbo_selection_condition);
@@ -210,19 +210,19 @@ container BAG : using = "units;classifications"
 					attribute<int32>                        einddatum0                   := import/meta/EINDDATUM == 0i ? Parameters/MaxDatum : import/meta/EINDDATUM;
 					attribute<point_rd>                     NW                           := lower_bound(geometry);
 					attribute<point_rd>                     SE                           := upper_bound(geometry);
-					attribute<float32>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
-					attribute<float32>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
+					attribute<Float64>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
+					attribute<Float64>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
 					
-					attribute<float32>                      lower_x := pointCol(NW);
-					attribute<float32>                      upper_x := pointCol(SE);
-					attribute<float32>                      lower_y := pointRow(NW);
-					attribute<float32>                      upper_y := pointRow(SE);
+					attribute<Float64>                      lower_x := pointCol(NW);
+					attribute<Float64>                      upper_x := pointCol(SE);
+					attribute<Float64>                      lower_y := pointRow(NW);
+					attribute<Float64>                      upper_y := pointRow(SE);
 					
-					attribute<bool>                         pand_selection_condition     := ='X_ext < 1000f && Y_ext < 1000f' //panden met een grotere x/y range dan 1km eruit
-																							'&& lower_x < 300000f && lower_x > 0f'
-																							'&& upper_x < 300000f && upper_x > 0f'
-																							'&& lower_y < 620000f && lower_y > 300000f'
-																							'&& upper_y < 620000f && upper_y > 300000f'; //binnen NL
+					attribute<bool>                         pand_selection_condition     := ='X_ext < 1000d && Y_ext < 1000d' //panden met een grotere x/y range dan 1km eruit
+																							'&& lower_x < 300000d && lower_x > 0d'
+																							'&& upper_x < 300000d && upper_x > 0d'
+																							'&& lower_y < 620000d && lower_y > 300000d'
+																							'&& upper_y < 620000d && upper_y > 300000d'; //binnen NL
 				}
 			}  
 				
@@ -259,8 +259,8 @@ container BAG : using = "units;classifications"
 		attribute<string> postcode5           := substr(postcode,0,5);
 		attribute<string> postcode4           := substr(postcode,0,4);
 
-		attribute<float32> X                  := PointCol(impl/Adres/geometry);
-		attribute<float32> Y                  := PointRow(impl/Adres/geometry);
+		attribute<Float64> X                  := PointCol(impl/Adres/geometry);
+		attribute<Float64> Y                  := PointRow(impl/Adres/geometry);
 
 		attribute<string> nummeraanduiding_id := impl/Adres/identificatie;
 

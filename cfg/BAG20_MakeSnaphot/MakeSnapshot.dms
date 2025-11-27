@@ -218,7 +218,7 @@ template MakeSnapshot
 				attribute<geometries/rdc_mm> geometry_mm   (polygon) := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/geometry_mm', ',') + ')';
 				attribute<geometries/rdc>    geometry      (polygon) := geometry_mm[geometries/rdc];
 				
-				attribute<geometries/rdc>    bg_simplified (polygon) := bg_simplify_polygon(geometry, 1.0);
+				attribute<geometries/rdc>    bg_simplified (polygon) := geos_simplify_polygon(geometry, 1.0);
 
 				attribute<string>            identificatie           := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/identificatie', ',') + ')';
 				attribute<eenheden/jaar>     oorspronkelijkBouwjaar  := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/oorspronkelijkBouwjaar', ',') + ')';

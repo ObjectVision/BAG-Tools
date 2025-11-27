@@ -141,9 +141,9 @@ container afleidingen: Using = "eenheden;geometries"
 
 				// attribute<geometries/rdc_mm> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry_mm, float64(inflate_size));
 				// attribute<geometries/rdc_mm> i8D_mm     (domain, polygon) := polygon_I8D(domain/geometry_mm, float64(inflate_size));
-				attribute<geometries/rdc_mm> buffer_8_mm     (domain, polygon) := bg_buffer_multi_polygon(domain/geometry_mm, float64(inflate_size), 8b); // for future use
+				attribute<geometries/rdc_mm> buffer_8_mm     (domain, polygon) := geos_buffer_multi_polygon(domain/geometry_mm, float64(inflate_size), 8b); // for future use
 
-				unit<uint32> neighbours := bg_polygon_connectivity(buffer_8_mm)
+				unit<uint32> neighbours := geos_polygon_connectivity(buffer_8_mm)
 				{
 					attribute<upoint> coded_pair := point_yx(domain/org_rel[first_rel], domain/org_rel[second_rel]);
 					attribute<geometries/rdc_mm> joint(., arc):=
@@ -221,8 +221,8 @@ container afleidingen: Using = "eenheden;geometries"
 		attribute<string>         toevoeging          := impl/nummeraanduiding_met_geom/toevoeging;
 
 		attribute<geometries/rdc> geometry            := impl/nummeraanduiding_met_geom/geometry_mm[geometries/rdc];
-		attribute<float32>        X                   := pointcol(geometry_mm[geometries/rdc]);
-		attribute<float32>        Y                   := pointrow(geometry_mm[geometries/rdc]);
+		attribute<float64>        X                   := pointcol(geometry_mm[geometries/rdc]);
+		attribute<float64>        Y                   := pointrow(geometry_mm[geometries/rdc]);
 
 		attribute<string>         woonplaatsnaam      := woonplaats/result/woonplaatsNaam[point_in_polygon(geometry_mm,woonplaats/result/geometry_mm)];
 	}
