@@ -27,8 +27,8 @@
 container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS version should be 8.81 or later
 { 
 	// te configureren
-	parameter<string> BAG_Date            := '20240708';
-	parameter<string> Snapshot_Date_Input := '20240101';
+	parameter<string> BAG_Date            := '20260108';
+	parameter<string> Snapshot_Date_Input := '20260101';
 	//
 
 	parameter<string> FSSDir              := '%SourceDataDir%/BAG/' + BAG_Date + '/fss';
