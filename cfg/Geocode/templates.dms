@@ -25,6 +25,7 @@ container templates
 				lowercase(from_utf(txt))
 				,stringparams/space ,stringparams/emptystring
 				,stringparams/squote,stringparams/emptystring
+				,stringparams/dquote,stringparams/emptystring
 				,stringparams/point ,stringparams/emptystring
 			);
 
@@ -223,6 +224,7 @@ container templates
 					att
 					,stringparams/space ,stringparams/emptystring
 					,stringparams/squote,stringparams/emptystring
+					,stringparams/dquote,stringparams/emptystring
 					,stringparams/tab   ,stringparams/emptystring
 					,stringparams/point ,stringparams/emptystring
 				)

@@ -21,13 +21,22 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		parameter<string> BAG_date                 := '20250115';
 		parameter<string> BAG_SnapshotDir          := '%SourceDataDir%/BAG/VolledigeTabel_'+BAG_date;
 		parameter<string> CBS_RegioIndelingenJaar  := '2024';
-		parameter<string> PathToFileToBeGeocoded   := '%SourceDataDir%/BAG/xy_source'; 
-		parameter<string> FileToBeGeocoded         := 'apothekersregister20251120_cleaned'; //.csv wordt er later aangeplakt.
+		// parameter<string> PathToFileToBeGeocoded   := '%SourceDataDir%/BAG/xy_source'; 
+		parameter<string> PathToFileToBeGeocoded   := 'C:/Users/JipClaassens/OneDrive - Objectvision/VU/Projects/NVM Prijsindex/Temp'; 
+		parameter<string> FileToBeGeocoded         := 'NVM_adressen_20260711'; //.csv wordt er later aangeplakt.
 		parameter<string> bouwjaar_truncation_expr := 'bouwjaar <= 1005w || bouwjaar > uint16(@YYYY@) ? null_w : bouwjaar < 1500w ? 1500w : bouwjaar';
 		parameter<string> BAG_year                 := substr(BAG_date, 0, 4);
 		parameter<string> max_bouwjaar             := BAG_year;
 		parameter<int32>  MaxDatum                 := 20500101i;
+		parameter<string> VeldScheidingsTeken      :=';';
 		
+		unit<uint32> extra_velden: nrofrows = 16
+		// unit<uint32> extra_velden: nrofrows = 14
+		{
+			attribute<string> naam     :  ['niveau_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak','bag_pand_bouwjaar','bag_pand_hoogte'];
+			// attribute<string> naam     :  ['niveau_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak'];
+			attribute<string> ItemNaam := 'TeGeocoderen/koppel_aan_bag_aggregaties/' + naam;
+		}		
 	}
 	
 	container Units
@@ -67,6 +76,7 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		parameter<string> space              := ' ';
 		parameter<string> tab                := '\t';
 		parameter<string> squote             := '\''';
+		parameter<string> dquote             := '"';
 		parameter<string> point              := '.';
 		parameter<string> underscore         := '_';
 		parameter<string> emptystring        := '';
@@ -83,8 +93,6 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 
 	#include<BAG.dms>
 	#include<CBS.dms>
-	//#include<NVM.dms>
-
 	#include<vervangingen.dms>
 	#include<templates.dms>
 
@@ -169,26 +177,6 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 				attribute<string>       code         (bronDomein) := cbs/gemeente/gm_code[gemeente_rel];
 				attribute<string>       naam         (bronDomein) := cbs/gemeente/gm_naam[gemeente_rel];
 			}
-			/*
-			container nvm_regio
-			{
-				attribute<nvm/regio>    nvmreg_rel   (bronDomein) := point_in_polygon(geometry, fpolygon(nvm/regio/Geometry));
-				attribute<string>       naam         (bronDomein) := nvm/regio/regionaam[nvmreg_rel];
-				attribute<string>       code         (bronDomein) := nvm/regio/regioid[nvmreg_rel];
-			}
-			container nvm_afdeling
-			{
-				attribute<nvm/afdeling> nvmafd_rel   (bronDomein) := point_in_polygon(geometry, fpolygon(nvm/afdeling/Geometry));
-				attribute<string>       naam         (bronDomein) := nvm/afdeling/afdeling[nvmafd_rel];
-				attribute<string>       code         (bronDomein) := nvm/afdeling/afdid[nvmafd_rel];
-			}
-			unit<uint32> nvm_afd_niveau := combine(nvm/afdeling, niveau) // TODO: entiteit definitie verplaatsen naar rapportage template of generieke stamtabel container
-			{
-				attribute<string> Label := nvm/afdeling/afdeling[nr_1] + ' - ' + niveau/naam[nr_2];
-				// vanaf hier specifiek per brondata set of verplaatsen naar een rapportage template
-				attribute<.> rel(bronDomein) := combine_data(., nvm_afdeling/nvmafd_rel, niveau_rel); 
-				attribute<uint32> count := pcount(rel);
-			}*/
 
 			container bag_adres_velden
 			{
@@ -269,42 +257,13 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 					, StorageName = "%LocalDataProjDir%/resultaat_per_gemeente.csv"
 					, StorageType = "str";
 				}
-
-				/*unit<uint32> nvm_afd:= nvm/afdeling
-				{
-					attribute<uint32> nr_BAG_adressen            := pcount(BAG/adres/nvmafd_rel);
-					attribute<uint32> nr_geogecodeerde_adressen  := pcount(TeGeocoderen/koppel_aan_bag_aggregaties/nvm_afdeling/nvmafd_rel);
-		
-					parameter<string> NiveauLinesExpr := 
-						'add('+
-								AsItemList(Quote(';')+'+string(nvm_afd_niveau/count[combine_data(nvm_afd_niveau, ID(nvm_afd), '+String(ID(niveau))+'[niveau])])')
-							+')';
-					attribute<string> NiveauLines := = NiveauLinesExpr;
-
-					parameter<string> Kopregel  := 'afd_id;afd_naam;aantal BAG adressen;aantal gegeocodeerde adressen'+AsList(';C'+String(Niveau/code),'');
-					attribute<string> BodyLines := 
-							AFDID + ';' + 
-							AFDELING + ';' + 
-							string(nr_BAG_adressen) + ';' + 
-							string(nr_geogecodeerde_adressen) +
-							NiveauLines
-						;
-
-					parameter<string> resultaat:= Kopregel + stringparams/newline + AsList(BodyLines, stringparams/newline)
-					, StorageName = "%LocalDataProjDir%/resultaat_per_nvmafdeling.csv"
-					, StorageType = "str";
-				}*/
 			}
 		}
 	}
 
 	container export
 	{
-		unit<uint32> extra_velden: nrofrows = 16
-		{
-			attribute<string> naam     :  ['niveau_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak','bag_pand_bouwjaar','bag_pand_hoogte'];
-			attribute<string> ItemNaam := 'TeGeocoderen/koppel_aan_bag_aggregaties/' + naam;
-		}
+		unit<uint32> extra_velden := Parameters/extra_velden;
 
 		container impl
 		{
@@ -324,14 +283,12 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 		}
 
 		parameter<string> bestand := impl/Kopregel + stringparams/newline + AsList(impl/Body, stringparams/newline) + stringparams/newline 
-		//+ substr(TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat,0,0)
 		, StorageName       = "='%LocalDataDir%/BAG-Tools/Result/'+Parameters/FileToBeGeocoded+'_Geocoded.csv'"
 		, StorageType       = "str"
 		, ExplicitSuppliers = "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat;"
 							  "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/buurt/resultaat;"
 							  "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/wijk/resultaat;"
 							  "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;";
-		// , ExplicitSuppliers = "TeGeocoderen/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat";
 	}
 
 	container analyses
@@ -397,7 +354,7 @@ container Geocode: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS versi
 	{
 		container Overridable
 		{
-			parameter<String> RSo_DataDir := '%sourceDataDir%/RSopen';
-		}
+			parameter<String> RSo_DataDir := '%sourceDataDir%/RuimteScanner/SD/RSopen';  
+		} 
 	}
 }

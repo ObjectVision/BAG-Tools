@@ -21,7 +21,7 @@ container bron
 		parameter<uint32> nrElems      := strcount(FileData,stringparams/newline)-1;
 		unit<uint32>      Domein       := range(uint32,0,nrElems);
 
-		parameter<string> VeldScheidingsTeken :=';'
+		parameter<string> VeldScheidingsTeken := Parameters/VeldScheidingsTeken
 		,	IntegrityCheck = "VeldScheidingsTeken = ',' || VeldScheidingsTeken = ';'";
 
 		parameter<string> FileData
@@ -36,7 +36,8 @@ container bron
 		unit<uint32> Veld:= Range(UInt32, 0, strcount(KopRegelVervangen/resultaat[0], VeldScheidingsTeken)+1)
 		{
 			attribute<string> RawName:= ReadArray(KopRegelVervangen/resultaat[0], Veld, string, 0);
-			attribute<string> Name := replace(RawName, '-','_');
+			attribute<string> Name   := replace(RawName, '-','_');
+			attribute<string> NameLC := lowercase(Name);
 		}
 
 		attribute<string> BodyLines (Domein) := readLines(FileData, Domein, KopRegel/ReadPos);
@@ -56,40 +57,67 @@ container bron
 				,Domein
 				,string
 			);
-		container postcode_org:= Templates/uniformeer_string(TableChopper/Domein, substr(Data/postcode, 0, 6));
+
+		// welke adresvelden (of synoniemen daarvan) zitten in het bronbestand? case-insensitief.
+		// spaties/punten zijn al uit de kopregel gestript, '-' is vervangen door '_'
+		container VeldAanwezig
+		{
+			parameter<bool> straatnaam           := any(Veld/NameLC == 'straatnaam');
+			parameter<bool> straat               := any(Veld/NameLC == 'straat');
+			parameter<bool> huisnummer           := any(Veld/NameLC == 'huisnummer');
+			parameter<bool> huisnr               := any(Veld/NameLC == 'huisnr');
+			parameter<bool> huisletter           := any(Veld/NameLC == 'huisletter');
+			parameter<bool> huisnummertoevoeging := any(Veld/NameLC == 'huisnummertoevoeging');
+			parameter<bool> huistoevoeging       := any(Veld/NameLC == 'huistoevoeging');
+			parameter<bool> toevoeging           := any(Veld/NameLC == 'toevoeging');
+			parameter<bool> postcode             := any(Veld/NameLC == 'postcode');
+			parameter<bool> woonplaats           := any(Veld/NameLC == 'woonplaats');
+			parameter<bool> woonplaatsnaam       := any(Veld/NameLC == 'woonplaatsnaam');
+			parameter<bool> plaats               := any(Veld/NameLC == 'plaats');
+		}
+
+		// canonieke adresvelden: per veld de eerst aanwezige bronkolom, anders leeg.
+		// ontbrekende kolommen (bijv. geen huisletter) geven zo geen configuratiefout meer.
+		container adresvelden
+		:	IntegrityCheck = "VeldAanwezig/postcode || VeldAanwezig/straatnaam || VeldAanwezig/straat || VeldAanwezig/woonplaats || VeldAanwezig/woonplaatsnaam" // geen enkel adresveld herkend in de kopregel
+		{
+			parameter<string> leeg := 'const('''', Domein)';
+
+			attribute<string> straatnaam (Domein) := = switch(case(VeldAanwezig/straatnaam, 'Data/straatnaam'), case(VeldAanwezig/straat, 'Data/straat'), leeg);
+			attribute<string> huisnummer (Domein) := = switch(case(VeldAanwezig/huisnummer, 'Data/huisnummer'), case(VeldAanwezig/huisnr, 'Data/huisnr'), leeg);
+			attribute<string> huisletter (Domein) := = VeldAanwezig/huisletter ? 'Data/huisletter' : leeg;
+			attribute<string> toevoeging (Domein) := =
+				switch(
+					 case(VeldAanwezig/huisnummertoevoeging, 'Data/huisnummertoevoeging')
+					,case(VeldAanwezig/toevoeging          , 'Data/toevoeging')
+					,case(VeldAanwezig/huistoevoeging      , 'Data/huistoevoeging')
+					,leeg
+				);
+			attribute<string> postcode   (Domein) := = VeldAanwezig/postcode ? 'Data/postcode' : leeg;
+			attribute<string> woonplaats (Domein) := =
+				switch(
+					 case(VeldAanwezig/woonplaats    , 'Data/woonplaats')
+					,case(VeldAanwezig/woonplaatsnaam, 'Data/woonplaatsnaam')
+					,case(VeldAanwezig/plaats        , 'Data/plaats')
+					,leeg
+				);
+
+			// BAG-conventie: huistoevoeging = huisletter + toevoeging aan elkaar, zie BAG.dms
+			attribute<string> huistoevoeging (Domein) := huisletter + toevoeging;
+		}
+
+		container postcode_org:= Templates/uniformeer_string(TableChopper/Domein, substr(adresvelden/postcode, 0, 6));
 		attribute<bool>   isMissingPC          (TableChopper/Domein):= isDefined(rlookup(postcode_org/resultaat,vervangingen/postcodes_missend/label));
 		attribute<string> postcode             (TableChopper/Domein):= isMissingPC ? string( 0 / 0) : postcode_org/resultaat;
-		attribute<uint32> huisnummer           (TableChopper/Domein):= uint32(data/huisnummertoevoeging );
-//		attribute<string> woonplaats_vervangen (TableChopper/Domein):= 
-//			MakeDefined(
-//				rjoin(trim(data/woonplaats),vervangingen/woonplaats/table/TeVervangen, vervangingen/woonplaats/table/VervangenDoor)
-//				,data/woonplaats
-//			);
 	}
 
 	// hiermee worden de bronvelden vertaald in de BAG adres veldnamen
-	container straatnaam     :=
-		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/straatnaam));
-		// Templates/uniformeer_string_straatnaam(TableChopper/Domein, adres_splitsen/straatnaam);
+	container straatnaam     := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/straatnaam);
+	container huisnummer     := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/huisnummer);
+	container huistoevoeging := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/huistoevoeging);
+	container woonplaatsnaam := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/woonplaats);
+	container postcode       := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/postcode);
 
-	container huisnummer     :=
-		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/huisnummer));
-		//Templates/uniformeer_string_straatnaam(TableChopper/Domein, adres_splitsen/huisnummer);
-
-	container huistoevoeging :=  
-		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/huisnummertoevoeging));
-		//Templates/uniformeer_string(TableChopper/Domein, adres_splitsen/huistoevoeging);
-
-	container woonplaatsnaam := 
-		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/woonplaats));
-		// Templates/uniformeer_string(TableChopper/Domein, const('',TableChopper/Domein));
-	
-	container postcode := 
-		Templates/uniformeer_string(TableChopper/Domein, string(TableChopper/data/postcode));
-	// container postcode
-	// {
-		// attribute<string> resultaat (TableChopper/Domein) := TableChopper/postcode;
-	// }
 	container postcode5
 	{
 		attribute<string> resultaat (TableChopper/Domein) := substr(postcode/resultaat,0,5);
