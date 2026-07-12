@@ -11,7 +11,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container vervangingen
+container replacements
 {
 	unit<uint32> postcodes_missend: nrofrows = 3, source = "https://nl.wikipedia.org/wiki/Postcode#Trivia"
 	{
@@ -111,7 +111,7 @@ container vervangingen
 		}
 		attribute<.>                 id                 := id(.);
 
-		attribute<vervangingen/type> type               := value(elem/values[value(id * nrAttr + 0, elem)],vervangingen/type);
+		attribute<replacements/type> type               := value(elem/values[value(id * nrAttr + 0, elem)],replacements/type);
 		attribute<string>            TeVervangen        :=       elem/values[value(id * nrAttr + 1, elem)];
 		attribute<string>            VervangenDoor      :=       elem/values[value(id * nrAttr + 2, elem)];
 
@@ -123,7 +123,7 @@ container vervangingen
 		attribute<uint32> number                        := id(.) + 1;
 		attribute<string> number_str                    := string(number);
 
-		attribute<vervangingen/type> type               := rjoin(values, table/set, table/type);
+		attribute<replacements/type> type               := rjoin(values, table/set, table/type);
 		attribute<uint32>            lengte_TeVervangen := rjoin(values, table/set, table/lengte_TeVervangen);
 	}
 	#include<woonplaats.dms>

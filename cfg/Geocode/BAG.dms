@@ -250,7 +250,7 @@ container BAG : using = "units;classifications"
 	unit<uint32> adres:= impl/Adres, FreeData = "False"
 	{
 		attribute<string> straatnaam          := impl/straatnaam/resultaat;
-		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,vervangingen/postcodes_missend/label));
+		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,replacements/postcodes_missend/label));
 		attribute<string> postcode            := isMissingPC ? string( 0 / 0) : impl/postcode/resultaat;
 		attribute<string> huisnummer          := impl/huisnummer/resultaat;
 		attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/resultaat, StringConstants/legehuistoevoeging);
@@ -274,8 +274,8 @@ container BAG : using = "units;classifications"
 
 		container keys:=
 			for_each_nedv(
-				 stap/naam
-				,stap/expr_key
+				 step/naam
+				,step/expr_key
 				,adres
 				,string
 			)
@@ -284,7 +284,7 @@ container BAG : using = "units;classifications"
 
 	container aggregaties :=
 		for_each_ne(
-			 stap/naam
-			,'Templates/maak_aggregatie_entiteit(' + quote(string(stap/code)) + ', adres/keys/' + stap/naam + ',' + string(stap/aggtype) + 'b)'
+			 step/naam
+			,'Templates/maak_aggregatie_entiteit(' + quote(string(step/code)) + ', adres/keys/' + step/naam + ',' + string(step/aggtype) + 'b)'
 		);
 }

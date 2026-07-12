@@ -8,11 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
 //                                                                                    //
-// Lezen van bronbestand met TableChopper iv, performance en opsplitsen adres velden  //
+// Reading the input file with TableChopper (performance) and splitting address fields //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container bron
+container input
 {
 	parameter<string> BestandsNaam := ModelParameters/PathToFileToBeGeocoded+'/'+ModelParameters/FileToBeGeocoded+'.csv';
 
@@ -107,7 +107,7 @@ container bron
 		}
 
 		container postcode_org:= Templates/uniformeer_string(TableChopper/Domein, substr(adresvelden/postcode, 0, 6));
-		attribute<bool>   isMissingPC          (TableChopper/Domein):= isDefined(rlookup(postcode_org/resultaat,vervangingen/postcodes_missend/label));
+		attribute<bool>   isMissingPC          (TableChopper/Domein):= isDefined(rlookup(postcode_org/resultaat,replacements/postcodes_missend/label));
 		attribute<string> postcode             (TableChopper/Domein):= isMissingPC ? string( 0 / 0) : postcode_org/resultaat;
 	}
 

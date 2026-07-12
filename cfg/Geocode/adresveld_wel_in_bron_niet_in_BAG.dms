@@ -14,9 +14,9 @@
 
 container adresveld_wel_in_bron_niet_in_BAG
 {
-	unit<uint32> adresveld := range(uint32,0,strcount(niveau/volgorde[0],',') + 1)
+	unit<uint32> adresveld := range(uint32,0,strcount(level/volgorde[0],',') + 1)
 	{
-		attribute<string> label := readarray(niveau/volgorde[0],.,string,0);
+		attribute<string> label := readarray(level/volgorde[0],.,string,0);
 	}
 
 	container per_adresveld :=
@@ -41,12 +41,12 @@ container adresveld_wel_in_bron_niet_in_BAG
 
 			unit<uint32> utf8_diff := select_with_attr_by_cond(BAG_voorkomend_uniek, BAG_voorkomend_uniek/base_neq_values);
 
-			attribute<BAG/adres> BAG_adres_rel (Analyse/bron/TableChopper/domein) := ='rlookup(Analyse/bron/' + veld + '/resultaat, BAG_voorkomend_uniek/values)';
+			attribute<BAG/adres> BAG_adres_rel (Analyse/input/TableChopper/domein) := ='rlookup(Analyse/input/' + veld + '/resultaat, BAG_voorkomend_uniek/values)';
 
 			unit<uint32> nietvoorkomend := select_with_org_rel(impl, isNull(BAG_adres_rel))
 			{
-				attribute<string> na_bewerking   := ='Analyse/bron/' + veld + '/resultaat[org_rel]';
-				attribute<string> voor_bewerking := ='Analyse/bron/' + veld + '/txt[org_rel]';
+				attribute<string> na_bewerking   := ='Analyse/input/' + veld + '/resultaat[org_rel]';
+				attribute<string> voor_bewerking := ='Analyse/input/' + veld + '/txt[org_rel]';
 			}
 			unit<uint32> nietvoorkomend_uniek := unique(nietvoorkomend/na_bewerking);
 		}

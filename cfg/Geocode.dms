@@ -47,8 +47,8 @@ container Geocode
 		// extra BAG attributes that are appended to every geocoded record on export
 		unit<uint32> extra_velden: nrofrows = 16
 		{
-			attribute<string> naam     :  ['niveau_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak','bag_pand_bouwjaar','bag_pand_hoogte'];
-			attribute<string> ItemNaam := 'Analyse/koppel_aan_bag_aggregaties/' + naam;
+			attribute<string> naam     :  ['level_code','X','Y','count','var','nummeraanduiding_id','bag_postcode','bag_straatnaam','bag_huisnummer','bag_huisletter','bag_toevoeging','bag_woonplaatsnaam','bag_pand_footprint','bag_vbo_oppervlak','bag_pand_bouwjaar','bag_pand_hoogte'];
+			attribute<string> ItemNaam := 'Analyse/link_to_bag_aggregations/' + naam;
 		}
 
 		container StringConstants
@@ -94,9 +94,9 @@ container Geocode
 		}
 
 		// matching levels of the geocoding decision tree (BAG-specific, kept in Dutch)
-		#include<niveau.dms>
+		#include<level.dms>
 
-		unit<uint32> stap := select_with_attr_by_cond(niveau, niveau/code > int8(0))
+		unit<uint32> step := select_with_attr_by_cond(level, level/code > int8(0))
 		{
 			attribute<string> expr_key := replace(volgorde,', ',' + ''_'' + ');
 		}
@@ -113,7 +113,7 @@ container Geocode
 	{
 		#include<BAG.dms>
 		#include<CBS.dms>
-		#include<vervangingen.dms>
+		#include<replacements.dms>
 	}
 
 	// generic reusable templates (infrastructure, used by SourceData and Analyse)
@@ -122,108 +122,108 @@ container Geocode
 	container Analyse
 	:	using = "ModelParameters;Units;Classifications;Geography;SourceData"
 	{
-		#include<bron.dms>
+		#include<input.dms>
 
-		unit<uint32> bronDomein := bron/TableChopper/Domein
+		unit<uint32> inputDomain := input/TableChopper/Domein
 		{
-			attribute<string> straatnaam     := bron/straatnaam/resultaat;
-			attribute<string> postcode       := bron/postcode/resultaat;
-			attribute<string> huisnummer     := bron/huisnummer/resultaat;
-			attribute<string> huistoevoeging := MakeDefined(bron/huistoevoeging/resultaat, StringConstants/legehuistoevoeging);
-			attribute<string> woonplaatsnaam := bron/woonplaatsnaam/resultaat;
-			attribute<string> postcode5      := bron/postcode5/resultaat;
-			attribute<string> postcode4      := bron/postcode4/resultaat;
+			attribute<string> straatnaam     := input/straatnaam/resultaat;
+			attribute<string> postcode       := input/postcode/resultaat;
+			attribute<string> huisnummer     := input/huisnummer/resultaat;
+			attribute<string> huistoevoeging := MakeDefined(input/huistoevoeging/resultaat, StringConstants/legehuistoevoeging);
+			attribute<string> woonplaatsnaam := input/woonplaatsnaam/resultaat;
+			attribute<string> postcode5      := input/postcode5/resultaat;
+			attribute<string> postcode4      := input/postcode4/resultaat;
 
-			// per matching level a composite key; the expressions in stap/expr_key
+			// per matching level a composite key; the expressions in step/expr_key
 			// reference the address attributes above by name, resolved in this context
 			container keys :=
 				for_each_nedv(
-					 stap/naam
-					,stap/expr_key
-					,bronDomein
+					 step/naam
+					,step/expr_key
+					,inputDomain
 					,string
 				);
 		}
 
-		container koppel_aan_bag_aggregaties
+		container link_to_bag_aggregations
 		{
 			container rlookups :=
 				for_each_nedv(
-					 stap/naam
-					,'rlookup(bronDomein/keys/' + stap/naam + ', BAG/aggregaties/' + stap/naam + '/domein/values)'
-					,bronDomein
+					 step/naam
+					,'rlookup(inputDomain/keys/' + step/naam + ', BAG/aggregaties/' + step/naam + '/domein/values)'
+					,inputDomain
 					,uint32
 				)
 			, KeepData = "True";
 
-			parameter<string> niveau_subexpr := AsItemList('case(isDefined(rlookups/'+ stap/naam  + '), ' + string(ID(stap)) + '[niveau])');
-			attribute<niveau> niveau_rel (bronDomein) := = 'switch(' + niveau_subexpr + ', rlookup(int8(-1), niveau/code))';
-			attribute<int8>   niveau_code(bronDomein) := niveau/code[niveau_rel];
+			parameter<string> level_subexpr := AsItemList('case(isDefined(rlookups/'+ step/naam  + '), ' + string(ID(step)) + '[level])');
+			attribute<level> level_rel (inputDomain) := = 'switch(' + level_subexpr + ', rlookup(int8(-1), level/code))';
+			attribute<int8>   level_code(inputDomain) := level/code[level_rel];
 
-			parameter<string> X_sub_expr := AsItemList('case(niveau_code == int8(' + string(stap/code) + '), BAG/aggregaties/' + stap/naam  + '/domein/meanX[rlookups/' + stap/naam  + '])');
+			parameter<string> X_sub_expr := AsItemList('case(level_code == int8(' + string(step/code) + '), BAG/aggregaties/' + step/naam  + '/domein/meanX[rlookups/' + step/naam  + '])');
 
-			attribute<Float64> X                   (bronDomein) := = 'switch(' + X_sub_expr + ', 0d / 0d )';
-			attribute<Float64> Y                   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','meanY')     + ', 0d / 0d )';
-			attribute<uint32>  count               (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','countX')    + ', 0  / 0  )';
-			attribute<Float64> var                 (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','var')       + ', 0d / 0d )';
+			attribute<Float64> X                   (inputDomain) := = 'switch(' + X_sub_expr + ', 0d / 0d )';
+			attribute<Float64> Y                   (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','meanY')     + ', 0d / 0d )';
+			attribute<uint32>  count               (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','countX')    + ', 0  / 0  )';
+			attribute<Float64> var                 (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','var')       + ', 0d / 0d )';
 
-			attribute<string>  nummeraanduiding_id (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','nummeraanduiding_id') + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  nummeraanduiding_id (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','nummeraanduiding_id') + ', ' + quote(StringConstants/emptystring) + ')';
 
-			attribute<string>  bag_postcode        (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_postcode')       + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_straatnaam      (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_straatnaam')     + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_huisnummer      (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_huisnummer')     + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_huisletter      (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_huisletter')     + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_toevoeging      (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_toevoeging')     + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_woonplaatsnaam  (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_woonplaatsnaam') + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_postcode        (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_postcode')       + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_straatnaam      (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_straatnaam')     + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_huisnummer      (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_huisnummer')     + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_huisletter      (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_huisletter')     + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_toevoeging      (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_toevoeging')     + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_woonplaatsnaam  (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_woonplaatsnaam') + ', ' + quote(StringConstants/emptystring) + ')';
 
-			attribute<string>  bag_pand_footprint  (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_footprint') + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_vbo_oppervlak   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_vbo_oppervlak')  + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_pand_bouwjaar   (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_bouwjaar')  + ', ' + quote(StringConstants/emptystring) + ')';
-			attribute<string>  bag_pand_hoogte     (bronDomein) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_hoogte')    + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_pand_footprint  (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_footprint') + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_vbo_oppervlak   (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_vbo_oppervlak')  + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_pand_bouwjaar   (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_bouwjaar')  + ', ' + quote(StringConstants/emptystring) + ')';
+			attribute<string>  bag_pand_hoogte     (inputDomain) := = 'switch(' + replace(X_sub_expr,'meanX','bag_pand_hoogte')    + ', ' + quote(StringConstants/emptystring) + ')';
 
-			attribute<rdc_meter> geometry          (bronDomein) := point_xy(X,Y,rdc_meter);
+			attribute<rdc_meter> geometry          (inputDomain) := point_xy(X,Y,rdc_meter);
 
 			container buurt
 			{
-				attribute<cbs/buurt> buurt_rel (bronDomein) := point_in_polygon(geometry, cbs/buurt/Geometry);
-				attribute<string>    code      (bronDomein) := cbs/buurt/bu_code[buurt_rel];
-				attribute<string>    naam      (bronDomein) := cbs/buurt/bu_naam[buurt_rel];
+				attribute<cbs/buurt> buurt_rel (inputDomain) := point_in_polygon(geometry, cbs/buurt/Geometry);
+				attribute<string>    code      (inputDomain) := cbs/buurt/bu_code[buurt_rel];
+				attribute<string>    naam      (inputDomain) := cbs/buurt/bu_naam[buurt_rel];
 			}
 			container wijk
 			{
-				attribute<cbs/wijk> wijk_rel (bronDomein) := point_in_polygon(geometry, cbs/wijk/Geometry);
-				attribute<string>   code     (bronDomein) := cbs/wijk/wk_code[wijk_rel];
-				attribute<string>   naam     (bronDomein) := cbs/wijk/wk_naam[wijk_rel];
+				attribute<cbs/wijk> wijk_rel (inputDomain) := point_in_polygon(geometry, cbs/wijk/Geometry);
+				attribute<string>   code     (inputDomain) := cbs/wijk/wk_code[wijk_rel];
+				attribute<string>   naam     (inputDomain) := cbs/wijk/wk_naam[wijk_rel];
 			}
 			container gemeente
 			{
-				attribute<cbs/gemeente> gemeente_rel (bronDomein) := point_in_polygon(geometry, cbs/gemeente/Geometry);
-				attribute<string>       code         (bronDomein) := cbs/gemeente/gm_code[gemeente_rel];
-				attribute<string>       naam         (bronDomein) := cbs/gemeente/gm_naam[gemeente_rel];
+				attribute<cbs/gemeente> gemeente_rel (inputDomain) := point_in_polygon(geometry, cbs/gemeente/Geometry);
+				attribute<string>       code         (inputDomain) := cbs/gemeente/gm_code[gemeente_rel];
+				attribute<string>       naam         (inputDomain) := cbs/gemeente/gm_naam[gemeente_rel];
 			}
 
 			// QA: source records that ended up without a nummeraanduiding match
-			unit<uint32> geen_nummeraanduiding := select_with_attr_by_org_rel(koppel_aan_bag_aggregaties, strlen(trim(Analyse/koppel_aan_bag_aggregaties/nummeraanduiding_id)) < 2)
+			unit<uint32> geen_nummeraanduiding := select_with_attr_by_org_rel(link_to_bag_aggregations, strlen(trim(Analyse/link_to_bag_aggregations/nummeraanduiding_id)) < 2)
 			{
-				attribute<string> bron_adres         := Analyse/bron/TableChopper/BodyLines[org_rel];
+				attribute<string> input_address         := Analyse/input/TableChopper/BodyLines[org_rel];
 			}
 
 			container metainformatie
 			{
-				attribute<niveau>  niveau_rel            (bronDomein) := ../niveau_rel;
-				attribute<uint32>  niveau_count          (niveau)     := pcount(niveau_rel);
-				attribute<Float64> gemiddelde_aantal     (niveau)     := MakeDefined(mean(Float64(count), niveau_rel),0d);
-				attribute<Float64> gemiddelde_variantie  (niveau)     := MakeDefined(mean(var, niveau_rel),0d);
-				attribute<Float64> percentage            (niveau)     := Float64(niveau_count) / Float64(#(bronDomein)) * 100d;
-				attribute<Float64> percentage_cumulatief (niveau)     := cumulate(percentage);
-				attribute<string>  aggregatie_type       (niveau)     := niveau/aggtype == 0b ? 'mean' : 'median';
+				attribute<level>  level_rel            (inputDomain) := ../level_rel;
+				attribute<uint32>  level_count          (level)     := pcount(level_rel);
+				attribute<Float64> gemiddelde_aantal     (level)     := MakeDefined(mean(Float64(count), level_rel),0d);
+				attribute<Float64> gemiddelde_variantie  (level)     := MakeDefined(mean(var, level_rel),0d);
+				attribute<Float64> percentage            (level)     := Float64(level_count) / Float64(#(inputDomain)) * 100d;
+				attribute<Float64> percentage_cumulatief (level)     := cumulate(percentage);
+				attribute<string>  aggregatie_type       (level)     := level/aggtype == 0b ? 'mean' : 'median';
 
 				container bestand
 				{
 					parameter<string> Kopregel := 'code;omschrijving;aantal;gemiddeld aantal adressen;gemiddelde variantie;percentage;percentage cumulatief;aggregatie type';
 					parameter<string> Body     :=
 						AsList(
-							   string(niveau/code) + ';' + replace(niveau/volgorde,',',' ') + ';' + string(niveau_count)  + ';' +
+							   string(level/code) + ';' + replace(level/volgorde,',',' ') + ';' + string(level_count)  + ';' +
 							   string(gemiddelde_aantal) + ';' +  string(gemiddelde_variantie) + ';' + string(percentage) + ';' +  string(percentage_cumulatief) + ';' +
 							   string(aggregatie_type)
 							,StringConstants/newline
@@ -237,7 +237,7 @@ container Geocode
 				unit<uint32> buurt := CBS/buurt
 				{
 					attribute<uint32> nr_BAG_adressen            := pcount(BAG/adres/buurt_rel);
-					attribute<uint32> nr_geogecodeerde_adressen  := pcount(Analyse/koppel_aan_bag_aggregaties/buurt/buurt_rel);
+					attribute<uint32> nr_geogecodeerde_adressen  := pcount(Analyse/link_to_bag_aggregations/buurt/buurt_rel);
 
 					parameter<string> Kopregel := 'buurt_code;buurt_naam;aantal BAG adressen;aantal gegeocodeerde adressen';
 					parameter<string> Body     := AsList(BU_CODE + ';' + BU_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), StringConstants/newline);
@@ -250,7 +250,7 @@ container Geocode
 				unit<uint32> wijk := CBS/wijk
 				{
 					attribute<uint32> nr_BAG_adressen            := pcount(BAG/adres/wijk_rel);
-					attribute<uint32> nr_geogecodeerde_adressen  := pcount(Analyse/koppel_aan_bag_aggregaties/wijk/wijk_rel);
+					attribute<uint32> nr_geogecodeerde_adressen  := pcount(Analyse/link_to_bag_aggregations/wijk/wijk_rel);
 
 					parameter<string> Kopregel := 'wijk_code;wijk_naam;aantal BAG adressen;aantal gegeocodeerde adressen';
 					parameter<string> Body     := AsList(WK_CODE + ';' + WK_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), StringConstants/newline);
@@ -263,7 +263,7 @@ container Geocode
 				unit<uint32> gemeente := CBS/gemeente
 				{
 					attribute<uint32> nr_BAG_adressen            := pcount(BAG/adres/gemeente_rel);
-					attribute<uint32> nr_geogecodeerde_adressen  := pcount(Analyse/koppel_aan_bag_aggregaties/gemeente/gemeente_rel);
+					attribute<uint32> nr_geogecodeerde_adressen  := pcount(Analyse/link_to_bag_aggregations/gemeente/gemeente_rel);
 
 					parameter<string> Kopregel := 'gem_code;gem_naam;aantal BAG adressen;aantal gegeocodeerde adressen';
 					parameter<string> Body     := AsList(GM_CODE + ';' + GM_NAAM + ';' + string(nr_BAG_adressen) + ';' + string(nr_geogecodeerde_adressen), StringConstants/newline);
@@ -289,28 +289,29 @@ container Geocode
 
 			container impl
 			{
-				parameter<string> ScheidingsTeken := Analyse/bron/TableChopper/VeldScheidingsTeken;
-				parameter<string> Kopregel        := Analyse/bron/TableChopper/KopRegel + ScheidingsTeken + 'buurt_code'+ ScheidingsTeken +'wijk_code'+ ScheidingsTeken +'gemeente_code'+ ScheidingsTeken + AsList(extra_velden/naam, ScheidingsTeken);
+				parameter<string> ScheidingsTeken := Analyse/input/TableChopper/VeldScheidingsTeken;
+				parameter<string> Kopregel        := Analyse/input/TableChopper/KopRegel + ScheidingsTeken + 'buurt_code'+ ScheidingsTeken +'wijk_code'+ ScheidingsTeken +'gemeente_code'+ ScheidingsTeken + AsList(extra_velden/naam, ScheidingsTeken);
 
-				attribute<string> BodyExtra (Analyse/bronDomein) := = AsList(
+				attribute<string> BodyExtra (Analyse/inputDomain) := = AsList(
 					'MakeDefined(String(' + extra_velden/ItemNaam + '),StringConstants/emptystring)'
 				,	' + ' + quote(ScheidingsTeken) + ' + '
 				);
-				attribute<string> Body      (Analyse/bronDomein) :=
-					  Analyse/bron/TableChopper/BodyLines + ScheidingsTeken
-					+ MakeDefined(Analyse/koppel_aan_bag_aggregaties/buurt/code,StringConstants/emptystring) + ScheidingsTeken
-					+ MakeDefined(Analyse/koppel_aan_bag_aggregaties/wijk/code,StringConstants/emptystring) + ScheidingsTeken
-					+ MakeDefined(Analyse/koppel_aan_bag_aggregaties/gemeente/code,StringConstants/emptystring) + ScheidingsTeken
+				attribute<string> Body      (Analyse/inputDomain) :=
+					  Analyse/input/TableChopper/BodyLines + ScheidingsTeken
+					+ MakeDefined(Analyse/link_to_bag_aggregations/buurt/code,StringConstants/emptystring) + ScheidingsTeken
+					+ MakeDefined(Analyse/link_to_bag_aggregations/wijk/code,StringConstants/emptystring) + ScheidingsTeken
+					+ MakeDefined(Analyse/link_to_bag_aggregations/gemeente/code,StringConstants/emptystring) + ScheidingsTeken
 					+ BodyExtra;
 			}
 
-			parameter<string> bestand := impl/Kopregel + StringConstants/newline + AsList(impl/Body, StringConstants/newline) + StringConstants/newline
+			// >>> writes the geocoded result CSV to %LocalDataDir%/BAG-Tools/Result/<file>_Geocoded.csv <<<
+			parameter<string> result := impl/Kopregel + StringConstants/newline + AsList(impl/Body, StringConstants/newline) + StringConstants/newline
 			, StorageName       = "='%LocalDataDir%/BAG-Tools/Result/'+ModelParameters/FileToBeGeocoded+'_Geocoded.csv'"
 			, StorageType       = "str"
-			, ExplicitSuppliers = "Analyse/koppel_aan_bag_aggregaties/metainformatie/bestand/resultaat;"
-								  "Analyse/koppel_aan_bag_aggregaties/metainformatie/buurt/resultaat;"
-								  "Analyse/koppel_aan_bag_aggregaties/metainformatie/wijk/resultaat;"
-								  "Analyse/koppel_aan_bag_aggregaties/metainformatie/gemeente/resultaat;";
+			, ExplicitSuppliers = "Analyse/link_to_bag_aggregations/metainformatie/bestand/resultaat;"
+								  "Analyse/link_to_bag_aggregations/metainformatie/buurt/resultaat;"
+								  "Analyse/link_to_bag_aggregations/metainformatie/wijk/resultaat;"
+								  "Analyse/link_to_bag_aggregations/metainformatie/gemeente/resultaat;";
 		}
 
 		container GitImpl
