@@ -14,117 +14,117 @@
 
 container input
 {
-	parameter<string> BestandsNaam := ModelParameters/PathToFileToBeGeocoded+'/'+ModelParameters/FileToBeGeocoded+'.csv';
+	parameter<string> FileName := ModelParameters/PathToFileToBeGeocoded+'/'+ModelParameters/FileToBeGeocoded+'.csv';
 
 	container TableChopper // Deze wordt gebruikt ipv de gdal.vect storage manager omdat de TableChopper substantieel veel sneller is
 	{
 		parameter<uint32> nrElems      := strcount(FileData,StringConstants/newline)-1;
-		unit<uint32>      Domein       := range(uint32,0,nrElems);
+		unit<uint32>      Domain       := range(uint32,0,nrElems);
 
-		parameter<string> VeldScheidingsTeken := ModelParameters/VeldScheidingsTeken
-		,	IntegrityCheck = "VeldScheidingsTeken = ',' || VeldScheidingsTeken = ';'";
+		parameter<string> FieldSeparator := ModelParameters/FieldSeparator
+		,	IntegrityCheck = "FieldSeparator = ',' || FieldSeparator = ';'";
 
 		parameter<string> FileData
 		:	StorageType = "str"
-		,	StorageName = "=BestandsNaam";
+		,	StorageName = "=FileName";
 
-		parameter<string> KopRegel:= readLines(FileData, void, 0);
+		parameter<string> HeaderLine:= readLines(FileData, void, 0);
 		unit<uint32> TemplateDomain: nrofrows = 1, isHidden = "True";
 
-		container KopRegelVervangen := Templates/vervang_ongewenste_scheidingstekens(TemplateDomain, const(KopRegel,TemplateDomain,string));
+		container HeaderCleaned := Templates/strip_unwanted_separators(TemplateDomain, const(HeaderLine,TemplateDomain,string));
 
-		unit<uint32> Veld:= Range(UInt32, 0, strcount(KopRegelVervangen/resultaat[0], VeldScheidingsTeken)+1)
+		unit<uint32> Field:= Range(UInt32, 0, strcount(HeaderCleaned/result[0], FieldSeparator)+1)
 		{
-			attribute<string> RawName:= ReadArray(KopRegelVervangen/resultaat[0], Veld, string, 0);
+			attribute<string> RawName:= ReadArray(HeaderCleaned/result[0], Field, string, 0);
 			attribute<string> Name   := replace(RawName, '-','_');
 			attribute<string> NameLC := lowercase(Name);
 		}
 
-		attribute<string> BodyLines (Domein) := readLines(FileData, Domein, KopRegel/ReadPos);
-		container BodyLinesVervangen         := Templates/vervang_ongewenste_scheidingstekens(Domein, BodyLines);
+		attribute<string> BodyLines (Domain) := readLines(FileData, Domain, HeaderLine/ReadPos);
+		container BodyLinesCleaned         := Templates/strip_unwanted_separators(Domain, BodyLines);
 
 		container Data:=
 			for_each_nedv(
-				Veld/Name
+				Field/Name
 				,'ReadElems(
-					 BodyLinesVervangen/resultaat
+					 BodyLinesCleaned/result
 					,string
 					,'+MakeDefined(
-						 Veld/Name[sub_or_null(ID(Veld),1)]+'/ReadPos'
-						,'const(0,Domein)'
+						 Field/Name[sub_or_null(ID(Field),1)]+'/ReadPos'
+						,'const(0,Domain)'
 					)+'
 				)'
-				,Domein
+				,Domain
 				,string
 			);
 
-		// welke adresvelden (of synoniemen daarvan) zitten in het bronbestand? case-insensitief.
+		// welke AddressFields (of synoniemen daarvan) zitten in het bronbestand? case-insensitief.
 		// spaties/punten zijn al uit de kopregel gestript, '-' is vervangen door '_'
-		container VeldAanwezig
+		container FieldPresent
 		{
-			parameter<bool> straatnaam           := any(Veld/NameLC == 'straatnaam');
-			parameter<bool> straat               := any(Veld/NameLC == 'straat');
-			parameter<bool> huisnummer           := any(Veld/NameLC == 'huisnummer');
-			parameter<bool> huisnr               := any(Veld/NameLC == 'huisnr');
-			parameter<bool> huisletter           := any(Veld/NameLC == 'huisletter');
-			parameter<bool> huisnummertoevoeging := any(Veld/NameLC == 'huisnummertoevoeging');
-			parameter<bool> huistoevoeging       := any(Veld/NameLC == 'huistoevoeging');
-			parameter<bool> toevoeging           := any(Veld/NameLC == 'toevoeging');
-			parameter<bool> postcode             := any(Veld/NameLC == 'postcode');
-			parameter<bool> woonplaats           := any(Veld/NameLC == 'woonplaats');
-			parameter<bool> woonplaatsnaam       := any(Veld/NameLC == 'woonplaatsnaam');
-			parameter<bool> plaats               := any(Veld/NameLC == 'plaats');
+			parameter<bool> straatnaam           := any(Field/NameLC == 'straatnaam');
+			parameter<bool> straat               := any(Field/NameLC == 'straat');
+			parameter<bool> huisnummer           := any(Field/NameLC == 'huisnummer');
+			parameter<bool> huisnr               := any(Field/NameLC == 'huisnr');
+			parameter<bool> huisletter           := any(Field/NameLC == 'huisletter');
+			parameter<bool> huisnummertoevoeging := any(Field/NameLC == 'huisnummertoevoeging');
+			parameter<bool> huistoevoeging       := any(Field/NameLC == 'huistoevoeging');
+			parameter<bool> toevoeging           := any(Field/NameLC == 'toevoeging');
+			parameter<bool> postcode             := any(Field/NameLC == 'postcode');
+			parameter<bool> woonplaats           := any(Field/NameLC == 'woonplaats');
+			parameter<bool> woonplaatsnaam       := any(Field/NameLC == 'woonplaatsnaam');
+			parameter<bool> plaats               := any(Field/NameLC == 'plaats');
 		}
 
-		// canonieke adresvelden: per veld de eerst aanwezige bronkolom, anders leeg.
+		// canonieke AddressFields: per veld de eerst aanwezige bronkolom, anders empty.
 		// ontbrekende kolommen (bijv. geen huisletter) geven zo geen configuratiefout meer.
-		container adresvelden
-		:	IntegrityCheck = "VeldAanwezig/postcode || VeldAanwezig/straatnaam || VeldAanwezig/straat || VeldAanwezig/woonplaats || VeldAanwezig/woonplaatsnaam" // geen enkel adresveld herkend in de kopregel
+		container AddressFields
+		:	IntegrityCheck = "FieldPresent/postcode || FieldPresent/straatnaam || FieldPresent/straat || FieldPresent/woonplaats || FieldPresent/woonplaatsnaam" // geen enkel adresveld herkend in de kopregel
 		{
-			parameter<string> leeg := 'const('''', Domein)';
+			parameter<string> empty := 'const('''', Domain)';
 
-			attribute<string> straatnaam (Domein) := = switch(case(VeldAanwezig/straatnaam, 'Data/straatnaam'), case(VeldAanwezig/straat, 'Data/straat'), leeg);
-			attribute<string> huisnummer (Domein) := = switch(case(VeldAanwezig/huisnummer, 'Data/huisnummer'), case(VeldAanwezig/huisnr, 'Data/huisnr'), leeg);
-			attribute<string> huisletter (Domein) := = VeldAanwezig/huisletter ? 'Data/huisletter' : leeg;
-			attribute<string> toevoeging (Domein) := =
+			attribute<string> straatnaam (Domain) := = switch(case(FieldPresent/straatnaam, 'Data/straatnaam'), case(FieldPresent/straat, 'Data/straat'), empty);
+			attribute<string> huisnummer (Domain) := = switch(case(FieldPresent/huisnummer, 'Data/huisnummer'), case(FieldPresent/huisnr, 'Data/huisnr'), empty);
+			attribute<string> huisletter (Domain) := = FieldPresent/huisletter ? 'Data/huisletter' : empty;
+			attribute<string> toevoeging (Domain) := =
 				switch(
-					 case(VeldAanwezig/huisnummertoevoeging, 'Data/huisnummertoevoeging')
-					,case(VeldAanwezig/toevoeging          , 'Data/toevoeging')
-					,case(VeldAanwezig/huistoevoeging      , 'Data/huistoevoeging')
-					,leeg
+					 case(FieldPresent/huisnummertoevoeging, 'Data/huisnummertoevoeging')
+					,case(FieldPresent/toevoeging          , 'Data/toevoeging')
+					,case(FieldPresent/huistoevoeging      , 'Data/huistoevoeging')
+					,empty
 				);
-			attribute<string> postcode   (Domein) := = VeldAanwezig/postcode ? 'Data/postcode' : leeg;
-			attribute<string> woonplaats (Domein) := =
+			attribute<string> postcode   (Domain) := = FieldPresent/postcode ? 'Data/postcode' : empty;
+			attribute<string> woonplaats (Domain) := =
 				switch(
-					 case(VeldAanwezig/woonplaats    , 'Data/woonplaats')
-					,case(VeldAanwezig/woonplaatsnaam, 'Data/woonplaatsnaam')
-					,case(VeldAanwezig/plaats        , 'Data/plaats')
-					,leeg
+					 case(FieldPresent/woonplaats    , 'Data/woonplaats')
+					,case(FieldPresent/woonplaatsnaam, 'Data/woonplaatsnaam')
+					,case(FieldPresent/plaats        , 'Data/plaats')
+					,empty
 				);
 
 			// BAG-conventie: huistoevoeging = huisletter + toevoeging aan elkaar, zie BAG.dms
-			attribute<string> huistoevoeging (Domein) := huisletter + toevoeging;
+			attribute<string> huistoevoeging (Domain) := huisletter + toevoeging;
 		}
 
-		container postcode_org:= Templates/uniformeer_string(TableChopper/Domein, substr(adresvelden/postcode, 0, 6));
-		attribute<bool>   isMissingPC          (TableChopper/Domein):= isDefined(rlookup(postcode_org/resultaat,replacements/postcodes_missend/label));
-		attribute<string> postcode             (TableChopper/Domein):= isMissingPC ? string( 0 / 0) : postcode_org/resultaat;
+		container postcode_raw:= Templates/normalize_string(TableChopper/Domain, substr(AddressFields/postcode, 0, 6));
+		attribute<bool>   isMissingPC          (TableChopper/Domain):= isDefined(rlookup(postcode_raw/result,replacements/missing_postcodes/label));
+		attribute<string> postcode             (TableChopper/Domain):= isMissingPC ? string( 0 / 0) : postcode_raw/result;
 	}
 
 	// hiermee worden de bronvelden vertaald in de BAG adres veldnamen
-	container straatnaam     := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/straatnaam);
-	container huisnummer     := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/huisnummer);
-	container huistoevoeging := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/huistoevoeging);
-	container woonplaatsnaam := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/woonplaats);
-	container postcode       := Templates/uniformeer_string(TableChopper/Domein, TableChopper/adresvelden/postcode);
+	container straatnaam     := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/straatnaam);
+	container huisnummer     := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/huisnummer);
+	container huistoevoeging := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/huistoevoeging);
+	container woonplaatsnaam := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/woonplaats);
+	container postcode       := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/postcode);
 
 	container postcode5
 	{
-		attribute<string> resultaat (TableChopper/Domein) := substr(postcode/resultaat,0,5);
+		attribute<string> result (TableChopper/Domain) := substr(postcode/result,0,5);
 	}
 	container postcode4
 	{
-		attribute<string> resultaat (TableChopper/Domein) := substr(postcode/resultaat,0,4);
+		attribute<string> result (TableChopper/Domain) := substr(postcode/result,0,4);
 	}
 	
 	// OPTIONAL / not wired into the default flow: splits a single combined address
@@ -134,18 +134,18 @@ container input
 	{
 		parameter<uint32> maxvalue := 9999999;
 
-		attribute<string> adres            (TableChopper/Domein):= TableChopper/Data/adres;
-		attribute<string> adres_vanaf_pos2 (TableChopper/Domein):= substr(adres,2,strlen(adres)-2); // om te voorkomen dat je in de 1e jan steenstraat op zoek gaat naar het eerste numerieke karakter
-		attribute<uint32> huisnr_toev_pos  (TableChopper/Domein):= 
+		attribute<string> adres            (TableChopper/Domain):= TableChopper/Data/adres;
+		attribute<string> adres_vanaf_pos2 (TableChopper/Domain):= substr(adres,2,strlen(adres)-2); // om te voorkomen dat je in de 1e jan steenstraat op zoek gaat naar het eerste numerieke karakter
+		attribute<uint32> huisnr_toev_pos  (TableChopper/Domain):= 
 			min_elem(
 				 MakeDefined(strpos(adres_vanaf_pos2,'0'),maxvalue),MakeDefined(strpos(adres_vanaf_pos2,'1'),maxvalue),MakeDefined(strpos(adres_vanaf_pos2,'2'),maxvalue)
 				,MakeDefined(strpos(adres_vanaf_pos2,'3'),maxvalue),MakeDefined(strpos(adres_vanaf_pos2,'4'),maxvalue),MakeDefined(strpos(adres_vanaf_pos2,'5'),maxvalue)
 				,MakeDefined(strpos(adres_vanaf_pos2,'6'),maxvalue),MakeDefined(strpos(adres_vanaf_pos2,'7'),maxvalue),MakeDefined(strpos(adres_vanaf_pos2,'8'),maxvalue)
 				,MakeDefined(strpos(adres_vanaf_pos2,'9'),maxvalue)
 			);
-		attribute<string> straatnaam     (TableChopper/Domein):= substr(adres,0, huisnr_toev_pos + 2);
-		attribute<string> nummer_toev    (TableChopper/Domein):= substr(adres_vanaf_pos2, huisnr_toev_pos, strlen(adres_vanaf_pos2) - huisnr_toev_pos);
-		attribute<string> huisnummer     (TableChopper/Domein):= string(uint32(nummer_toev));
-		attribute<string> huistoevoeging (TableChopper/Domein):= replace(substr(nummer_toev, strlen(huisnummer), strlen(nummer_toev) - strlen(huisnummer)),'-','');
+		attribute<string> straatnaam     (TableChopper/Domain):= substr(adres,0, huisnr_toev_pos + 2);
+		attribute<string> nummer_toev    (TableChopper/Domain):= substr(adres_vanaf_pos2, huisnr_toev_pos, strlen(adres_vanaf_pos2) - huisnr_toev_pos);
+		attribute<string> huisnummer     (TableChopper/Domain):= string(uint32(nummer_toev));
+		attribute<string> huistoevoeging (TableChopper/Domain):= replace(substr(nummer_toev, strlen(huisnummer), strlen(nummer_toev) - strlen(huisnummer)),'-','');
 	}
 }

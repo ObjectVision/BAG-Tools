@@ -14,14 +14,14 @@
 container Templates
 :	using = "ModelParameters;Units;Classifications;Geography;SourceData"
 {
-	Template uniformeer_string
+	Template normalize_string
 	{
 		// begin case parameters
 		unit<uint32> domain;
 		attribute<string> txt (domain);
 		// eind case parameters
 
-		attribute<string> vervangen (domain) :=
+		attribute<string> replaced (domain) :=
 			replace(
 				lowercase(from_utf(txt))
 				,StringConstants/space ,StringConstants/emptystring
@@ -30,56 +30,56 @@ container Templates
 				,StringConstants/point ,StringConstants/emptystring
 			);
 
-		attribute<string> resultaat (domain) := replace_value(vervangen, StringConstants/emptystring, string(0/0));
+		attribute<string> result (domain) := replace_value(replaced, StringConstants/emptystring, string(0/0));
 	}
 
-	Template uniformeer_string_straatnaam
+	Template normalize_streetname
 	{
 		// begin case parameters
 		unit<uint32> domain;
 		attribute<string> txt (domain);
 		// eind case parameters
 
-		container vervangstappen :=
+		container replacement_steps :=
 			for_each_ne(
 				 'step_' + replacements/sets/number_str
-				,'vervang(
+				,'replace_step(
 					domain ,
-					 step_' + string(id(replacements/sets)) + '/staptype/resultaat ,'
+					 step_' + string(id(replacements/sets)) + '/step_type/result ,'
 					+ replacements/sets/number_str   +  ' ,'
 					+ string(replacements/sets/type) +  ' ,'
 					+ quote(string(replacements/sets/values))  +  ' ,'
-					+ string(replacements/sets/lengte_TeVervangen) +
+					+ string(replacements/sets/replace_length) +
 				')'
 			)
 		{
 			container step_0
 			{
-				container staptype
+				container step_type
 				{
-					attribute<string> resultaat (domain) := lowercase(from_utf(txt));
+					attribute<string> result (domain) := lowercase(from_utf(txt));
 				}
-				container ter_controle
+				container check
 				{
-					attribute<bool> is_aangepast (domain) := txt <> staptype/resultaat;
-					unit<uint32> aangepast := select_with_attr_by_org_rel(staptype, is_aangepast)
+					attribute<bool> is_changed (domain) := txt <> step_type/result;
+					unit<uint32> changed := select_with_attr_by_org_rel(step_type, is_changed)
 					{
 						attribute<string> voor := txt[org_rel];
-						attribute<string> na   := resultaat;
+						attribute<string> na   := result;
 					}
-					unit<uint32> aangepast_uniek := unique(aangepast/voor)
+					unit<uint32> changed_unique := unique(changed/voor)
 					{
 						attribute<string> voor := values;
-						attribute<string> na   := rjoin(values, aangepast/voor, aangepast/na);
+						attribute<string> na   := rjoin(values, changed/voor, changed/na);
 					}
 				}
 			}
 		}
-		attribute<string> resultaat0  (domain) := = 'replace_value(vervangstappen/step_' + string(max(replacements/sets/number)) + '/staptype/resultaat , StringConstants/emptystring, string(0/0))';
-		attribute<string> resultaat   (domain) := replace(resultaat0, ';', '');
+		attribute<string> result0  (domain) := = 'replace_value(replacement_steps/step_' + string(max(replacements/sets/number)) + '/step_type/result , StringConstants/emptystring, string(0/0))';
+		attribute<string> result   (domain) := replace(result0, ';', '');
 	}
 
-	Template vervang
+	Template replace_step
 	{
 		// begin case parameters
 		unit<uint32>                 domain;
@@ -87,79 +87,79 @@ container Templates
 		parameter<uint32>            number;
 		parameter<replacements/type> type;
 		parameter<string>            set;
-		parameter<uint32>            lengte_TeVervangen;
+		parameter<uint32>            replace_length;
 
 		// eind case parameters
 		unit<uint32> lookup_table := select_with_attr_by_cond(replacements/table, replacements/table/set == set);
 
-		parameter<string> staptype_expr :=
+		parameter<string> step_type_expr :=
 			switch(
-				 case(type == 1[replacements/type],'vervang_start(domain, src, number, lookup_table, lengte_TeVervangen)')
-				,case(type == 2[replacements/type],'vervang_einde(domain, src, number, lookup_table, lengte_TeVervangen)')
-				,'vervang_alle(domain, src, number)'
+				 case(type == 1[replacements/type],'replace_prefix(domain, src, number, lookup_table, replace_length)')
+				,case(type == 2[replacements/type],'replace_suffix(domain, src, number, lookup_table, replace_length)')
+				,'replace_anywhere(domain, src, number)'
 			);
 
-		container staptype := =staptype_expr;
+		container step_type := =step_type_expr;
 
-		container ter_controle
+		container check
 		{
-			attribute<bool> is_aangepast (domain) := src <> staptype/resultaat;
-			unit<uint32> aangepast := select_with_attr_by_org_rel(staptype, is_aangepast)
+			attribute<bool> is_changed (domain) := src <> step_type/result;
+			unit<uint32> changed := select_with_attr_by_org_rel(step_type, is_changed)
 			{
 				attribute<string> voor := src[org_rel];
-				attribute<string> na   := resultaat[org_rel];
+				attribute<string> na   := result[org_rel];
 			}
-			unit<uint32> aangepast_uniek := Unique(aangepast/voor)
+			unit<uint32> changed_unique := Unique(changed/voor)
 			{
 				attribute<string> voor := values;
-				attribute<string> na   := rjoin(values, aangepast/voor, aangepast/na);
+				attribute<string> na   := rjoin(values, changed/voor, changed/na);
 			}
 		}
 	}
 
-	Template vervang_start
+	Template replace_prefix
 	{
 		// begin case parameters
 		unit<uint32>      domain;
 		attribute<string> src (domain);
 		parameter<uint32> number;
 		unit<uint32>      lookup_table;
-		parameter<uint32> lengte_TeVervangen;
+		parameter<uint32> replace_length;
 		// eind case parameters
 
 		attribute<uint32> src_len             (domain) := strlen(src);
-		attribute<int32>  src_rest_len_src    (domain) := int32(src_len) - int32(lengte_TeVervangen);
+		attribute<int32>  src_rest_len_src    (domain) := int32(src_len) - int32(replace_length);
 		attribute<uint32> src_rest_len        (domain) := uint32(max_elem(0i, src_rest_len_src));
 
-		attribute<string> src_start           (domain) := substr(src,0,lengte_TeVervangen);
-		attribute<string> src_rest            (domain) := substr(src,lengte_TeVervangen, src_rest_len);
+		attribute<string> src_start           (domain) := substr(src,0,replace_length);
+		attribute<string> src_rest            (domain) := substr(src,replace_length, src_rest_len);
 
-		attribute<string> src_start_vervangen (domain) := MakeDefined(rjoin(src_start, lookup_table/TeVervangen, lookup_table/VervangenDoor),src_start);
-		attribute<string> resultaat           (domain) := src_start_vervangen + src_rest;
+		attribute<string> src_start_replaced (domain) := MakeDefined(rjoin(src_start, lookup_table/to_replace, lookup_table/replace_by),src_start);
+		attribute<string> result           (domain) := src_start_replaced + src_rest;
 	}
 
-	Template vervang_einde
+	Template replace_suffix
 	{
 		// begin case parameters
 		unit<uint32>      domain;
 		attribute<string> src (domain);
 		parameter<uint32> number;
 		unit<uint32>      lookup_table;
-		parameter<uint32> lengte_TeVervangen;
+		parameter<uint32> replace_length;
 		// eind case parameters
 
 		attribute<uint32> src_len             (domain) := strlen(src);
-		attribute<int32>  src_rest_len_src    (domain) := int32(src_len) - int32(lengte_TeVervangen);
+		attribute<int32>  src_rest_len_src    (domain) := int32(src_len) - int32(replace_length);
 		attribute<uint32> src_rest_len        (domain) := uint32(max_elem(0i, src_rest_len_src));
 
-		attribute<string> src_einde           (domain) := substr(src,src_rest_len,lengte_TeVervangen);
+		attribute<string> src_end           (domain) := substr(src,src_rest_len,replace_length);
 		attribute<string> src_rest            (domain) := substr(src,0,src_rest_len);
 
-		attribute<string> src_einde_vervangen (domain) := MakeDefined(rjoin(src_einde, lookup_table/TeVervangen, lookup_table/VervangenDoor),src_einde);
-		attribute<string> resultaat           (domain) := src_rest + src_einde_vervangen;
+		attribute<string> src_end_replaced (domain) := MakeDefined(rjoin(src_end, lookup_table/to_replace, lookup_table/replace_by),src_end);
+		attribute<string> result           (domain) := src_rest + src_end_replaced;
 	}
 
-	Template vervang_alle
+	Template replace_anywhere
 	{
 		// begin case parameters
 		unit<uint32>      domain;
@@ -167,11 +167,11 @@ container Templates
 		parameter<uint32> number;
 		// eind case parameters
 
-		parameter<string> replace_part_expr  := AsItemList(quote(lookup_table/TeVervangen) + ',' + quote(lookup_table/VervangenDoor));
-		attribute<string> resultaat (domain) := ='replace(src, ' + replace_part_expr +')';
+		parameter<string> replace_part_expr  := AsItemList(quote(lookup_table/to_replace) + ',' + quote(lookup_table/replace_by));
+		attribute<string> result (domain) := ='replace(src, ' + replace_part_expr +')';
 	}
 
-	Template maak_aggregatie_entiteit
+	Template make_aggregation_entity
 	{
 		// begin case parameters
 		parameter<string> code;
@@ -179,47 +179,47 @@ container Templates
 		parameter<uint8>  aggtype; // 0 = mean, 1= median 
 		// eind case parameters
 
-		attribute<domein> domein_rel (BAG/adres):= rlookup(key, domein/values);
+		attribute<domain> domain_rel (BAG/adres):= rlookup(key, domain/values);
 
-		unit<uint32> domein := unique(key), FreeData = "False"
+		unit<uint32> domain := unique(key), FreeData = "False"
 		{
-			attribute<Float64>  meanX    := mean(BAG/adres/X , domein_rel);
-			attribute<Float64>  meanY    := mean(BAG/adres/Y , domein_rel);
-			attribute<Float64>  medianX  := rth_element(BAG/adres/X ,0.5f, domein_rel);
-			attribute<Float64>  medianY  := rth_element(BAG/adres/Y ,0.5f, domein_rel);
+			attribute<Float64>  meanX    := mean(BAG/adres/X , domain_rel);
+			attribute<Float64>  meanY    := mean(BAG/adres/Y , domain_rel);
+			attribute<Float64>  medianX  := rth_element(BAG/adres/X ,0.5f, domain_rel);
+			attribute<Float64>  medianY  := rth_element(BAG/adres/Y ,0.5f, domain_rel);
 
-			attribute<uint32>   countX   := count(BAG/adres/X, domein_rel);
-			attribute<Float64>  varX     := var(BAG/adres/X  , domein_rel);
-			attribute<Float64>  varY     := var(BAG/adres/Y  , domein_rel);
+			attribute<uint32>   countX   := count(BAG/adres/X, domain_rel);
+			attribute<Float64>  varX     := var(BAG/adres/X  , domain_rel);
+			attribute<Float64>  varY     := var(BAG/adres/Y  , domain_rel);
 			attribute<Float64>  var      := varX + varY;
 			attribute<rdc_meter> geometry := =aggtype == 0b ? 'point_xy(meanX,meanY,rdc_meter)' : 'point_xy(medianX,medianY,rdc_meter)';
 
-			attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_postcode        := min(BAG/adres/postcode      , domein_rel) == max(BAG/adres/postcode      , domein_rel) ? min(BAG/adres/postcode      , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_straatnaam      := min(BAG/adres/straatnaam    , domein_rel) == max(BAG/adres/straatnaam    , domein_rel) ? min(BAG/adres/straatnaam    , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_huisnummer      := min(BAG/adres/huisnummer_str, domein_rel) == max(BAG/adres/huisnummer_str, domein_rel) ? min(BAG/adres/huisnummer_str, domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_huisletter      := min(BAG/adres/huisletter    , domein_rel) == max(BAG/adres/huisletter    , domein_rel) ? min(BAG/adres/huisletter    , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_toevoeging      := min(BAG/adres/toevoeging    , domein_rel) == max(BAG/adres/toevoeging    , domein_rel) ? min(BAG/adres/toevoeging    , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_woonplaatsnaam  := min(BAG/adres/woonplaats    , domein_rel) == max(BAG/adres/woonplaats    , domein_rel) ? min(BAG/adres/woonplaats    , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_pand_footprint  := min(BAG/adres/pand_footprint, domein_rel) == max(BAG/adres/pand_footprint, domein_rel) ? min(BAG/adres/pand_footprint, domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_vbo_oppervlak   := min(BAG/adres/vbo_oppervlak , domein_rel) == max(BAG/adres/vbo_oppervlak , domein_rel) ? min(BAG/adres/vbo_oppervlak , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_pand_bouwjaar   := min(BAG/adres/pand_bouwjaar , domein_rel) == max(BAG/adres/pand_bouwjaar , domein_rel) ? min(BAG/adres/pand_bouwjaar , domein_rel) : StringConstants/emptystring;
-			attribute<string>  bag_pand_hoogte     := min(BAG/adres/pand_hoogte   , domein_rel) == max(BAG/adres/pand_hoogte   , domein_rel) ? min(BAG/adres/pand_hoogte   , domein_rel) : StringConstants/emptystring;
+			attribute<string>  nummeraanduiding_id := countX == 1 ? first(BAG/adres/nummeraanduiding_id , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_postcode        := min(BAG/adres/postcode      , domain_rel) == max(BAG/adres/postcode      , domain_rel) ? min(BAG/adres/postcode      , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_straatnaam      := min(BAG/adres/straatnaam    , domain_rel) == max(BAG/adres/straatnaam    , domain_rel) ? min(BAG/adres/straatnaam    , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_huisnummer      := min(BAG/adres/huisnummer_str, domain_rel) == max(BAG/adres/huisnummer_str, domain_rel) ? min(BAG/adres/huisnummer_str, domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_huisletter      := min(BAG/adres/huisletter    , domain_rel) == max(BAG/adres/huisletter    , domain_rel) ? min(BAG/adres/huisletter    , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_toevoeging      := min(BAG/adres/toevoeging    , domain_rel) == max(BAG/adres/toevoeging    , domain_rel) ? min(BAG/adres/toevoeging    , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_woonplaatsnaam  := min(BAG/adres/woonplaats    , domain_rel) == max(BAG/adres/woonplaats    , domain_rel) ? min(BAG/adres/woonplaats    , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_pand_footprint  := min(BAG/adres/pand_footprint, domain_rel) == max(BAG/adres/pand_footprint, domain_rel) ? min(BAG/adres/pand_footprint, domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_vbo_oppervlak   := min(BAG/adres/vbo_oppervlak , domain_rel) == max(BAG/adres/vbo_oppervlak , domain_rel) ? min(BAG/adres/vbo_oppervlak , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_pand_bouwjaar   := min(BAG/adres/pand_bouwjaar , domain_rel) == max(BAG/adres/pand_bouwjaar , domain_rel) ? min(BAG/adres/pand_bouwjaar , domain_rel) : StringConstants/emptystring;
+			attribute<string>  bag_pand_hoogte     := min(BAG/adres/pand_hoogte   , domain_rel) == max(BAG/adres/pand_hoogte   , domain_rel) ? min(BAG/adres/pand_hoogte   , domain_rel) : StringConstants/emptystring;
 
 			attribute<string> PC      := uppercase(values);
 			attribute<string> GM_CODE := CBS/gemeente/GM_CODE[point_in_polygon(geometry, CBS/gemeente/geometry)];
 		}
 	}
 
-	Template vervang_ongewenste_scheidingstekens
+	Template strip_unwanted_separators
 	{
 		// begin case parameters
 		unit<uint32> domain;
 		attribute<string> att (domain);
 		// eind case parameters
 
-		parameter<string> VeldScheidingsTeken_niet_ingebruik:= Analyse/input/TableChopper/VeldScheidingsTeken = ';' ? ',' : ';';
-		attribute<string> resultaat (domain):=
+		parameter<string> FieldSeparator_not_in_use:= Analyse/input/TableChopper/FieldSeparator = ';' ? ',' : ';';
+		attribute<string> result (domain):=
 			replace(
 				replace(
 					att
@@ -229,29 +229,29 @@ container Templates
 					,StringConstants/tab   ,StringConstants/emptystring
 					,StringConstants/point ,StringConstants/emptystring
 				)
-				, VeldScheidingsTeken_niet_ingebruik, '_'
+				, FieldSeparator_not_in_use, '_'
 			)
 		;
 	}
 	
-	template datum_selectie
+	template date_selection
 	{
 		// begin case parameters
 		unit<uint32>              domain;
-		parameter<int32>          prik_datum;
-		attribute<bool>           overig_filter (domain);
+		parameter<int32>          snapshot_date;
+		attribute<bool>           other_filter (domain);
 		// einde case parameters
 
-		attribute<bool> WasGestart   (domain) := domain/meta/BEGINDATUM <= prik_datum;
-		attribute<bool> WasBeeindigd (domain) := domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
+		attribute<bool> HasStarted   (domain) := domain/meta/BEGINDATUM <= snapshot_date;
+		attribute<bool> HasEnded (domain) := domain/meta/EINDDATUM  <= snapshot_date && domain/meta/EINDDATUM > 0i;
 
-		attribute<bool> conditie     (domain) := ='WasGestart && not(WasBeeindigd) && domain/Meta/status_sel && overig_filter';
+		attribute<bool> condition     (domain) := ='HasStarted && not(HasEnded) && domain/Meta/status_sel && other_filter';
 
-		unit<uint32> selectie := select_with_attr_by_org_rel(import, conditie)
+		unit<uint32> selection := select_with_attr_by_org_rel(import, condition)
 		, DialogType = "Map"
 		, DialogData = "geometry_mm"
 		{
-			container meta := collect_attr_by_org_rel(import/meta, selectie, selectie/org_rel);
+			container meta := collect_attr_by_org_rel(import/meta, selection, selection/org_rel);
 		}
 	}
 	

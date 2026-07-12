@@ -34,11 +34,11 @@ container BAG : using = "units;classifications"
 		// }
 		// unit<uint32> adres_met_xy := select_with_attr_by_cond(adres, isDefined(adres/geometry));
 
-		container straatnaam     := Templates/uniformeer_string_straatnaam(Adres, Adres/straatnaam);
-		container postcode       := Templates/uniformeer_string(Adres, Adres/postcode);
-		container huisnummer     := Templates/uniformeer_string(Adres, string(Adres/huisnummer));
-		container huistoevoeging := Templates/uniformeer_string(Adres, Adres/huisletter + Adres/toevoeging);
-		container woonplaatsnaam := Templates/uniformeer_string(Adres, Adres/woonplaats);
+		container straatnaam     := Templates/normalize_streetname(Adres, Adres/straatnaam);
+		container postcode       := Templates/normalize_string(Adres, Adres/postcode);
+		container huisnummer     := Templates/normalize_string(Adres, string(Adres/huisnummer));
+		container huistoevoeging := Templates/normalize_string(Adres, Adres/huisletter + Adres/toevoeging);
+		container woonplaatsnaam := Templates/normalize_string(Adres, Adres/woonplaats);
 		
 		unit<uint32> Adres := nummeraanduiding/result;
 		
@@ -67,32 +67,32 @@ container BAG : using = "units;classifications"
 				container meta := Templates/meta_src_template(., nummeraanduiding_status);
 			}
 
-			container datum_selectie:= ='Templates/datum_selectie(import, int32(ModelParameters/BAG_date), Import/IsInNederland)'
+			container date_selection:= ='Templates/date_selection(import, int32(ModelParameters/BAG_date), Import/IsInNederland)'
 			{
-				unit<uint32> selectie
+				unit<uint32> selection
 				{
 					attribute<result> result_rel := rlookup(identificatie, result/identificatie);
 					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 				}
 			}
 
-			unit<uint32> result := unique(datum_selectie/selectie/identificatie)
+			unit<uint32> result := unique(date_selection/selection/identificatie)
 			{
-				attribute<uint32> count := pcount(datum_selectie/selectie/result_rel), DisableStorage = "True";
+				attribute<uint32> count := pcount(date_selection/selection/result_rel), DisableStorage = "True";
 
 				attribute<string>   identificatie           := values;
-				attribute<int32>    huisnummer              := last(datum_selectie/selectie/huisnummer              , datum_selectie/selectie/result_rel);
+				attribute<int32>    huisnummer              := last(date_selection/selection/huisnummer              , date_selection/selection/result_rel);
 				attribute<string>   huisnummer_str          := string(huisnummer);
-				attribute<string>   huisletter              := last(datum_selectie/selectie/huisletter              , datum_selectie/selectie/result_rel);
-				attribute<string>   toevoeging              := last(datum_selectie/selectie/toevoeging              , datum_selectie/selectie/result_rel);
-				attribute<string>   postcode                := last(datum_selectie/selectie/postcode                , datum_selectie/selectie/result_rel);
-				attribute<string>   woonplaats              := last(datum_selectie/selectie/woonplaats              , datum_selectie/selectie/result_rel);
-				attribute<string>   straatnaam              := last(datum_selectie/selectie/straatnaam              , datum_selectie/selectie/result_rel);
-				attribute<rdc_meter> geometry                := last(datum_selectie/selectie/geometry                , datum_selectie/selectie/result_rel);
-				attribute<string>   pand_footprint          := string(last(datum_selectie/selectie/pand_footprint   , datum_selectie/selectie/result_rel));
-				attribute<string>   pand_bouwjaar           := string(last(datum_selectie/selectie/pand_bouwjaar    , datum_selectie/selectie/result_rel));
-				attribute<string>   pand_hoogte             := string(last(datum_selectie/selectie/pand_hoogte      , datum_selectie/selectie/result_rel));
-				attribute<string>   vbo_oppervlak           := string(last(datum_selectie/selectie/vbo_oppervlak    , datum_selectie/selectie/result_rel));
+				attribute<string>   huisletter              := last(date_selection/selection/huisletter              , date_selection/selection/result_rel);
+				attribute<string>   toevoeging              := last(date_selection/selection/toevoeging              , date_selection/selection/result_rel);
+				attribute<string>   postcode                := last(date_selection/selection/postcode                , date_selection/selection/result_rel);
+				attribute<string>   woonplaats              := last(date_selection/selection/woonplaats              , date_selection/selection/result_rel);
+				attribute<string>   straatnaam              := last(date_selection/selection/straatnaam              , date_selection/selection/result_rel);
+				attribute<rdc_meter> geometry                := last(date_selection/selection/geometry                , date_selection/selection/result_rel);
+				attribute<string>   pand_footprint          := string(last(date_selection/selection/pand_footprint   , date_selection/selection/result_rel));
+				attribute<string>   pand_bouwjaar           := string(last(date_selection/selection/pand_bouwjaar    , date_selection/selection/result_rel));
+				attribute<string>   pand_hoogte             := string(last(date_selection/selection/pand_hoogte      , date_selection/selection/result_rel));
+				attribute<string>   vbo_oppervlak           := string(last(date_selection/selection/vbo_oppervlak    , date_selection/selection/result_rel));
 			}
 			
 			unit<uint8> nummeraanduiding_status : nrofrows = 3
@@ -249,12 +249,12 @@ container BAG : using = "units;classifications"
 
 	unit<uint32> adres:= impl/Adres, FreeData = "False"
 	{
-		attribute<string> straatnaam          := impl/straatnaam/resultaat;
-		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,replacements/postcodes_missend/label));
-		attribute<string> postcode            := isMissingPC ? string( 0 / 0) : impl/postcode/resultaat;
-		attribute<string> huisnummer          := impl/huisnummer/resultaat;
-		attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/resultaat, StringConstants/legehuistoevoeging);
-		attribute<string> woonplaatsnaam      := impl/woonplaatsnaam/resultaat;
+		attribute<string> straatnaam          := impl/straatnaam/result;
+		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/result,replacements/missing_postcodes/label));
+		attribute<string> postcode            := isMissingPC ? string( 0 / 0) : impl/postcode/result;
+		attribute<string> huisnummer          := impl/huisnummer/result;
+		attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/result, StringConstants/legehuistoevoeging);
+		attribute<string> woonplaatsnaam      := impl/woonplaatsnaam/result;
 
 		attribute<string> postcode5           := substr(postcode,0,5);
 		attribute<string> postcode4           := substr(postcode,0,4);
@@ -285,6 +285,6 @@ container BAG : using = "units;classifications"
 	container aggregaties :=
 		for_each_ne(
 			 step/naam
-			,'Templates/maak_aggregatie_entiteit(' + quote(string(step/code)) + ', adres/keys/' + step/naam + ',' + string(step/aggtype) + 'b)'
+			,'Templates/make_aggregation_entity(' + quote(string(step/code)) + ', adres/keys/' + step/naam + ',' + string(step/aggtype) + 'b)'
 		);
 }

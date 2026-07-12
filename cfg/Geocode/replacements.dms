@@ -13,7 +13,7 @@
 
 container replacements
 {
-	unit<uint32> postcodes_missend: nrofrows = 3, source = "https://nl.wikipedia.org/wiki/Postcode#Trivia"
+	unit<uint32> missing_postcodes: nrofrows = 3, source = "https://nl.wikipedia.org/wiki/Postcode#Trivia"
 	{
 		attribute<string> label :['9999xx','9999za','9999zz'];
 	}
@@ -30,7 +30,7 @@ container replacements
 		unit<uint32> elem := range(uint32, 0, nrAttr * #table)
 		{
 			attribute<string> values: [ 
-			//'type','TeVervangen','VervangenDoor'
+			//'type','to_replace','replace_by'
 			  '1','burg ','burgemeester '
 			 ,'1','burg.','burgemeester' 
 			 ,'1','ds ','dominee '
@@ -112,11 +112,11 @@ container replacements
 		attribute<.>                 id                 := id(.);
 
 		attribute<replacements/type> type               := value(elem/values[value(id * nrAttr + 0, elem)],replacements/type);
-		attribute<string>            TeVervangen        :=       elem/values[value(id * nrAttr + 1, elem)];
-		attribute<string>            VervangenDoor      :=       elem/values[value(id * nrAttr + 2, elem)];
+		attribute<string>            to_replace        :=       elem/values[value(id * nrAttr + 1, elem)];
+		attribute<string>            replace_by      :=       elem/values[value(id * nrAttr + 2, elem)];
 
-		attribute<uint32>            lengte_TeVervangen := strlen(TeVervangen);
-		attribute<string>            set                := string(type) + '_' + string(lengte_TeVervangen);
+		attribute<uint32>            replace_length := strlen(to_replace);
+		attribute<string>            set                := string(type) + '_' + string(replace_length);
 	}
 	unit<uint32> sets := unique(table/set)
 	{
@@ -124,7 +124,7 @@ container replacements
 		attribute<string> number_str                    := string(number);
 
 		attribute<replacements/type> type               := rjoin(values, table/set, table/type);
-		attribute<uint32>            lengte_TeVervangen := rjoin(values, table/set, table/lengte_TeVervangen);
+		attribute<uint32>            replace_length := rjoin(values, table/set, table/replace_length);
 	}
 	#include<woonplaats.dms>
 }
