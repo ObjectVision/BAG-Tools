@@ -16,11 +16,11 @@ container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-
 	parameter<string> gegeneraliseerd_str := '_niet_gegeneraliseerd';
 	
 	container gpkg
-	:	StorageName     = "='%SourceDataDir%/CBS/cbsgebiedsindelingen'+Parameters/CBS_RegioIndelingenJaar+'.gpkg'"
+	:	StorageName     = "='%SourceDataDir%/CBS/cbsgebiedsindelingen'+ModelParameters/CBS_RegioIndelingenJaar+'.gpkg'"
 	, 	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	,	SyncMode        = "alltables"
-	,	DialogData      = "point_rd"
+	,	DialogData      = "rdc_meter"
 	,	URL             = "https://www.cbs.nl/nl-nl/dossier/nederland-regionaal/geografische-data/cbs-gebiedsindelingen"
 	,	KeepData        = "true"
 	{
@@ -28,7 +28,7 @@ container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-
 	
 	unit<uint32> Buurt     := ='gpkg/buurt'+gegeneraliseerd_str
 	{
-		attribute<point_rd>  geometry                                 (poly) := ='gpkg/buurt'+gegeneraliseerd_str+'/geometry[point_rd]';
+		attribute<rdc_meter>  geometry                                 (poly) := ='gpkg/buurt'+gegeneraliseerd_str+'/geometry[rdc_meter]';
 		attribute<string>    label                                           := statnaam;
 		attribute<string>    name                                            := AsItemName(statnaam);
 		attribute<string>    BU_CODE                                         := statcode;
@@ -36,7 +36,7 @@ container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-
 	}
 	unit<uint32> Wijk      := ='gpkg/wijk'+gegeneraliseerd_str
 	{
-		attribute<point_rd>  geometry                                 (poly) := ='gpkg/wijk'+gegeneraliseerd_str+'/geometry[point_rd]';
+		attribute<rdc_meter>  geometry                                 (poly) := ='gpkg/wijk'+gegeneraliseerd_str+'/geometry[rdc_meter]';
 		attribute<string>    label                                           := statnaam;
 		attribute<string>    name                                            := AsItemName(statnaam);
 		attribute<string>    WK_CODE                                         := statcode;
@@ -44,7 +44,7 @@ container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-
 	}
 	unit<uint32> Gemeente  := ='gpkg/gemeente'+gegeneraliseerd_str
 	{
-		attribute<point_rd>  geometry                                 (poly) := ='gpkg/gemeente'+gegeneraliseerd_str+'/geometry[point_rd]';
+		attribute<rdc_meter>  geometry                                 (poly) := ='gpkg/gemeente'+gegeneraliseerd_str+'/geometry[rdc_meter]';
 		attribute<string>    label                                           := statnaam;
 		attribute<string>    name                                            := AsItemName(statnaam);
 		attribute<uint32>    gem_nr                                          := uint32(right(statcode, 4));

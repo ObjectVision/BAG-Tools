@@ -15,7 +15,7 @@ container BAG : using = "units;classifications"
 {
 	container impl
 	{
-		parameter<string> SnapshotDir:= Parameters/BAG_SnapshotDir;
+		parameter<string> SnapshotDir:= ModelParameters/BAG_SnapshotDir;
 
 		// unit<uint32> adres
 		// : StorageName     = "=SnapshotDir + '/adres.fss'"
@@ -30,7 +30,7 @@ container BAG : using = "units;classifications"
 			// attribute<string> woonplaatsnaam;
 			// attribute<string> nummeraanduiding_id;
 
-			// attribute<point_rd> geometry;
+			// attribute<rdc_meter> geometry;
 		// }
 		// unit<uint32> adres_met_xy := select_with_attr_by_cond(adres, isDefined(adres/geometry));
 
@@ -58,16 +58,16 @@ container BAG : using = "units;classifications"
 				attribute<string> status;
 				
 				attribute<vbos/vbo>   vbo_rel         := rlookup(identificatie, vbos/vbo/nummeraanduiding_id);
-				attribute<point_rd>   geometry        := vbos/vbo/geometry[vbo_rel];
+				attribute<rdc_meter>   geometry        := vbos/vbo/geometry[vbo_rel];
 				attribute<meter2>     pand_footprint  := vbos/vbo/pand_footprint[vbo_rel];
 				attribute<uint16>     pand_bouwjaar   := vbos/vbo/pand_bouwjaar[vbo_rel];
 				attribute<uint16>     pand_hoogte     := vbos/vbo/pand_hoogte[vbo_rel];
 				attribute<int32>      vbo_oppervlak   := vbos/vbo/oppervlakte[vbo_rel];
-				attribute<bool>       IsInNederland   := IsDefined(point_in_polygon(geometry, /CBS/Gemeente/geometry));
+				attribute<bool>       IsInNederland   := IsDefined(point_in_polygon(geometry, CBS/Gemeente/geometry));
 				container meta := Templates/meta_src_template(., nummeraanduiding_status);
 			}
 
-			container datum_selectie:= ='Templates/datum_selectie(import, int32(Parameters/BAG_date), Import/IsInNederland)'
+			container datum_selectie:= ='Templates/datum_selectie(import, int32(ModelParameters/BAG_date), Import/IsInNederland)'
 			{
 				unit<uint32> selectie
 				{
@@ -88,7 +88,7 @@ container BAG : using = "units;classifications"
 				attribute<string>   postcode                := last(datum_selectie/selectie/postcode                , datum_selectie/selectie/result_rel);
 				attribute<string>   woonplaats              := last(datum_selectie/selectie/woonplaats              , datum_selectie/selectie/result_rel);
 				attribute<string>   straatnaam              := last(datum_selectie/selectie/straatnaam              , datum_selectie/selectie/result_rel);
-				attribute<point_rd> geometry                := last(datum_selectie/selectie/geometry                , datum_selectie/selectie/result_rel);
+				attribute<rdc_meter> geometry                := last(datum_selectie/selectie/geometry                , datum_selectie/selectie/result_rel);
 				attribute<string>   pand_footprint          := string(last(datum_selectie/selectie/pand_footprint   , datum_selectie/selectie/result_rel));
 				attribute<string>   pand_bouwjaar           := string(last(datum_selectie/selectie/pand_bouwjaar    , datum_selectie/selectie/result_rel));
 				attribute<string>   pand_hoogte             := string(last(datum_selectie/selectie/pand_hoogte      , datum_selectie/selectie/result_rel));
@@ -110,8 +110,8 @@ container BAG : using = "units;classifications"
 			:	StorageName = "= SnapshotDir + '/vbo.fss'"
 			,	StorageReadOnly = "True"
 			{
-				attribute<point_rd_mm>                geometry_mm;
-				attribute<point_rd>                   geometry  := geometry_mm[point_rd];
+				attribute<rdc_mm>                geometry_mm;
+				attribute<rdc_meter>                   geometry  := geometry_mm[rdc_meter];
 				attribute<string>                     nummeraanduiding_id;
 				attribute<string>                     identificatie;
 				attribute<int32>                      oppervlakte;
@@ -127,15 +127,15 @@ container BAG : using = "units;classifications"
 			//enrich the source attributes, and prepare selection criteria.
 			unit<uint32> src := import
 			{
-				attribute<point_rd>                   geometry                  := import/geometry;
+				attribute<rdc_meter>                   geometry                  := import/geometry;
 				attribute<string>                     nummeraanduiding_id       := import/nummeraanduiding_id;
 				attribute<uint64>                     vbo_bag_nr                := uint64(identificatie);
 				attribute<uint64>                     pand_bag_nr               := rjoin(vbo_bag_nr, uint64(import/gerelateerdPand/identificatie), uint64(import/gerelateerdPand/pand_id));
 				attribute<int32>                      oppervlakte               := import/oppervlakte;
 				// attribute<int32>                      oppervlakte_trunc         := oppervlakte < 500000i  ? oppervlakte : null_i;
 				attribute<vbo_status>                 status_rel                := import/meta/status_rel;
-				attribute<int32>                      begindatum                := import/meta/BEGINDATUM == 0i ? Parameters/MaxDatum : import/meta/BEGINDATUM;
-				attribute<int32>                      einddatum                 := import/meta/EINDDATUM == 0i ? Parameters/MaxDatum : import/meta/EINDDATUM;
+				attribute<int32>                      begindatum                := import/meta/BEGINDATUM == 0i ? ModelParameters/MaxDatum : import/meta/BEGINDATUM;
+				attribute<int32>                      einddatum                 := import/meta/EINDDATUM == 0i ? ModelParameters/MaxDatum : import/meta/EINDDATUM;
 				attribute<uint16>                     pand_bouwjaar             := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/bouwjaar_trunc);
 				attribute<uint16>                     pand_hoogte               := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/pand_hoogte);
 				attribute<meter2>                     pand_footprint            := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/footprint);
@@ -156,10 +156,10 @@ container BAG : using = "units;classifications"
 			:	StorageName = "= SnapshotDir + '/pand.fss'"
 			,	StorageReadOnly = "True"
 			{
-				attribute<point_rd_mm>                  geometry_mm       (poly);
-				attribute<point_rd>                     geometry          (poly) := geometry_mm[point_rd];
-				attribute<point_rd_mm>                  geometry_mm_simpl (poly) := geos_buffer_multi_polygon(geometry_mm, 100d, 16b);
-				attribute<point_rd>                     geometry_simpl    (poly) := geometry_mm_simpl[point_rd];
+				attribute<rdc_mm>                  geometry_mm       (poly);
+				attribute<rdc_meter>                     geometry          (poly) := geometry_mm[rdc_meter];
+				attribute<rdc_mm>                  geometry_mm_simpl (poly) := geos_buffer_multi_polygon(geometry_mm, 100d, 16b);
+				attribute<rdc_meter>                     geometry_simpl    (poly) := geometry_mm_simpl[rdc_meter];
 				attribute<uint16>                       bouwjaar;
 				attribute<string>                       identificatie;
 				
@@ -167,14 +167,14 @@ container BAG : using = "units;classifications"
 			}
 			unit<uint32> src := import
 			{
-				attribute<point_rd>                    geometry_org (poly)          := import/geometry;
-				// attribute<point_rd>                    geometry_simpl_org (poly)    := import/geometry_simpl;
+				attribute<rdc_meter>                    geometry_org (poly)          := import/geometry;
+				// attribute<rdc_meter>                    geometry_simpl_org (poly)    := import/geometry_simpl;
 				attribute<uint64>                      pand_bag_nr                  := uint64(identificatie);
 				attribute<pand_status>                 status_rel                   := import/meta/status_rel;
 				attribute<int32>                       begindatum                   := impl/begindatum0 < 19600101i ? impl/TIJDSTIPREGISTRATIE : impl/begindatum0;
 				attribute<int32>                       einddatum                    := impl/einddatum0 < 19600101i ? impl/EINDREGISTRATIE : impl/einddatum0;
 				attribute<uint16>                      bouwjaar                     := import/bouwjaar;
-				attribute<uint16>                      bouwjaar_trunc               := =replace(parameters/bouwjaar_truncation_expr, '@YYYY@', parameters/max_bouwjaar);
+				attribute<uint16>                      bouwjaar_trunc               := =replace(ModelParameters/bouwjaar_truncation_expr, '@YYYY@', ModelParameters/max_bouwjaar);
 				attribute<meter2>                      footprint                    := area(geometry, meter2);
 				attribute<bool>                        IsVoorraad                   := pand_status/isVoorraad[status_rel];
 				
@@ -183,8 +183,8 @@ container BAG : using = "units;classifications"
 				attribute<cm>                          pand_hoogte_maaiveld         := BAG/impl/pand_hoogte/hoogte_maaiveld[PHN_rel];
 
 				
-				attribute<point_rd>                    geometry (poly)              := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_org);
-				// attribute<point_rd>                    geometry_simpl (poly)        := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_simpl_org);
+				attribute<rdc_meter>                    geometry (poly)              := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_org);
+				// attribute<rdc_meter>                    geometry_simpl (poly)        := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_simpl_org);
 				
 				unit<uint32> impl := .
 				{
@@ -192,24 +192,24 @@ container BAG : using = "units;classifications"
 					attribute<bool>                     HasNegativeArea              := area(geometry_org, meter2) < 0[meter2];
 					unit<uint32> select_reversed_winding_order := select_with_org_rel(HasNegativeArea)
 					{
-						attribute<point_rd>                geometry (poly)          := src/geometry_org[org_rel];
+						attribute<rdc_meter>                geometry (poly)          := src/geometry_org[org_rel];
 						attribute<int32>                    begindatum0              := impl/begindatum0[org_rel];
 						unit<uint32> seq_points := sequence2points(geometry)
 						{
-							attribute<point_rd> points_reversed       := reverse(point);
+							attribute<rdc_meter> points_reversed       := reverse(point);
 							attribute<uint32>    Sequence_rel_Reversed := reverse(Sequence_rel);
 						}
 						
 						attribute<meter2>    area_reversed            := area(geometry_reversed, meter2);
-						attribute<point_rd> geometry_reversed (poly) := points2sequence(seq_points/points_reversed, seq_points/Sequence_rel_Reversed);
+						attribute<rdc_meter> geometry_reversed (poly) := points2polygon(seq_points/points_reversed, seq_points/Sequence_rel_Reversed);
 					}
 				
 					attribute<int32>                        TIJDSTIPREGISTRATIE          := int32(replace(substr(import/meta/TIJDSTIPREGISTRATIE,0,10),'-',''));
 					attribute<int32>                        EINDREGISTRATIE              := int32(replace(substr(import/meta/EINDREGISTRATIE,0,10),'-',''));
-					attribute<int32>                        begindatum0                  := import/meta/BEGINDATUM == 0i ? Parameters/MaxDatum : import/meta/BEGINDATUM;
-					attribute<int32>                        einddatum0                   := import/meta/EINDDATUM == 0i ? Parameters/MaxDatum : import/meta/EINDDATUM;
-					attribute<point_rd>                     NW                           := lower_bound(geometry);
-					attribute<point_rd>                     SE                           := upper_bound(geometry);
+					attribute<int32>                        begindatum0                  := import/meta/BEGINDATUM == 0i ? ModelParameters/MaxDatum : import/meta/BEGINDATUM;
+					attribute<int32>                        einddatum0                   := import/meta/EINDDATUM == 0i ? ModelParameters/MaxDatum : import/meta/EINDDATUM;
+					attribute<rdc_meter>                     NW                           := lower_bound(geometry);
+					attribute<rdc_meter>                     SE                           := upper_bound(geometry);
 					attribute<Float64>                      X_ext                        := sub_or_null(PointCol(SE),PointCol(NW));
 					attribute<Float64>                      Y_ext                        := sub_or_null(PointRow(SE),PointRow(NW));
 					
@@ -230,14 +230,14 @@ container BAG : using = "units;classifications"
 			
 		}
 		
-		// parameter<String> pand_hoogte_jaar := uint32(Parameters/BAG_year) >= 2020 ? string(Parameters/BAG_year) : string(2020);
+		// parameter<String> pand_hoogte_jaar := uint32(ModelParameters/BAG_year) >= 2020 ? string(ModelParameters/BAG_year) : string(2020);
 		parameter<String> pand_hoogte_jaar := '2023';
 		
 		unit<UInt32> pand_hoogte
 		:	StorageName     = "='%RSo_DataDir%/Vastgoed/PHN_'+pand_hoogte_jaar+'0101.fss'"
 		,	StorageReadOnly = "True"
 		{
-			attribute<point_rd>  geometry (poly)   := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/geometry);
+			attribute<rdc_meter>  geometry (poly)   := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/geometry);
 			attribute<String>    identificatie;
 			attribute<uint64>    pand_bag_nr       := uint64(identificatie);
 			attribute<UInt16>    hoogte; 
@@ -253,7 +253,7 @@ container BAG : using = "units;classifications"
 		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/resultaat,vervangingen/postcodes_missend/label));
 		attribute<string> postcode            := isMissingPC ? string( 0 / 0) : impl/postcode/resultaat;
 		attribute<string> huisnummer          := impl/huisnummer/resultaat;
-		attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/resultaat, stringparams/legehuistoevoeging);
+		attribute<string> huistoevoeging      := MakeDefined(impl/huistoevoeging/resultaat, StringConstants/legehuistoevoeging);
 		attribute<string> woonplaatsnaam      := impl/woonplaatsnaam/resultaat;
 
 		attribute<string> postcode5           := substr(postcode,0,5);
@@ -264,13 +264,13 @@ container BAG : using = "units;classifications"
 
 		attribute<string> nummeraanduiding_id := impl/Adres/identificatie;
 
-		attribute<point_rd> geometry          := point_xy(X,Y,point_rd);
+		attribute<rdc_meter> geometry          := point_xy(X,Y,rdc_meter);
 
-		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(geometry, CBS/buurt/Geometry[point_rd]);
-		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(geometry, CBS/wijk/Geometry[point_rd]);
-		attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(geometry, CBS/gemeente/Geometry[point_rd]);
-		//attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(geometry, NVM/regio/Geometry[point_rd]);
-		//attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(geometry, NVM/afdeling/Geometry[point_rd]);
+		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(geometry, CBS/buurt/Geometry[rdc_meter]);
+		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(geometry, CBS/wijk/Geometry[rdc_meter]);
+		attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(geometry, CBS/gemeente/Geometry[rdc_meter]);
+		//attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(geometry, NVM/regio/Geometry[rdc_meter]);
+		//attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(geometry, NVM/afdeling/Geometry[rdc_meter]);
 
 		container keys:=
 			for_each_nedv(

@@ -14,14 +14,14 @@
 
 container bron
 {
-	parameter<string> BestandsNaam := Parameters/PathToFileToBeGeocoded+'/'+Parameters/FileToBeGeocoded+'.csv';
+	parameter<string> BestandsNaam := ModelParameters/PathToFileToBeGeocoded+'/'+ModelParameters/FileToBeGeocoded+'.csv';
 
 	container TableChopper // Deze wordt gebruikt ipv de gdal.vect storage manager omdat de TableChopper substantieel veel sneller is
 	{
-		parameter<uint32> nrElems      := strcount(FileData,stringparams/newline)-1;
+		parameter<uint32> nrElems      := strcount(FileData,StringConstants/newline)-1;
 		unit<uint32>      Domein       := range(uint32,0,nrElems);
 
-		parameter<string> VeldScheidingsTeken := Parameters/VeldScheidingsTeken
+		parameter<string> VeldScheidingsTeken := ModelParameters/VeldScheidingsTeken
 		,	IntegrityCheck = "VeldScheidingsTeken = ',' || VeldScheidingsTeken = ';'";
 
 		parameter<string> FileData
@@ -127,7 +127,9 @@ container bron
 		attribute<string> resultaat (TableChopper/Domein) := substr(postcode/resultaat,0,4);
 	}
 	
-	// hiermee wordt een adresveld opgesplitst naar een straatnaam, huisnummer en huistoevoeging
+	// OPTIONAL / not wired into the default flow: splits a single combined address
+	// column ('adres') into street, house number and addition. Only usable for sources
+	// that provide one 'adres' column instead of the separate columns handled above.
 	container adres_splitsen
 	{
 		parameter<uint32> maxvalue := 9999999;
