@@ -192,7 +192,7 @@ container woonplaats
 			,'RESSEN GEM NIJMEGEN','Ressen'
 			,'PIETERZYL','Pieterzijl'
 			,'PYNACKER','Pijnacker'
-			,'ALKMAAR/ OUDORP','Ourodp'
+			,'ALKMAAR/ OUDORP','Oudorp'
 			,'OISTERWYK','Oisterwijk'
 			,'OUD VOSSEMEER','Oud-Vossemeer'
 			,'OUDORP NH','Oudorp'
@@ -404,7 +404,7 @@ container woonplaats
 			,'DRONRIJP','Dronryp'
 			,'DRIESUM','Driezum'
 			,'DRIEL NABIJ ARNHEM','Driel'
-			,'DRIEBERGEN-RIJSSENBUR','Driebergen-Rijsseburg'
+			,'DRIEBERGEN-RIJSSENBUR','Driebergen-Rijsenburg'
 			,'DORDREHT','Dordrecht'
 			,'DOORNSPYK','Doornspijk'
 			,'DEN HOUT NB','Den Hout'
@@ -436,7 +436,7 @@ container woonplaats
 			,'BROEKHUIZEN DR','Broekhuizen'
 			,'BROEK OP LANGEDYK','Broek op Langedijk'
 			,'BROEK FR','Broek'
-			,'BOYL','BOIJL'
+			,'BOYL','Boijl'
 			,'BREUKELEN UT','Breukelen'
 			,'BREDAW','Breda'
 			,'BOVEN LEEUWEN','Boven-Leeuwen'
@@ -454,7 +454,7 @@ container woonplaats
 			,'Berkel & Rodenrijs','Berkel en Rodenrijs'
 			,'BERKEL EN RODENRYS','Berkel en Rodenrijs'
 			,'BERGEN OP ZOOM CENTRU','Bergen op Zoom'
-			,'BERGEN LB','Bergen L'
+			,'BERGEN LB','Bergen (L)'
 			,'BERGEN NH','Bergen (NH)'
 			,'BENNKOM','Bennekom'
 			,'BENNBROEK','Bennebroek'
@@ -517,5 +517,19 @@ container woonplaats
 		attribute<.>      id            := id(.);
 		attribute<string> to_replace   := elem/values[value(id * nrAttr , elem)];
 		attribute<string> replace_by := elem/values[value(id * nrAttr + 1, elem)];
+
+		// both sides normalized the same way as Templates/normalize_string,
+		// so they can be joined against normalized input/BAG woonplaats values
+		attribute<string> key_normalized   := replace(lowercase(from_utf(to_replace)), StringConstants/space, StringConstants/emptystring, StringConstants/squote, StringConstants/emptystring, StringConstants/dquote, StringConstants/emptystring, StringConstants/point, StringConstants/emptystring);
+		attribute<string> value_normalized := replace(lowercase(from_utf(replace_by)), StringConstants/space, StringConstants/emptystring, StringConstants/squote, StringConstants/emptystring, StringConstants/dquote, StringConstants/emptystring, StringConstants/point, StringConstants/emptystring);
+	}
+
+	// on-demand QA (requires the BAG snapshot): rows whose replace_by value does not
+	// occur as a woonplaats in the BAG, i.e. outdated or misspelled target names
+	container check_values_in_BAG
+	{
+		unit<uint32> bag_places := unique(BAG/adres/woonplaatsnaam);
+		attribute<bool> known (table) := isDefined(rlookup(table/value_normalized, bag_places/values));
+		unit<uint32> unknown := select_with_attr_by_cond(table, not(known));
 	}
 }

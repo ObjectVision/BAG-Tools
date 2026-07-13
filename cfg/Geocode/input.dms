@@ -115,7 +115,16 @@ container input
 	container straatnaam     := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/straatnaam);
 	container huisnummer     := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/huisnummer);
 	container huistoevoeging := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/huistoevoeging);
-	container woonplaatsnaam := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/woonplaats);
+	container woonplaatsnaam
+	{
+		container normalized := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/woonplaats);
+
+		// map legacy/alternative spellings (typos, truncated entries, province suffixes,
+		// pre-rename Frisian names) onto the BAG spelling, see SourceData/replacements/woonplaats
+		attribute<string> remapped (TableChopper/Domain) := rjoin(normalized/result, replacements/woonplaats/table/key_normalized, replacements/woonplaats/table/value_normalized);
+		attribute<string> result   (TableChopper/Domain) := MakeDefined(remapped, normalized/result);
+		attribute<string> txt      (TableChopper/Domain) := normalized/txt; // used by the adresveld_wel_in_bron_niet_in_BAG QA analysis
+	}
 	container postcode       := Templates/normalize_string(TableChopper/Domain, TableChopper/AddressFields/postcode);
 
 	container postcode5
