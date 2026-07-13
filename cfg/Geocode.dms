@@ -202,12 +202,6 @@ container Geocode
 				attribute<string>       naam         (inputDomain) := cbs/gemeente/gm_naam[gemeente_rel];
 			}
 
-			// QA: source records that ended up without a nummeraanduiding match
-			unit<uint32> geen_nummeraanduiding := select_with_attr_by_org_rel(link_to_bag_aggregations, strlen(trim(Analyse/link_to_bag_aggregations/nummeraanduiding_id)) < 2)
-			{
-				attribute<string> input_address         := Analyse/input/TableChopper/BodyLines[org_rel];
-			}
-
 			container metainformatie
 			{
 				attribute<level>  level_rel            (inputDomain) := ../level_rel;

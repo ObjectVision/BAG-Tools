@@ -59,20 +59,6 @@ container Templates
 				{
 					attribute<string> result (domain) := lowercase(from_utf(txt));
 				}
-				container check
-				{
-					attribute<bool> is_changed (domain) := txt <> step_type/result;
-					unit<uint32> changed := select_with_attr_by_org_rel(step_type, is_changed)
-					{
-						attribute<string> voor := txt[org_rel];
-						attribute<string> na   := result;
-					}
-					unit<uint32> changed_unique := unique(changed/voor)
-					{
-						attribute<string> voor := values;
-						attribute<string> na   := rjoin(values, changed/voor, changed/na);
-					}
-				}
 			}
 		}
 		attribute<string> result0  (domain) := = 'replace_value(replacement_steps/step_' + string(max(replacements/sets/number)) + '/step_type/result , StringConstants/emptystring, string(0/0))';
@@ -100,21 +86,6 @@ container Templates
 			);
 
 		container step_type := =step_type_expr;
-
-		container check
-		{
-			attribute<bool> is_changed (domain) := src <> step_type/result;
-			unit<uint32> changed := select_with_attr_by_org_rel(step_type, is_changed)
-			{
-				attribute<string> voor := src[org_rel];
-				attribute<string> na   := result[org_rel];
-			}
-			unit<uint32> changed_unique := Unique(changed/voor)
-			{
-				attribute<string> voor := values;
-				attribute<string> na   := rjoin(values, changed/voor, changed/na);
-			}
-		}
 	}
 
 	Template replace_prefix
