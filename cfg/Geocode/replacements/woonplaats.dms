@@ -23,10 +23,11 @@ container woonplaats
 			attribute<string> values: [ 
 			//woonplaats_trimmed','BAG-schrijfwijze
 			 'ZUIDWOLDE DR','Zuidwolde'
+			// Zwaagdijk-Oost: in de BAG-adressen komt alleen 'Zwaagdijk' (en 'Zwaagdijk-West') voor als woonplaatsnaam
 			,'ZUIDWOLDE GN','Zuidwolde'
 			,'ZWYNDRECHT','Zwijndrecht'
-			,'ZWAAGDYK OOST','Zwaagdijk-oost'
-			,'ZWAAGDYIJK OOST','Zwaagdijk-oost'
+			,'ZWAAGDYK OOST','Zwaagdijk'
+			,'ZWAAGDYIJK OOST','Zwaagdijk'
 			,'ZYDERVELD','Zijderveld'
 			,'ZYDEWIND','Zijdewind'
 			,'ZEVENHUIZEN ZH','Zevenhuizen'
@@ -60,8 +61,8 @@ container woonplaats
 			,'WESTZAAM','Westzaan'
 			,'WEST GRAFTDIJK','West-Graftdijk'
 			,'WESTERLEE GN','Westerlee'
-			,'WESTERHAAR-VRIEZENV W','Westerhaar-Vriezenveenschewijk'
-			,'WESTERHAAR-VRIEZENV','Westerhaar-Vriezenveenschewijk'
+			,'WESTERHAAR-VRIEZENV W','Westerhaar-Vriezenveensewijk'
+			,'WESTERHAAR-VRIEZENV','Westerhaar-Vriezenveensewijk'
 			,'WELL LB','Well'
 			,'WELL GLD','Well'
 			,'WAPNVELD','Wapenveld'
@@ -94,8 +95,8 @@ container woonplaats
 			,'TOLDYK','Toldijk'
 			,'TIBURG','Tilburg'
 			,'TILBUG','Tilburg'
-			,'TIENHOVEN UT','Tienhoven'
-			,'TIENHOVEN ZH','Tienhoven'
+			,'TIENHOVEN UT','Tienhoven' // NB: 'Tienhoven' komt (nog) niet voor als woonplaatsnaam in de BAG-adressen; rij is vooralsnog een no-op
+			,'TIENHOVEN ZH','Tienhoven aan de Lek' // hernoemd in 2018
 			,'T ZANDT GN','t Zandt'
 			,'T ZAND NH','t Zand'
 			,'`T HARDE','t Harde'
@@ -173,7 +174,7 @@ container woonplaats
 			,'SCHALKWYK','Schalkwijk'
 			,'Schiphol Rijk','Schiphol-Rijk'
 			,'SCHERPENZEEL FR','Scherpenzeel'
-			,'S-HEER HENDRIKSKINDE','s Heer Hendrikskinderen'
+			,'S-HEER HENDRIKSKINDE','s-Heer Hendrikskinderen'
 			,'RYNSBURG','Rijnsburg'
 			,'ROZENBURG ZH','Rozenburg'
 			,'ROZENBURG NH','Rozenburg'
@@ -437,7 +438,7 @@ container woonplaats
 			,'BROEK OP LANGEDYK','Broek op Langedijk'
 			,'BROEK FR','Broek'
 			,'BOYL','Boijl'
-			,'BREUKELEN UT','Breukelen'
+			,'BREUKELEN UT','Breukelen' // NB: 'Breukelen' komt (nog) niet voor als woonplaatsnaam in de BAG-adressen; rij is vooralsnog een no-op
 			,'BREDAW','Breda'
 			,'BOVEN LEEUWEN','Boven-Leeuwen'
 			,'BOERAKKER GEM LEEK','Boerakker'
@@ -454,7 +455,7 @@ container woonplaats
 			,'Berkel & Rodenrijs','Berkel en Rodenrijs'
 			,'BERKEL EN RODENRYS','Berkel en Rodenrijs'
 			,'BERGEN OP ZOOM CENTRU','Bergen op Zoom'
-			,'BERGEN LB','Bergen (L)'
+			,'BERGEN LB','Bergen L' // BAG-woonplaats heet 'Bergen L', zonder haakjes (i.t.t. 'Bergen (NH)')
 			,'BERGEN NH','Bergen (NH)'
 			,'BENNKOM','Bennekom'
 			,'BENNBROEK','Bennebroek'
