@@ -32,11 +32,11 @@ container Geocode
 {
 	container ModelParameters
 	{
-		parameter<string> BAG_date                 := '20250115';
-		parameter<string> BAG_SnapshotDir          := '%SourceDataDir%/BAG/VolledigeTabel_'+BAG_date;
+		parameter<string> BAG_date                 := '20260710';
+		parameter<string> BAG_SnapshotDir          := '%SourceDataDir%/RSopen/Vastgoed/VolledigeTabel_'+BAG_date;
 		parameter<string> CBS_RegioIndelingenJaar  := '2024';
 		// parameter<string> PathToFileToBeGeocoded   := '%SourceDataDir%/BAG/xy_source';
-		parameter<string> PathToFileToBeGeocoded   := 'C:/Users/JipClaassens/OneDrive - Objectvision/VU/Projects/NVM Prijsindex/Temp';
+		parameter<string> PathToFileToBeGeocoded   := '%OneDrive_Dir%/VU/Projects/NVM Prijsindex/Temp';
 		parameter<string> FileToBeGeocoded         := 'NVM_adressen_20260711'; // .csv is appended later
 		parameter<string> bouwjaar_truncation_expr := 'bouwjaar <= 1005w || bouwjaar > uint16(@YYYY@) ? null_w : bouwjaar < 1500w ? 1500w : bouwjaar';
 		parameter<string> BAG_year                 := substr(BAG_date, 0, 4);
@@ -367,7 +367,8 @@ container Geocode
 	{
 		container Overridable
 		{
-			parameter<String> RSo_DataDir := '%sourceDataDir%/RuimteScanner/SD/RSopen';
+			parameter<String> RSo_DataDir  := '%sourceDataDir%/RSopen';
+			parameter<String> OneDrive_Dir := 'D:/OneDrive - Objectvision';
 		}
 	}
 }

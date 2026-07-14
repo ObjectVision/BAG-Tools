@@ -233,21 +233,21 @@ container Templates
 		unit<uint8>  statustype;
 		// end case parameters
 
-		attribute<string>     STATUS                 (domain);
+		// attribute<string>     STATUS                 (domain);
 		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), statustype/label);
 		attribute<bool>       status_sel             (domain) := statustype/IsSelected[status_rel];
 
-		attribute<int32>      BEGINDATUM             (domain);
-		attribute<int32>      EINDDATUM              (domain);
-		attribute<uint32>     VOORKOMENIDENTIFICATIE (domain);
+		// attribute<int32>      BEGINDATUM             (domain);
+		// attribute<int32>      EINDDATUM              (domain);
+		// attribute<uint32>     VOORKOMENIDENTIFICATIE (domain);
 
-		attribute<string>     TIJDSTIPREGISTRATIE    (domain);
-		attribute<string>     EINDREGISTRATIE        (domain);
+		// attribute<string>     TIJDSTIPREGISTRATIE    (domain);
+		// attribute<string>     EINDREGISTRATIE        (domain);
 
-		attribute<int32>      DOCUMENTDATUM          (domain);
-		attribute<string>     DOCUMENTNUMMER         (domain);
+		// attribute<int32>      DOCUMENTDATUM          (domain);
+		// attribute<string>     DOCUMENTNUMMER         (domain);
 
-		attribute<bool>       IS_GECONSTATEERD       (domain);
+		// attribute<bool>       IS_GECONSTATEERD       (domain);
 	}
 	
 }

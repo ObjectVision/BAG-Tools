@@ -45,7 +45,7 @@ container BAG : using = "units;classifications"
 		container nummeraanduiding
 		{
 			unit<uint32> import
-			:	StorageName     = "=SnapshotDir + '/nummeraanduiding.fss'"
+			:	StorageName     = "=SnapshotDir + '/nummeraanduiding.mmd'"
 			,	StorageReadOnly = "True"
 			{
 				attribute<string> identificatie;
@@ -107,21 +107,21 @@ container BAG : using = "units;classifications"
 		container vbos
 		{
 			unit<uint32> import
-			:	StorageName = "= SnapshotDir + '/vbo.fss'"
+			:	StorageName = "= SnapshotDir + '/vbo.mmd'"
 			,	StorageReadOnly = "True"
 			{
-				attribute<rdc_mm>                geometry_mm;
+				// attribute<rdc_mm>                geometry_mm;
 				attribute<rdc_meter>                   geometry  := geometry_mm[rdc_meter];
-				attribute<string>                     nummeraanduiding_id;
-				attribute<string>                     identificatie;
-				attribute<int32>                      oppervlakte;
+				// attribute<string>                     nummeraanduiding_id;
+				// attribute<string>                     identificatie;
+				// attribute<int32>                      oppervlakte;
 
-				unit<uint32> gerelateerdPand
-				{
-					attribute<string> identificatie;
-					attribute<string> pand_id;
-				}
-				container meta := templates/meta_src_template(., vbo_status);
+				// unit<uint32> gerelateerdPand
+				// {
+					// attribute<string> identificatie;
+					// attribute<string> pand_id;
+				// }
+				// container meta := templates/meta_src_template(., vbo_status);
 			}
 			
 			//enrich the source attributes, and prepare selection criteria.
@@ -153,15 +153,15 @@ container BAG : using = "units;classifications"
 		container panden
 		{
 			unit<uint32> import
-			:	StorageName = "= SnapshotDir + '/pand.fss'"
+			:	StorageName = "= SnapshotDir + '/pand.mmd'"
 			,	StorageReadOnly = "True"
 			{
-				attribute<rdc_mm>                  geometry_mm       (poly);
+				// attribute<rdc_mm>                  geometry_mm       (poly);
 				attribute<rdc_meter>                     geometry          (poly) := geometry_mm[rdc_meter];
-				attribute<rdc_mm>                  geometry_mm_simpl (poly) := geos_buffer_multi_polygon(geometry_mm, 100d, 16b);
-				attribute<rdc_meter>                     geometry_simpl    (poly) := geometry_mm_simpl[rdc_meter];
-				attribute<uint16>                       bouwjaar;
-				attribute<string>                       identificatie;
+				// attribute<rdc_mm>                  geometry_mm_simpl (poly) := geos_buffer_multi_polygon(geometry_mm, 100d, 16b);
+				// attribute<rdc_meter>                     geometry_simpl    (poly) := geometry_mm_simpl[rdc_meter];
+				// attribute<uint16>                       bouwjaar;
+				// attribute<string>                       identificatie;
 				
 				container meta := templates/meta_src_template(., pand_status);
 			}
@@ -179,8 +179,8 @@ container BAG : using = "units;classifications"
 				attribute<bool>                        IsVoorraad                   := pand_status/isVoorraad[status_rel];
 				
 				attribute<BAG/impl/pand_hoogte>        PHN_rel                      := rlookup(pand_bag_nr, BAG/impl/pand_hoogte/pand_bag_nr);
-				attribute<cm>                          pand_hoogte                  := BAG/impl/pand_hoogte/hoogte_cm[PHN_rel];
-				attribute<cm>                          pand_hoogte_maaiveld         := BAG/impl/pand_hoogte/hoogte_maaiveld[PHN_rel];
+				attribute<cm>                          pand_hoogte                  := BAG/impl/pand_hoogte/hoogte[PHN_rel][cm];
+				attribute<cm>                          pand_hoogte_maaiveld         := BAG/impl/pand_hoogte/hoogte_maaiveld_offset[PHN_rel][cm];
 
 				
 				attribute<rdc_meter>                    geometry (poly)              := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_org);
@@ -231,23 +231,23 @@ container BAG : using = "units;classifications"
 		}
 		
 		// parameter<String> pand_hoogte_jaar := uint32(ModelParameters/BAG_year) >= 2020 ? string(ModelParameters/BAG_year) : string(2020);
-		parameter<String> pand_hoogte_jaar := '2023';
+		parameter<String> pand_hoogte_jaar := '2026';
 		
 		unit<UInt32> pand_hoogte
-		:	StorageName     = "='%RSo_DataDir%/Vastgoed/PHN_'+pand_hoogte_jaar+'0101.fss'"
+		:	StorageName     = "='%RSo_DataDir%/Vastgoed/PHN_'+pand_hoogte_jaar+'0101.mmd'"
 		,	StorageReadOnly = "True"
 		{
 			attribute<rdc_meter>  geometry (poly)   := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/geometry);
-			attribute<String>    identificatie;
-			attribute<uint64>    pand_bag_nr       := uint64(identificatie);
-			attribute<UInt16>    hoogte; 
-			attribute<cm>        hoogte_cm         := hoogte[cm]; 
-			attribute<cm>        hoogte_maaiveld; 
-			attribute<Int16>     AHN_inwinjaar; 
+			// attribute<String>    identificatie;
+			// attribute<uint64>    pand_bag_nr       := uint64(identificatie);
+			// attribute<UInt16>    hoogte; 
+			// attribute<cm>        hoogte_cm         := hoogte[cm]; 
+			// attribute<cm>        hoogte_maaiveld; 
+			// attribute<Int16>     AHN_inwinjaar; 
 		}
 	}
 
-	unit<uint32> adres:= impl/Adres, FreeData = "False"
+	unit<uint32> adres:= impl/Adres
 	{
 		attribute<string> straatnaam          := impl/straatnaam/result;
 		attribute<bool>   isMissingPC         := isDefined(rlookup(impl/postcode/result,replacements/missing_postcodes/label));

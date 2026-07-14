@@ -16,7 +16,7 @@ container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-
 	parameter<string> gegeneraliseerd_str := '_niet_gegeneraliseerd';
 	
 	container gpkg
-	:	StorageName     = "='%SourceDataDir%/CBS/cbsgebiedsindelingen'+ModelParameters/CBS_RegioIndelingenJaar+'.gpkg'"
+	:	StorageName     = "='%RSo_DataDir%/RegioIndelingen/cbsgebiedsindelingen'+ModelParameters/CBS_RegioIndelingenJaar+'.gpkg'"
 	, 	StorageType     = "gdal.vect"
 	,	StorageReadOnly = "True"
 	,	SyncMode        = "alltables"
