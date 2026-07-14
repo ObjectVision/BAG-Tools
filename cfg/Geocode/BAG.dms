@@ -178,9 +178,13 @@ container BAG : using = "units;classifications"
 				attribute<meter2>                      footprint                    := area(geometry, meter2);
 				attribute<bool>                        IsVoorraad                   := pand_status/isVoorraad[status_rel];
 				
-				attribute<BAG/impl/pand_hoogte>        PHN_rel                      := rlookup(pand_bag_nr, BAG/impl/pand_hoogte/pand_bag_nr);
-				attribute<cm>                          pand_hoogte                  := BAG/impl/pand_hoogte/hoogte[PHN_rel][cm];
-				attribute<cm>                          pand_hoogte_maaiveld         := BAG/impl/pand_hoogte/hoogte_maaiveld_offset[PHN_rel][cm];
+				attribute<BAG/impl/pand_hoogte>          PHN_rel                    := rlookup(pand_bag_nr, BAG/impl/pand_hoogte/pand_bag_nr);
+				attribute<cm>                            pand_hoogte_phn            := BAG/impl/pand_hoogte/hoogte[PHN_rel][cm];
+				// PHN-2026 (AHN5) is nog niet landsdekkend: panden zonder ingewonnen
+				// AHN5-tegel ontbreken geheel in de tabel -> aanvullen met PHN-2023
+				attribute<BAG/impl/pand_hoogte_fallback> PHN_fallback_rel           := rlookup(pand_bag_nr, BAG/impl/pand_hoogte_fallback/pand_bag_nr);
+				attribute<cm>                            pand_hoogte                := MakeDefined(pand_hoogte_phn, BAG/impl/pand_hoogte_fallback/hoogte[PHN_fallback_rel][cm]);
+				attribute<cm>                            pand_hoogte_maaiveld       := BAG/impl/pand_hoogte/hoogte_maaiveld_offset[PHN_rel][cm];
 
 				
 				attribute<rdc_meter>                    geometry (poly)              := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_org);
@@ -226,7 +230,10 @@ container BAG : using = "units;classifications"
 				}
 			}  
 				
-			unit<uint32> pand := select_with_attr_by_org_rel(src, src/Impl/pand_selection_condition);
+			unit<uint32> pand := select_with_attr_by_org_rel(src, src/Impl/pand_selection_condition)
+			{
+				unit<uint32> wo_hoogte := select_with_attr_by_cond(., IsNull(pand_hoogte));
+			}
 			
 		}
 		
@@ -240,10 +247,22 @@ container BAG : using = "units;classifications"
 			attribute<rdc_meter>  geometry (poly)   := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/geometry);
 			// attribute<String>    identificatie;
 			// attribute<uint64>    pand_bag_nr       := uint64(identificatie);
-			// attribute<UInt16>    hoogte; 
-			// attribute<cm>        hoogte_cm         := hoogte[cm]; 
-			// attribute<cm>        hoogte_maaiveld; 
-			// attribute<Int16>     AHN_inwinjaar; 
+			// attribute<UInt16>    hoogte;
+			// attribute<cm>        hoogte_cm         := hoogte[cm];
+			// attribute<cm>        hoogte_maaiveld;
+			// attribute<Int16>     AHN_inwinjaar;
+		}
+
+		// fallback-bron voor panden die (nog) niet in PHN-<pand_hoogte_jaar> zitten
+		parameter<String> pand_hoogte_fallback_jaar := '2023';
+
+		unit<UInt32> pand_hoogte_fallback
+		:	StorageName     = "='%RSo_DataDir%/Vastgoed/PHN_'+pand_hoogte_fallback_jaar+'0101.fss'"
+		,	StorageReadOnly = "True"
+		{
+			attribute<String>    identificatie;
+			attribute<uint64>    pand_bag_nr       := uint64(identificatie);
+			attribute<UInt16>    hoogte;
 		}
 	}
 
