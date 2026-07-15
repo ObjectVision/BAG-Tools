@@ -104,8 +104,10 @@ container Geocode
 
 	container Geography
 	{
-		unit<dpoint> rdc_meter := range(dpoint, point_yx(300000d,0d), point_yx(625000d,280000d));
+		unit<dpoint> rdc_meter := range(dpoint, point_yx(300000d,0d), point_yx(625000d,280000d)), DialogData = "ngr_layer", SpatialReference = "EPSG:28992", Descr = "Geografisch domain in RD-coordinaten, gedefinieerd in meters.";
 		unit<ipoint> rdc_mm    := gridset(rdc_meter, point_yx(0.001, 0.001), point_yx(0.0, 0.0), ipoint);
+
+		#include<ngr_layer.dms> // reference WMS layer
 	}
 
 	container SourceData
