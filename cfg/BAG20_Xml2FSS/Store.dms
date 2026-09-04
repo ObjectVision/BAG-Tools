@@ -13,6 +13,8 @@
 
 container Store // Resultaten wegschrijven naar een MMD store per BAG object
 {
+	container ligplaats_meta := Templates/meta(ligplaats, ligplaats/Objecten_Status), IsHidden = "True";
+
 	unit<uint32> ligplaats := xml/ligplaats/ParsedXML/Objecten_ligplaats
 	, StorageName = "= StoreDir + '/ligplaats.mmd'"
 	{
@@ -22,7 +24,18 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 			ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
 				[invert(ligplaats/Objecten_heeftAlsHoofdadres/parent_rel[ligplaats])];
 
-		container meta := Templates/meta(., Objecten_Status);
+		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+		{
+			attribute<string> STATUS                 (ligplaats) := ligplaats_meta/STATUS;
+			attribute<uint32> VOORKOMENIDENTIFICATIE (ligplaats) := ligplaats_meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (ligplaats) := ligplaats_meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (ligplaats) := ligplaats_meta/EINDDATUM;
+			attribute<string> TIJDSTIPREGISTRATIE    (ligplaats) := ligplaats_meta/TIJDSTIPREGISTRATIE;
+			attribute<string> EINDREGISTRATIE        (ligplaats) := ligplaats_meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (ligplaats) := ligplaats_meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (ligplaats) := ligplaats_meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (ligplaats) := ligplaats_meta/IS_GECONSTATEERD;
+		}
 
 		unit<uint32> nevenadres := ligplaats/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef  // 1->0..n relatie
 		{
@@ -30,6 +43,8 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 			attribute<string>        nummeraanduiding_id := nevenadres/_ValuesTable/Values[nevenadres/value_rel];
 		}
 	}
+
+	container standplaats_meta := Templates/meta(standplaats, standplaats/Objecten_Status), IsHidden = "True";
 
 	unit<uint32> standplaats := xml/standplaats/ParsedXML/Objecten_standplaats
 	, StorageName = "= StoreDir + '/standplaats.mmd'"
@@ -40,7 +55,18 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 			standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
 				[invert(standplaats/Objecten_heeftAlsHoofdadres/parent_rel[standplaats])];
 
-		container meta := Templates/meta(., Objecten_Status);
+		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+		{
+			attribute<string> STATUS                 (standplaats) := standplaats_meta/STATUS;
+			attribute<uint32> VOORKOMENIDENTIFICATIE (standplaats) := standplaats_meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (standplaats) := standplaats_meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (standplaats) := standplaats_meta/EINDDATUM;
+			attribute<string> TIJDSTIPREGISTRATIE    (standplaats) := standplaats_meta/TIJDSTIPREGISTRATIE;
+			attribute<string> EINDREGISTRATIE        (standplaats) := standplaats_meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (standplaats) := standplaats_meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (standplaats) := standplaats_meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (standplaats) := standplaats_meta/IS_GECONSTATEERD;
+		}
 
 		unit<uint32> nevenadres := standplaats/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef  // 1->0..n relatie
 		{
@@ -77,8 +103,22 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 		attribute<string> openbareruimte_id       := ='union_data(.,' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/nummeraanduiding/openbareruimte_id ') + ')';
 		attribute<string> woonplaats_id           := ='union_data(.,' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/nummeraanduiding/woonplaats_id ') + ')';
 
-		container meta := Templates/meta_union('nummeraanduiding',nummeraanduiding, XML/nummeraanduiding/fileset);
+		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+		{
+			attribute<string> STATUS                 (nummeraanduiding) := nummeraanduiding_meta/STATUS;
+			attribute<uint32> VOORKOMENIDENTIFICATIE (nummeraanduiding) := nummeraanduiding_meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (nummeraanduiding) := nummeraanduiding_meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (nummeraanduiding) := nummeraanduiding_meta/EINDDATUM;
+			attribute<string> TIJDSTIPREGISTRATIE    (nummeraanduiding) := nummeraanduiding_meta/TIJDSTIPREGISTRATIE;
+			attribute<string> EINDREGISTRATIE        (nummeraanduiding) := nummeraanduiding_meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (nummeraanduiding) := nummeraanduiding_meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (nummeraanduiding) := nummeraanduiding_meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (nummeraanduiding) := nummeraanduiding_meta/IS_GECONSTATEERD;
+		}
 	}
+
+	container nummeraanduiding_meta := Templates/meta_union('nummeraanduiding', nummeraanduiding, XML/nummeraanduiding/fileset), IsHidden = "True";
+	container openbareruimte_meta   := Templates/meta(openbareruimte, openbareruimte/Objecten_Status), IsHidden = "True";
 
 	unit<uint32> openbareruimte := XML/openbareruimte/ParsedXML/Objecten_openbareruimte
 	, StorageName = "= StoreDir + '/openbareruimte.mmd'"
@@ -88,8 +128,21 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 		attribute<string> type          := openbareruimte/Objecten_Type;
 		attribute<string> woonplaats_id := XML/openbareruimte/gerelateerdeWoonplaats_id;
 
-		container meta := Templates/meta (., Objecten_Status ) ;
+		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+		{
+			attribute<string> STATUS                 (openbareruimte) := openbareruimte_meta/STATUS;
+			attribute<uint32> VOORKOMENIDENTIFICATIE (openbareruimte) := openbareruimte_meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (openbareruimte) := openbareruimte_meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (openbareruimte) := openbareruimte_meta/EINDDATUM;
+			attribute<string> TIJDSTIPREGISTRATIE    (openbareruimte) := openbareruimte_meta/TIJDSTIPREGISTRATIE;
+			attribute<string> EINDREGISTRATIE        (openbareruimte) := openbareruimte_meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (openbareruimte) := openbareruimte_meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (openbareruimte) := openbareruimte_meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (openbareruimte) := openbareruimte_meta/IS_GECONSTATEERD;
+		}
 	}
+
+	container woonplaats_meta := Templates/meta(woonplaats, woonplaats/Objecten_Status), IsHidden = "True";
 
 	unit<uint32> woonplaats := XML/woonplaats/ParsedXML/Objecten_Woonplaats
 	, StorageName = "= StoreDir + '/woonplaats.mmd'"
@@ -98,7 +151,18 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 		attribute<string> identificatie         := woonplaats/Objecten_identificatie;
 		attribute<string> woonplaatsNaam        := woonplaats/Objecten_Naam;
 
-		container meta := Templates/meta(., Objecten_Status);
+		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+		{
+			attribute<string> STATUS                 (woonplaats) := woonplaats_meta/STATUS;
+			attribute<uint32> VOORKOMENIDENTIFICATIE (woonplaats) := woonplaats_meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (woonplaats) := woonplaats_meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (woonplaats) := woonplaats_meta/EINDDATUM;
+			attribute<string> TIJDSTIPREGISTRATIE    (woonplaats) := woonplaats_meta/TIJDSTIPREGISTRATIE;
+			attribute<string> EINDREGISTRATIE        (woonplaats) := woonplaats_meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (woonplaats) := woonplaats_meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (woonplaats) := woonplaats_meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (woonplaats) := woonplaats_meta/IS_GECONSTATEERD;
+		}
 	}
 
 	parameter<string> overzicht := overzichten/impl/genereer_rapport;

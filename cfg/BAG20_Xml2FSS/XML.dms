@@ -296,13 +296,26 @@ container XML
 			container ParsedXML  := parse_xml(XmlData, schema);
 			container geoBuilder := Templates/ProcessGmlPolygon(ParsedXML/Objecten_pand, false);
 
+			container pand_meta := Templates/meta(pand, pand/Objecten_Status), IsHidden = "True";
+
 			unit<uint32> pand := ParsedXML/Objecten_Pand, StorageName= "= StoreDir + '/pand/fs_' + string(fileset_rel) + '.mmd'"
 			{
 				attribute<geometries/rdc> geometry (polygon)  := geoBuilder/result;
 				attribute<string> identificatie          := Objecten_identificatie;
 				attribute<int16>  oorspronkelijkBouwjaar := Objecten_oorspronkelijkBouwjaar[int16];
 
-				container meta:= Templates/meta(., Objecten_Status);
+				container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+				{
+					attribute<string> STATUS                 (pand) := pand_meta/STATUS;
+					attribute<uint32> VOORKOMENIDENTIFICATIE (pand) := pand_meta/VOORKOMENIDENTIFICATIE;
+					attribute<int32>  BEGINDATUM             (pand) := pand_meta/BEGINDATUM;
+					attribute<int32>  EINDDATUM              (pand) := pand_meta/EINDDATUM;
+					attribute<string> TIJDSTIPREGISTRATIE    (pand) := pand_meta/TIJDSTIPREGISTRATIE;
+					attribute<string> EINDREGISTRATIE        (pand) := pand_meta/EINDREGISTRATIE;
+					attribute<int32>  DOCUMENTDATUM          (pand) := pand_meta/DOCUMENTDATUM;
+					attribute<string> DOCUMENTNUMMER         (pand) := pand_meta/DOCUMENTNUMMER;
+					attribute<bool>   IS_GECONSTATEERD       (pand) := pand_meta/IS_GECONSTATEERD;
+				}
 			}
 
 			/* XML code 1 pand object, BAG 2.0
@@ -537,6 +550,8 @@ container XML
 					);
 			}
 
+			container vbo_meta := Templates/meta(vbo, vbo/Objecten_Status), IsHidden = "True";
+
 			unit<uint32> vbo := ParsedXML/Objecten_Verblijfsobject, StorageName = "= StoreDir + '/vbo/fs_' + string(fileset_rel) + '.mmd'"
 			{
 				attribute<string> identificatie       := vbo/Objecten_identificatie;
@@ -571,7 +586,18 @@ container XML
 						,bool
 					);
 
-				container meta:= Templates/meta(., Objecten_Status);
+				container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+				{
+					attribute<string> STATUS                 (vbo) := vbo_meta/STATUS;
+					attribute<uint32> VOORKOMENIDENTIFICATIE (vbo) := vbo_meta/VOORKOMENIDENTIFICATIE;
+					attribute<int32>  BEGINDATUM             (vbo) := vbo_meta/BEGINDATUM;
+					attribute<int32>  EINDDATUM              (vbo) := vbo_meta/EINDDATUM;
+					attribute<string> TIJDSTIPREGISTRATIE    (vbo) := vbo_meta/TIJDSTIPREGISTRATIE;
+					attribute<string> EINDREGISTRATIE        (vbo) := vbo_meta/EINDREGISTRATIE;
+					attribute<int32>  DOCUMENTDATUM          (vbo) := vbo_meta/DOCUMENTDATUM;
+					attribute<string> DOCUMENTNUMMER         (vbo) := vbo_meta/DOCUMENTNUMMER;
+					attribute<bool>   IS_GECONSTATEERD       (vbo) := vbo_meta/IS_GECONSTATEERD;
+				}
 			}
 		}
 		template schema // xml attributes are here modelled as sub units of the entity related unit.
@@ -704,6 +730,8 @@ container XML
 
 			container ParsedXML := parse_xml(XmlData, schema);
 
+			container nummeraanduiding_meta := Templates/meta(nummeraanduiding, nummeraanduiding/Objecten_Status), IsHidden = "True";
+
 			unit<uint32> nummeraanduiding := ParsedXML/Objecten_Nummeraanduiding
 			{
 				attribute<string> OpenbareRuimte_id := nummeraanduiding/Objecten_ligtAan/Objectenref_OpenbareRuimteRef
@@ -711,7 +739,18 @@ container XML
 				attribute<string> Woonplaats_id     := nummeraanduiding/Objecten_ligtIn/Objectenref_WoonplaatsRef
 					[invert(value(nummeraanduiding/Objecten_ligtIn/Parent_rel, nummeraanduiding))];
 
-				container meta := Templates/meta(.,Objecten_Status);
+				container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
+				{
+					attribute<string> STATUS                 (nummeraanduiding) := nummeraanduiding_meta/STATUS;
+					attribute<uint32> VOORKOMENIDENTIFICATIE (nummeraanduiding) := nummeraanduiding_meta/VOORKOMENIDENTIFICATIE;
+					attribute<int32>  BEGINDATUM             (nummeraanduiding) := nummeraanduiding_meta/BEGINDATUM;
+					attribute<int32>  EINDDATUM              (nummeraanduiding) := nummeraanduiding_meta/EINDDATUM;
+					attribute<string> TIJDSTIPREGISTRATIE    (nummeraanduiding) := nummeraanduiding_meta/TIJDSTIPREGISTRATIE;
+					attribute<string> EINDREGISTRATIE        (nummeraanduiding) := nummeraanduiding_meta/EINDREGISTRATIE;
+					attribute<int32>  DOCUMENTDATUM          (nummeraanduiding) := nummeraanduiding_meta/DOCUMENTDATUM;
+					attribute<string> DOCUMENTNUMMER         (nummeraanduiding) := nummeraanduiding_meta/DOCUMENTNUMMER;
+					attribute<bool>   IS_GECONSTATEERD       (nummeraanduiding) := nummeraanduiding_meta/IS_GECONSTATEERD;
+				}
 			}
 		}
 
