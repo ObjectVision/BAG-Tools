@@ -66,6 +66,7 @@ container Templates: IsHidden = "True"
 		// begin case parameters
 		unit<uint32> posList;
 		parameter<bool> isExterior;
+		attribute<gmlPolygon> polygon_rel (posList); // het gml:Polygon waar deze ring toe behoort
 		// end case parameters
 
 		unit<uint32> impl := posList
@@ -73,13 +74,13 @@ container Templates: IsHidden = "True"
 			attribute<string> values := _ValuesTable/Values[value_rel];
 
 			attribute<uint32> srsDimension_with_nullvalues := strlen(posList/srsDimension) == 0 
-				? uint32(gmlPolygon/srsDimension[posList/Parent_rel]) // als de poslist geen srsdimension heeft, nemen we die van de parent
+				? uint32(gmlPolygon/srsDimension[polygon_rel]) // als de poslist geen srsdimension heeft, nemen we die van het gml:Polygon
 				: uint32(posList/srsDimension);
 			attribute<uint32> srsDimension := MakeDefined(srsDimension_with_nullvalues, srsDimensionDefaultValue)
 			, IntegrityCheck = "srsDimension == 2 || srsDimension == 3";
 
 			attribute<string>  str_sequence        := '{'+string(uint32(count) * srsDimension) + ':' + values + '}';
-			attribute<float64> f64_sequence (poly) := float64Seq(str_sequence);
+			attribute<float64> f64_sequence (arc)  := float64Seq(str_sequence); // een kale coordinatenreeks, geen polygoon
 
 			unit<uint32> posListUnit := range(uint32, 0, #posList) // trick to avoid coordinates/Sequence_rel having an untraceable values unit.
 			{
@@ -92,36 +93,40 @@ container Templates: IsHidden = "True"
 			{
 				attribute<float64>     x    := point;
 				attribute<float64>     y    := coordinates/point[org_rel + 1];
-				attribute<rdc_mm>      p_mm := point_yx(Round(y * 1000.0), Round(x * 1000.0), rdc_mm);
+				attribute<rdc_meter>   p_m  := point_yx(y, x, rdc_meter);
 				attribute<posListUnit> s    := Sequence_rel;
 				attribute<uint32>      fo   := ordinal / posListUnit/nrCoordPerPoint[s]; // forward winding
 				attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding*/
 			}
 
-			attribute<rdc_mm> geometry_mm (poly) := union_data(posList, points2sequence_pso(p/p_mm, p/s, isExterior ? p/ro : p/fo));
+			attribute<rdc_meter> geometry (poly) := union_data(posList, points2polygon_pso(p/p_m, p/s, isExterior ? p/ro : p/fo));
 		}
-		attribute<rdc_mm> result (posList, poly) := impl/geometry_mm[rdc_mm];
+		attribute<rdc_meter> result (posList, poly) := impl/geometry;
 	}
 
+	// De hele geometrie-afleiding werkt in rdc_meter (dpoint). De geos_*-polygoonoperatoren accepteren sinds
+	// GeoDMS 20.16.0 alleen nog dpoint, en ook '-' en '+' worden op dpoint door GEOS uitgevoerd in plaats van
+	// door boost::polygon, die op RD-coordinaten in mm meer dan de beschikbare 25 bits nodig heeft.
+	// Pas bij het wegschrijven naar FSS wordt met [rdc_mm] naar millimeters teruggerekend. Zie GitHub issue #1.
 	Template union 
 	{
 		// begin case parameters
-		unit<uint32>      child;
-		unit<uint32>      parent;
-		attribute<rdc_mm> geometry   (child, poly);
-		attribute<parent> parent_rel (child);
+		unit<uint32>         child;
+		unit<uint32>         parent;
+		attribute<rdc_meter> geometry   (child, poly);
+		attribute<parent>    parent_rel (child);
 		// end case parameters
 
-		attribute<rdc_mm> result (poly, parent) := geos_union_polygon(geometry, parent_rel);
+		attribute<rdc_meter> result (poly, parent) := geos_union_polygon(geometry, parent_rel);
 	}
 
 	Template optimized_union
 	{
 		// begin case parameters
-		unit<uint32>      child;
-		unit<uint32>      parent;
-		attribute<rdc_mm> geometry   (child, poly);
-		attribute<parent> parent_rel (child);
+		unit<uint32>         child;
+		unit<uint32>         parent;
+		attribute<rdc_meter> geometry   (child, poly);
+		attribute<parent>    parent_rel (child);
 		// end case parameters
 
 		container impl
@@ -132,52 +137,53 @@ container Templates: IsHidden = "True"
 			unit<uint32> nonTrivialChild := select_with_org_rel((count != 1)[union_data(childCopy, parent_rel)])
 			{
 				attribute<child>  child_rel            := value(org_rel, child);
-				attribute<rdc_mm> union (poly, parent) := geos_union_polygon(geometry[child_rel], parent_rel[child_rel]);
+				attribute<rdc_meter> union (poly, parent) := geos_union_polygon(geometry[child_rel], parent_rel[child_rel]);
 			}
 		}
-		attribute<rdc_mm> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
-		attribute<Int32>  area   (parent)      := area(result, Int32); // DEBUG
+		attribute<rdc_meter> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
+		attribute<float64> area  (parent)      := area(result, float64); // DEBUG; float64 want rdc_meter-coordinaten hebben een metriek
 	}
 
 	Template one2one_union
 	{
 		// begin case parameters
-		unit<uint32>      child;
-		unit<uint32>      parent;
-		attribute<rdc_mm> geometry   (child, poly);
-		attribute<parent> parent_rel (child);
+		unit<uint32>         child;
+		unit<uint32>         parent;
+		attribute<rdc_meter> geometry   (child, poly);
+		attribute<parent>    parent_rel (child);
 		// end case parameters
 
 		container impl 
 		{
 			parameter<bool> Check := (#child == #parent) && all(parent_rel == ID(child)[parent]);
 		}
-		attribute<rdc_mm> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
+		attribute<rdc_meter> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
 	}
 
 	Template LinearRing
 	{
 		// begin case parameters
-		unit<uint32>    parsedXMLsrc;
-		parameter<bool> isExterior;
+		unit<uint32>          parsedXMLsrc;
+		parameter<bool>       isExterior;
+		attribute<gmlPolygon> polygon_rel (parsedXMLsrc/gml_posList);
 		// end case parameters
 
 		container impl 
 		{
-			container posList := posListProcessor(parsedXMLsrc/gml_posList, isExterior);
+			container posList := posListProcessor(parsedXMLsrc/gml_posList, isExterior, polygon_rel);
 			container union   := one2one_union(parsedXMLsrc/gml_posList, parsedXMLsrc, posList/result, parsedXMLsrc/gml_posList/Parent_rel);
 		}
-		attribute<rdc_mm> geometry_mm (poly,parsedXMLsrc) := impl/union/result;
+		attribute<rdc_meter> geometry (poly,parsedXMLsrc) := impl/union/result;
 	}
 
 	Template Polygon
 	{
 		// begin case parameters
-		unit<uint32>        Exterior;
-		attribute<rdc_mm>   ExtGeometry (Exterior, poly);
-		unit<uint32>        Interior;
-		attribute<rdc_mm>   IntGeometry (Interior, poly);
-		attribute<Exterior> Parent_rel  (Interior);
+		unit<uint32>         Exterior;
+		attribute<rdc_meter> ExtGeometry (Exterior, poly);
+		unit<uint32>         Interior;
+		attribute<rdc_meter> IntGeometry (Interior, poly);
+		attribute<Exterior>  Parent_rel  (Interior);
 		// end case parameters
 
 		container impl
@@ -193,16 +199,16 @@ container Templates: IsHidden = "True"
 			unit<uint32> nonTrivialExterior := select_with_org_rel(ExtCopy/count2 > 0)
 			{
 				attribute<Exterior> Exterior_rel := value(org_rel, Exterior);
-				attribute<rdc_mm>   diff (poly)  := ExtGeometry[Exterior_rel] - IntUnion/result[Exterior_rel];
+				attribute<rdc_meter> diff (poly) := ExtGeometry[Exterior_rel] - IntUnion/result[Exterior_rel];
 			}
 
-			attribute<rdc_mm> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
+			attribute<rdc_meter> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
 		}
-		attribute<rdc_mm> result (poly,Exterior) :=
+		attribute<rdc_meter> result (poly,Exterior) :=
 			impl/count == 0
 				? ExtGeometry 
 				: impl/result;
-		attribute<Int32>  area   (Exterior)      := area(result, Int32); // DEBUG
+		attribute<float64> area  (Exterior)    := area(result, float64); // DEBUG; float64 want rdc_meter-coordinaten hebben een metriek
 	}
 
 	Template ProcessGmlPolygonImpl
@@ -211,11 +217,14 @@ container Templates: IsHidden = "True"
 		unit<uint32> gmlPolygon;
 		// end case parameters
 
-		container Exterior := Templates/LinearRing(gmlPolygon, true);
-		container Interior := Templates/LinearRing(gmlPolygon/gml_Interior, false);
+		// srsDimension van een ring zonder eigen srsDimension komt van zijn gml:Polygon; voor binnenringen loopt die relatie via gml_Interior
+		attribute<gmlPolygon> InteriorPolygon_rel (gmlPolygon/gml_Interior/gml_posList) := gmlPolygon/gml_Interior/Parent_rel[gmlPolygon/gml_Interior/gml_posList/Parent_rel];
+
+		container Exterior := Templates/LinearRing(gmlPolygon,              true,  gmlPolygon/gml_posList/Parent_rel);
+		container Interior := Templates/LinearRing(gmlPolygon/gml_Interior, false, InteriorPolygon_rel);
 		container Polygon  := Templates/Polygon(
-			gmlPolygon,              Exterior/geometry_mm,
-			gmlPolygon/gml_Interior, Interior/geometry_mm,
+			gmlPolygon,              Exterior/geometry,
+			gmlPolygon/gml_Interior, Interior/geometry,
 			gmlPolygon/gml_Interior/Parent_rel
 		);
 	}
@@ -234,6 +243,6 @@ container Templates: IsHidden = "True"
 			: 'Templates/one2one_union(impl/gmlPolygon, gmlContext, impl/Polygon/result, impl/gmlPolygon/Parent_rel)';
 
 		container geometry := = geometry_expr;
-		attribute<rdc_mm> result (gmlContext, polygon) := geometry/result;
+		attribute<rdc_meter> result (gmlContext, polygon) := geometry/result;
 	}
 }

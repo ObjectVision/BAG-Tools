@@ -34,7 +34,11 @@ container XML
 				? 1b
 				: 0b;
 
-		parameter<string> Objectenlijst: Storagename = "=impl/FileNameDirInfo";	
+		// ExplicitSuppliers dwingt af dat het Dir-commando gedraaid heeft voordat de lijst gelezen wordt;
+		// zonder deze koppeling leest CanGenerate de lijst van de vorige run, of een lijst die er nog niet is.
+		parameter<string> Objectenlijst
+		:	StorageName       = "=impl/FileNameDirInfo"
+		,	ExplicitSuppliers = "writeObjectenlijst";	
 
 		container bestand_selectie
 		{
@@ -294,7 +298,7 @@ container XML
 
 			unit<uint32> pand := ParsedXML/Objecten_Pand, StorageName= "= FSSDir + '/pand/fs_' + string(fileset_rel) + '.fss'"
 			{
-				attribute<rdc_mm> geometry_mm (polygon)  := geoBuilder/result;
+				attribute<rdc_mm> geometry_mm (polygon)  := geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
 				attribute<string> identificatie          := Objecten_identificatie;
 				attribute<int16>  oorspronkelijkBouwjaar := Objecten_oorspronkelijkBouwjaar[int16];
 
@@ -498,7 +502,7 @@ container XML
 				unit<uint32> polygon := vbo/gml_Polygon
 				{
 					attribute<string> identificatie      := vbo/Objecten_identificatie[value(vbo_impl/gml_Polygon/Parent_rel, vbo_impl)];
-					attribute<rdc_mm> geometry_mm (poly) := geoBuilder/polygon/result;
+					attribute<rdc_mm> geometry_mm (poly) := geoBuilder/polygon/result[rdc_mm]; // afleiding in meters, opslag in mm
 				}
 
 				attribute<int32> oppervlakte := vbo/Objecten_oppervlakte[int32];

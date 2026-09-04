@@ -16,7 +16,7 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	unit<uint32> ligplaats := xml/ligplaats/ParsedXML/Objecten_ligplaats
 	, StorageName = "= FSSDir + '/ligplaats.fss'"
 	{
-		attribute<rdc_mm> geometry_mm (polygon) := xml/ligplaats/geoBuilder/result;
+		attribute<rdc_mm> geometry_mm (polygon) := xml/ligplaats/geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
 		attribute<string> identificatie         := ligplaats/Objecten_identificatie;
 		attribute<string> nummeraanduiding_id   :=
 			ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
@@ -34,7 +34,7 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	unit<uint32> standplaats := xml/standplaats/ParsedXML/Objecten_standplaats
 	, StorageName = "= FSSDir + '/standplaats.fss'"
 	{
-		attribute<rdc_mm> geometry_mm (polygon) := xml/standplaats/geoBuilder/result;
+		attribute<rdc_mm> geometry_mm (polygon) := xml/standplaats/geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
 		attribute<string> identificatie         := standplaats/Objecten_identificatie;
 		attribute<string> nummeraanduiding_id   :=
 			standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
@@ -94,7 +94,7 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	unit<uint32> woonplaats := XML/woonplaats/ParsedXML/Objecten_Woonplaats
 	, StorageName = "= FSSDir + '/woonplaats.fss'"
 	{
-		attribute<rdc_mm> geometry_mm (polygon) := XML/woonplaats/geoBuilder/result;
+		attribute<rdc_mm> geometry_mm (polygon) := XML/woonplaats/geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
 		attribute<string> identificatie         := woonplaats/Objecten_identificatie;
 		attribute<string> woonplaatsNaam        := woonplaats/Objecten_Naam;
 
