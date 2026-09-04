@@ -236,10 +236,6 @@ container afleidingen: Using = "eenheden;geometries"
 		attribute<string>         woonplaatsnaam      := woonplaats/result/woonplaatsNaam[point_in_polygon(geometry,woonplaats/result/geometry)];
 	}
 
-	unit<uint32> adres_store := select_with_attr_by_org_rel(adres, const(true, adres)), StorageName = "=SnapshotDir + '/adres.mmd'"
-	{
-		attribute<adres> org_rel: DisableStorage = "True";
-	}
 
 	container impl
 	{

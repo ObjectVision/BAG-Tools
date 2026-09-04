@@ -30,22 +30,15 @@ template MakeSnapshot
 	parameter<string> SuppliersExprAll := isValidStoreDir
 		? 	WriteToMMD
 			?
-				'object/ligplaats/result_store;'
-				'object/standplaats/result_store;'
-				'object/pand/result_store;'
-				'object/vbo/result_store;'
-				'object/nummeraanduiding/result_store;'
-				'object/openbareruimte/result_store;'
-				'object/woonplaats/result_store;'
-				'object/afleidingen/adres_store;'
+				'snapshot_store;'
 				'object/overzichten/impl/genereer_rapport' 
-				+ (met_pandhoogte_attributen ? ';object/pand/phn_store' : '')
+				+ (met_pandhoogte_attributen ? ';pandhoogte_store' : '')
 			: 'gdalwrite_vect_export/result/make_geopackage '
 		: ''; 
 
 	parameter<string> SuppliersExprAdres := isValidStoreDir
 		?
-			'object/afleidingen/adres_store;'
+			'snapshot_store'
 		: ''; 
 
 	parameter<string> MaakVolledigeSnapshot := isValidStoreDir ? 'ready' : 'Folder : ' + expand(., StoreDir) + ' bevat geen volledige set van MMD stores'
@@ -110,16 +103,6 @@ template MakeSnapshot
 				}
 			}
 
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.mmd'"
-			{
-				attribute<uint32> count  : DisableStorage = "True";
-				attribute<string> values : DisableStorage = "True";
-				attribute<result> org_rel: DisableStorage = "True";
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-
-				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
-			}
 		}
 
 		container standplaats
@@ -177,15 +160,6 @@ template MakeSnapshot
 				}
 			}
 
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.mmd'"
-			{
-				attribute<string> values : DisableStorage = "True";
-				attribute<result> org_rel: DisableStorage = "True";
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-
-				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
-			}
 		}
 
 		container pand
@@ -334,38 +308,7 @@ template MakeSnapshot
 					);
 			}
 
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.mmd'"
-			{
-				attribute<uint32> sel_count: DisableStorage = "True";
-				attribute<uint32> vbo_count: DisableStorage = "True";
-				attribute<result> org_rel:   DisableStorage = "True";
-				
-				// De classificatie gaat mee de store in. Zonder deze lokale kopie noemt de dictionary de
-				// unit bij haar absolute pad in de schrijvende configuratie, dat een lezer van de
-				// snapshot niet kan declareren.
-				unit<uint8> type_woonpand := afleidingen/pand_attributen/geometrie/type_woonpand
-				{
-					attribute<string> label      := afleidingen/pand_attributen/geometrie/type_woonpand/label,      DialogType = "LabelText";
-					attribute<string> name       := afleidingen/pand_attributen/geometrie/type_woonpand/name;
-					attribute<uint32> BrushColor := afleidingen/pand_attributen/geometrie/type_woonpand/BrushColor, DialogType = "BrushColor";
-					attribute<uint32> PenColor   := BrushColor,    DialogType = "PenColor";
-				}
 
-				attribute<type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE[org_rel][type_woonpand];
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-
-				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_store, org_rel);
-			}
-
-			unit<uint32> phn_store := result_store
-			,	StorageName = "= SnapshotDir + '/pand.mmd'"
-			,	DialogType  = "Map"
-			,	DialogData  = "geometry"
-			{
-				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte[result_store/org_rel];
-				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar[result_store/org_rel];
-			}
 		}
 
 		container vbo
@@ -566,28 +509,6 @@ template MakeSnapshot
 						, src/identificatie);
 				}
 			}
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.mmd'"
-			{
-				attribute<uint32>      count:    DisableStorage = "True";
-				attribute<pand/result> pand_rel: DisableStorage = "True";
-				attribute<result>      org_rel:  DisableStorage = "True";
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-
-				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_store, org_rel);
-
-				unit<uint32> gerelateerdPand := select_with_attr_by_org_rel(result/gerelateerdPand, const(true,result/gerelateerdPand))
-				{
-					attribute<uint32> mutatie_rel: DisableStorage = "True";
-					attribute<uint32> fileset_rel: DisableStorage = "True";
-				}
-
-				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres))
-				{
-					attribute<uint32> mutatie_rel: DisableStorage = "True";
-					attribute<uint32> fileset_rel: DisableStorage = "True";
-				}
-			}
 		}
 
 		container nummeraanduiding
@@ -643,13 +564,6 @@ template MakeSnapshot
 
 				container meta := meta_template(selectie, .);
 			}
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.mmd'"
-			{
-				attribute<uint32> key: DisableStorage = "True";
-				attribute<result> org_rel:   DisableStorage = "True";
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-			}
 		}
 
 		container openbareruimte
@@ -699,14 +613,6 @@ template MakeSnapshot
 				container meta := meta_template(selectie, .);
 			}
 
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.mmd'"
-			{
-				attribute<string> values : DisableStorage = "True";
-				attribute<uint32> key:     DisableStorage = "True";
-				attribute<result> org_rel: DisableStorage = "True";
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-			}
 		}
 
 		container woonplaats
@@ -759,19 +665,277 @@ template MakeSnapshot
 				container meta := meta_template(selectie, .);
 			}
 
-			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.mmd'"
-			{
-				attribute<uint32> count:   DisableStorage = "True";
-				attribute<string> values:  DisableStorage = "True";
-				attribute<uint32> key:     DisableStorage = "True";
-				attribute<result> org_rel: DisableStorage = "True";
-
-				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
-			}
 		}
 		#include<afleidingen.dms>
 		#include<overzichten.dms>
 		#include<pc6.dms>
+	}
+
+	// De hele snapshot in een MMD store. Verwijzingen tussen de objecttypes blijven daardoor
+	// relaties in plaats van sleutelstrings, en de classificaties reizen zelfbeschrijvend mee.
+	// Een sleutel die met lookup(A/B_rel, B/identificatie) terug te halen is, wordt niet bewaard.
+	container snapshot_store
+	:	StorageName = "= SnapshotDir + '/bag.mmd'"
+	{
+			// ---- classificaties, eenmalig en zelfbeschrijvend in de store
+			unit<uint8> status_ligplaats := typeringen/status/ligplaats
+			{
+				attribute<string> Label := typeringen/status/ligplaats/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/ligplaats/selected;
+			}
+			unit<uint8> status_standplaats := typeringen/status/standplaats
+			{
+				attribute<string> Label := typeringen/status/standplaats/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/standplaats/selected;
+			}
+			unit<uint8> status_pand := typeringen/status/pand
+			{
+				attribute<string> Label := typeringen/status/pand/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/pand/selected;
+			}
+			unit<uint8> status_vbo := typeringen/status/vbo
+			{
+				attribute<string> Label := typeringen/status/vbo/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/vbo/selected;
+			}
+			unit<uint8> status_nummeraanduiding := typeringen/status/nummeraanduiding
+			{
+				attribute<string> Label := typeringen/status/nummeraanduiding/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/nummeraanduiding/selected;
+			}
+			unit<uint8> status_openbareruimte := typeringen/status/openbareruimte
+			{
+				attribute<string> Label := typeringen/status/openbareruimte/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/openbareruimte/selected;
+			}
+			unit<uint8> status_woonplaats := typeringen/status/woonplaats
+			{
+				attribute<string> Label := typeringen/status/woonplaats/label, DialogType = "LabelText";
+				attribute<bool>   selected := typeringen/status/woonplaats/selected;
+			}
+			unit<uint8> type_woonpand := object/afleidingen/pand_attributen/geometrie/type_woonpand
+			{
+				attribute<string> Label      := object/afleidingen/pand_attributen/geometrie/type_woonpand/label,      DialogType = "LabelText";
+				attribute<string> name       := object/afleidingen/pand_attributen/geometrie/type_woonpand/name;
+				attribute<uint32> BrushColor := object/afleidingen/pand_attributen/geometrie/type_woonpand/BrushColor, DialogType = "BrushColor";
+				attribute<uint32> PenColor   := BrushColor,    DialogType = "PenColor";
+			}
+
+			// ---- objecttypes, in volgorde van verwijzing
+			unit<uint32> woonplaats := object/woonplaats/result
+			{
+				attribute<geometries/rdc> geometry (polygon) := object/woonplaats/result/geometry;
+				attribute<string>         identificatie      := object/woonplaats/result/identificatie;
+				attribute<string>         woonplaatsNaam     := object/woonplaats/result/woonplaatsNaam;
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_woonplaats draagt de labels
+					attribute<status_woonplaats> status_rel (woonplaats) := rlookup(lowercase(object/woonplaats/result/meta/Status), status_woonplaats/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (woonplaats) := object/woonplaats/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (woonplaats) := object/woonplaats/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (woonplaats) := object/woonplaats/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (woonplaats) := object/woonplaats/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (woonplaats) := object/woonplaats/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (woonplaats) := object/woonplaats/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (woonplaats) := object/woonplaats/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (woonplaats) := object/woonplaats/result/meta/IS_GECONSTATEERD;
+				}
+			}
+
+			unit<uint32> openbareruimte := object/openbareruimte/result
+			{
+				attribute<string> identificatie := object/openbareruimte/result/identificatie;
+				attribute<string> naam          := object/openbareruimte/result/naam;
+				attribute<string> type          := object/openbareruimte/result/type;
+				attribute<woonplaats>         woonplaats_rel         := rlookup(object/openbareruimte/result/woonplaats_id, woonplaats/identificatie);
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_openbareruimte draagt de labels
+					attribute<status_openbareruimte> status_rel (openbareruimte) := rlookup(lowercase(object/openbareruimte/result/meta/Status), status_openbareruimte/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (openbareruimte) := object/openbareruimte/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (openbareruimte) := object/openbareruimte/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (openbareruimte) := object/openbareruimte/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (openbareruimte) := object/openbareruimte/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (openbareruimte) := object/openbareruimte/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (openbareruimte) := object/openbareruimte/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (openbareruimte) := object/openbareruimte/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (openbareruimte) := object/openbareruimte/result/meta/IS_GECONSTATEERD;
+				}
+			}
+
+			unit<uint32> nummeraanduiding := object/nummeraanduiding/result
+			{
+				attribute<string> identificatie           := object/nummeraanduiding/result/identificatie;
+				attribute<int32>  huisnummer              := object/nummeraanduiding/result/huisnummer;
+				attribute<string> huisletter              := object/nummeraanduiding/result/huisletter;
+				attribute<string> toevoeging              := object/nummeraanduiding/result/toevoeging;
+				attribute<string> postcode                := object/nummeraanduiding/result/postcode;
+				attribute<string> typeAdresseerbaarObject := object/nummeraanduiding/result/typeAdresseerbaarObject;
+				attribute<openbareruimte>     openbareruimte_rel     := rlookup(object/nummeraanduiding/result/openbareruimte_id, openbareruimte/identificatie);
+				attribute<woonplaats>         woonplaats_rel         := rlookup(object/nummeraanduiding/result/woonplaats_id, woonplaats/identificatie);
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_nummeraanduiding draagt de labels
+					attribute<status_nummeraanduiding> status_rel (nummeraanduiding) := rlookup(lowercase(object/nummeraanduiding/result/meta/Status), status_nummeraanduiding/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (nummeraanduiding) := object/nummeraanduiding/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (nummeraanduiding) := object/nummeraanduiding/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (nummeraanduiding) := object/nummeraanduiding/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (nummeraanduiding) := object/nummeraanduiding/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (nummeraanduiding) := object/nummeraanduiding/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (nummeraanduiding) := object/nummeraanduiding/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (nummeraanduiding) := object/nummeraanduiding/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (nummeraanduiding) := object/nummeraanduiding/result/meta/IS_GECONSTATEERD;
+				}
+			}
+
+			unit<uint32> ligplaats := object/ligplaats/result
+			{
+				attribute<geometries/rdc> geometry (polygon) := object/ligplaats/result/geometry;
+				attribute<string>         identificatie      := object/ligplaats/result/identificatie;
+				attribute<nummeraanduiding>   nummeraanduiding_rel   := rlookup(object/ligplaats/result/nummeraanduiding_id, nummeraanduiding/identificatie);
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_ligplaats draagt de labels
+					attribute<status_ligplaats> status_rel (ligplaats) := rlookup(lowercase(object/ligplaats/result/meta/Status), status_ligplaats/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (ligplaats) := object/ligplaats/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (ligplaats) := object/ligplaats/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (ligplaats) := object/ligplaats/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (ligplaats) := object/ligplaats/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (ligplaats) := object/ligplaats/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (ligplaats) := object/ligplaats/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (ligplaats) := object/ligplaats/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (ligplaats) := object/ligplaats/result/meta/IS_GECONSTATEERD;
+				}
+
+				unit<uint32> nevenadres := object/ligplaats/result/nevenadres
+				{
+					attribute<ligplaats>        ligplaats_rel := rlookup(object/ligplaats/result/nevenadres/identificatie, ligplaats/identificatie);
+					attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/ligplaats/result/nevenadres/nummeraanduiding_id, nummeraanduiding/identificatie);
+				}
+			}
+
+			unit<uint32> standplaats := object/standplaats/result
+			{
+				attribute<geometries/rdc> geometry (polygon) := object/standplaats/result/geometry;
+				attribute<string>         identificatie      := object/standplaats/result/identificatie;
+				attribute<nummeraanduiding>   nummeraanduiding_rel   := rlookup(object/standplaats/result/nummeraanduiding_id, nummeraanduiding/identificatie);
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_standplaats draagt de labels
+					attribute<status_standplaats> status_rel (standplaats) := rlookup(lowercase(object/standplaats/result/meta/Status), status_standplaats/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (standplaats) := object/standplaats/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (standplaats) := object/standplaats/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (standplaats) := object/standplaats/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (standplaats) := object/standplaats/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (standplaats) := object/standplaats/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (standplaats) := object/standplaats/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (standplaats) := object/standplaats/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (standplaats) := object/standplaats/result/meta/IS_GECONSTATEERD;
+				}
+
+				unit<uint32> nevenadres := object/standplaats/result/nevenadres
+				{
+					attribute<standplaats>      standplaats_rel := rlookup(object/standplaats/result/nevenadres/identificatie, standplaats/identificatie);
+					attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/standplaats/result/nevenadres/nummeraanduiding_id, nummeraanduiding/identificatie);
+				}
+			}
+
+			unit<uint32> pand := object/pand/result
+			{
+				attribute<geometries/rdc> geometry (polygon) := object/pand/result/geometry;
+				attribute<string>         identificatie      := object/pand/result/identificatie;
+				attribute<eenheden/jaar>  bouwjaar           := object/pand/result/bouwjaar;
+				attribute<type_woonpand>  woonpand_type_rel  := object/pand/result/woningtype/WOONPAND_TYPE[type_woonpand];
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_pand draagt de labels
+					attribute<status_pand> status_rel (pand) := rlookup(lowercase(object/pand/result/meta/Status), status_pand/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (pand) := object/pand/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (pand) := object/pand/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (pand) := object/pand/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (pand) := object/pand/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (pand) := object/pand/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (pand) := object/pand/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (pand) := object/pand/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (pand) := object/pand/result/meta/IS_GECONSTATEERD;
+				}
+
+				container gebruiksdoelen := for_each_nedv(
+					  'nr_' + typeringen/gebruiksdoel_vbo/name
+					, 'object/pand/result/gebruiksdoelen/nr_' + typeringen/gebruiksdoel_vbo/name
+					, pand
+					, uint32);
+			}
+
+			unit<uint32> vbo := object/vbo/result
+			{
+				attribute<geometries/rdc> geometry      := object/vbo/result/geometry;
+				attribute<string>         identificatie := object/vbo/result/identificatie;
+				attribute<int32>          oppervlakte   := object/vbo/result/oppervlakte;
+				attribute<nummeraanduiding>   nummeraanduiding_rel   := rlookup(object/vbo/result/nummeraanduiding_id, nummeraanduiding/identificatie);
+				attribute<pand>           pand_rel      := object/vbo/result/pand_rel[pand]; // pand waarin de vbo ligt
+
+				container meta
+				{
+					// de status als code in plaats van als string; status_vbo draagt de labels
+					attribute<status_vbo> status_rel (vbo) := rlookup(lowercase(object/vbo/result/meta/Status), status_vbo/Label);
+					attribute<eenheden/datum>   BEGINDATUM              (vbo) := object/vbo/result/meta/BEGINDATUM;
+					attribute<eenheden/datum>   EINDDATUM               (vbo) := object/vbo/result/meta/EINDDATUM;
+					attribute<uint32>           VOORKOMENIDENTIFICATIE  (vbo) := object/vbo/result/meta/VOORKOMENIDENTIFICATIE;
+					attribute<string>           TIJDSTIPREGISTRATIE     (vbo) := object/vbo/result/meta/TIJDSTIPREGISTRATIE;
+					attribute<string>           EINDREGISTRATIE         (vbo) := object/vbo/result/meta/EINDREGISTRATIE;
+					attribute<eenheden/datum>   DOCUMENTDATUM           (vbo) := object/vbo/result/meta/DOCUMENTDATUM;
+					attribute<string>           DOCUMENTNUMMER          (vbo) := object/vbo/result/meta/DOCUMENTNUMMER;
+					attribute<bool>             IS_GECONSTATEERD        (vbo) := object/vbo/result/meta/IS_GECONSTATEERD;
+				}
+
+				container gebruiksdoelen := for_each_nedv(
+					  typeringen/gebruiksdoel_vbo/name
+					, 'object/vbo/result/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name
+					, vbo
+					, bool);
+
+				unit<uint32> gerelateerdPand := object/vbo/result/gerelateerdPand // administratieve relatie uit de BAG
+				{
+					attribute<vbo>  vbo_rel  := rlookup(object/vbo/result/gerelateerdPand/identificatie, vbo/identificatie);
+					attribute<pand> pand_rel := rlookup(object/vbo/result/gerelateerdPand/pand_id, pand/identificatie);
+				}
+
+				unit<uint32> nevenadres := object/vbo/result/nevenadres
+				{
+					attribute<vbo>              vbo_rel              := rlookup(object/vbo/result/nevenadres/identificatie, vbo/identificatie);
+					attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/vbo/result/nevenadres/nummeraanduiding_id, nummeraanduiding/identificatie);
+				}
+			}
+
+			unit<uint32> adres := object/afleidingen/adres
+			{
+				attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/afleidingen/adres/nummeraanduiding_id, nummeraanduiding/identificatie);
+				attribute<string>           straatnaam           := object/afleidingen/adres/straatnaam;
+				attribute<string>           postcode             := object/afleidingen/adres/postcode;
+				attribute<int32>            huisnummer           := object/afleidingen/adres/huisnummer;
+				attribute<string>           huisletter           := object/afleidingen/adres/huisletter;
+				attribute<string>           toevoeging           := object/afleidingen/adres/toevoeging;
+				attribute<string>           woonplaatsnaam       := object/afleidingen/adres/woonplaatsnaam;
+				attribute<geometries/rdc>   geometry             := object/afleidingen/adres/geometry;
+				attribute<float64>          X                    := object/afleidingen/adres/X;
+				attribute<float64>          Y                    := object/afleidingen/adres/Y;
+			}
+	}
+
+	// De PHN-hoogte is optioneel en heeft eigen brondata, dus die blijft een eigen store,
+	// rij voor rij uitgelijnd met snapshot_store/pand.
+	unit<uint32> pandhoogte_store := object/pand/result
+	,	StorageName = "= SnapshotDir + '/pandhoogte.mmd'"
+	{
+		attribute<eenheden/cm_uint16> AHN_hoogte    := object/afleidingen/pand_attributen/hoogte/AHN_hoogte;
+		attribute<uint16>             AHN_inwinjaar := object/afleidingen/pand_attributen/hoogte/AHN_inwinjaar;
 	}
 
 	#include<gdalwrite_vect_export.dms>
