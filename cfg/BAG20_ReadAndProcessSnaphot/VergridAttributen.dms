@@ -15,7 +15,7 @@ container AttributenNaarGrid
 {
 	unit<spoint> m250 := Geografie/gridcel_250m/domain
 	{
-		attribute<eenheden/jaar>     bouwjaar       := modus(ReadSnapshot/pand/bouwjaar_cleaned, Geografie/gridcel_250m/domain/domain_rel);
+		attribute<eenheden/jaar>     bouwjaar       := modus(ReadSnapshot/afgeleid/pand/bouwjaar_cleaned, Geografie/gridcel_250m/domain/domain_rel);
 		attribute<eenheden/m2_int32> woon_oppervlak :=   sum(RelateerAttributen/pand/sum_oppervlakte_vbo_per_gebruiksdoel/woon, Geografie/gridcel_250m/domain/domain_rel), cdf = "Klassificaties/oppervlakte_11K/ClassBreak_250m";
 		attribute<uint32>            nrpanden       := pcount(Geografie/gridcel_250m/domain/domain_rel);
 
@@ -25,7 +25,7 @@ container AttributenNaarGrid
 
 	unit<spoint> m100 := Geografie/gridcel_100m/domain
 	{
-		attribute<eenheden/jaar>     bouwjaar       := modus(ReadSnapshot/pand/bouwjaar_cleaned, Geografie/gridcel_100m/domain/domain_rel);
+		attribute<eenheden/jaar>     bouwjaar       := modus(ReadSnapshot/afgeleid/pand/bouwjaar_cleaned, Geografie/gridcel_100m/domain/domain_rel);
 		attribute<eenheden/m2_int32> woon_oppervlak :=   sum(RelateerAttributen/pand/sum_oppervlakte_vbo_per_gebruiksdoel/woon, Geografie/gridcel_100m/domain/domain_rel), cdf = "Klassificaties/oppervlakte_11K/ClassBreak_100m";
 		attribute<uint32>            nrpanden       := pcount(Geografie/gridcel_100m/domain/domain_rel);
 
@@ -35,7 +35,7 @@ container AttributenNaarGrid
 
 	unit<spoint> m25 := Geografie/gridcel_25m/domain
 	{
-		attribute<eenheden/jaar>     bouwjaar       := ReadSnapshot/pand/bouwjaar_cleaned[pand_rel];
+		attribute<eenheden/jaar>     bouwjaar       := ReadSnapshot/afgeleid/pand/bouwjaar_cleaned[pand_rel];
 		attribute<eenheden/m2_int32> woon_oppervlak :=   sum(RelateerAttributen/pand/sum_oppervlakte_vbo_per_gebruiksdoel/woon, Geografie/gridcel_25m/domain/domain_rel);
 		attribute<uint32>            nrpanden       := pcount(Geografie/gridcel_25m/domain/domain_rel);
 

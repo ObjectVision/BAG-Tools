@@ -13,49 +13,49 @@
 
 container RelateerAttributen
 {
-	unit<uint32> vbo := ReadSnapshot/vbo
+	unit<uint32> vbo := ReadSnapshot/bag/vbo
 	{
-		attribute<string>                   identificatie              := ReadSnapshot/vbo/identificatie;
+		attribute<string>                   identificatie              := ReadSnapshot/bag/vbo/identificatie;
 
-		// Sectie pand: relateer pand informatie aan verblijfsobjecten
-		attribute<ReadSnapshot/adres>       pand_rel                   := rlookup(vbo/pand_id_geom, ReadSnapshot/pand/identificatie); // relatie van ieder vbo naar het pand index nummer, op basis van de snapshot data
-		attribute<ReadSnapshot/adres>       pand_rel_point_in_polygon  := point_in_polygon(vbo/geometry, ReadSnapshot/pand/geometry); // relatie van ieder vbo naar het adres index nummer, geometrisch bepaald
-		attribute<eenheden/jaar>            pand_bouwjaar              := ReadSnapshot/pand/bouwjaar[pand_rel];
-		attribute<typeringen/type_woonpand> pand_woonpand_type         := ReadSnapshot/pand/WOONPAND_TYPE[pand_rel];
+		// Sectie pand: de snapshot draagt de relatie zelf, er valt niets te koppelen op sleutel
+		attribute<pand>                     pand_rel                   := ReadSnapshot/bag/vbo/pand_rel[pand];
+		attribute<pand>                     pand_rel_point_in_polygon  := point_in_polygon(vbo/geometry, ReadSnapshot/bag/pand/geometry)[pand]; // dezelfde relatie, maar geometrisch bepaald
+		attribute<eenheden/jaar>            pand_bouwjaar              := ReadSnapshot/bag/pand/bouwjaar[pand_rel];
+		attribute<ReadSnapshot/bag/type_woonpand> pand_woonpand_type   := ReadSnapshot/bag/pand/woonpand_type_rel[pand_rel];
 
-		// Sectie adres: relateer adres informatie aan verblijfsobjecten
-		attribute<ReadSnapshot/adres>       adres_rel                  := rlookup(vbo/nummeraanduiding_id, ReadSnapshot/adres/nummeraanduiding_id); // relatie van ieder vbo naar het adres index nummer.
+		// Sectie adres: het adres staat bij de nummeraanduiding, waar het vbo al naar wijst
+		attribute<ReadSnapshot/bag/nummeraanduiding> adres_rel         := ReadSnapshot/bag/vbo/nummeraanduiding_rel; // relatie van ieder vbo naar zijn nummeraanduiding
 
-		attribute<string>                   straatnaam                 := ReadSnapshot/adres/straatnaam[adres_rel]; // zoek op basis van de relatie het gewenste adresveld op
-		attribute<string>                   postcode                   := ReadSnapshot/adres/postcode[adres_rel];
-		attribute<int32>                    huisnummer                 := ReadSnapshot/adres/huisnummer[adres_rel];
-		attribute<string>                   huisletter                 := ReadSnapshot/adres/huisletter[adres_rel];
-		attribute<string>                   toevoeging                 := ReadSnapshot/adres/toevoeging[adres_rel];
-		attribute<string>                   woonplaatsnaam             := ReadSnapshot/adres/woonplaatsnaam[adres_rel];
+		attribute<string>                   straatnaam                 := ReadSnapshot/bag/nummeraanduiding/straatnaam[adres_rel]; // zoek op basis van de relatie het gewenste adresveld op
+		attribute<string>                   postcode                   := ReadSnapshot/bag/nummeraanduiding/postcode[adres_rel];
+		attribute<int32>                    huisnummer                 := ReadSnapshot/bag/nummeraanduiding/huisnummer[adres_rel];
+		attribute<string>                   huisletter                 := ReadSnapshot/bag/nummeraanduiding/huisletter[adres_rel];
+		attribute<string>                   toevoeging                 := ReadSnapshot/bag/nummeraanduiding/toevoeging[adres_rel];
+		attribute<string>                   woonplaatsnaam             := ReadSnapshot/bag/nummeraanduiding/woonplaatsnaam[adres_rel];
 
 		attribute<postcode6>                postcode6_rel              := rlookup(postcode, postcode6/values);
 	}
 
-	unit<uint32> pand := ReadSnapshot/pand
+	unit<uint32> pand := ReadSnapshot/bag/pand
 	{
-		attribute<string>                   identificatie              := ReadSnapshot/pand/identificatie;
-		attribute<eenheden/m2>              pand_oppervlakte           := area(ReadSnapshot/pand/geometry, eenheden/m2); // bepaal de oppervlakte van een pand op basis van zijn geometrie
+		attribute<string>                   identificatie              := ReadSnapshot/bag/pand/identificatie;
+		attribute<eenheden/m2>              pand_oppervlakte           := area(ReadSnapshot/bag/pand/geometry, eenheden/m2); // bepaal de oppervlakte van een pand op basis van zijn geometrie
 
 		// Sectie vbo: relateer pand informatie aan verblijfsobjecten
 		attribute<uint32>                   aantal_vbo                 := pcount(vbo/pand_rel); // tel het aantal verblijfsobjecten per pand
 
-		attribute<eenheden/m2_int32>        sum_vbo_oppervlakte        := sum(ReadSnapshot/vbo/oppervlakte, vbo/pand_rel);                                  // sommeer de oppervlaktes van de verblijfsobjecten per pand
+		attribute<eenheden/m2_int32>        sum_vbo_oppervlakte        := sum(ReadSnapshot/afgeleid/vbo/oppervlakte, vbo/pand_rel);                                  // sommeer de oppervlaktes van de verblijfsobjecten per pand
 		attribute<eenheden/percentage>      perc_vbo_opp_pand_opp      := 100[eenheden/percentage] * (sum_vbo_oppervlakte[eenheden/m2] / pand_oppervlakte); // deel de sum_vbo_oppervlakte op de pand_oppervlakte, let op de conversie van de values unit.
 
 		container aantal_vbo_per_gebruiksdoel := for_each_nedv(
 			 typeringen/gebruiksdoel_vbo/name 
-			,'sum(ReadSnapshot/vbo/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ' ? 1 : 0 , vbo/pand_rel)'
+			,'sum(ReadSnapshot/bag/vbo/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ' ? 1 : 0 , vbo/pand_rel)'
 			, pand
 			, uint32); // tel voor ieder gebruiksdoel hoeveel verblijfsobjecten voorkomen in het pand.
 
 		container sum_oppervlakte_vbo_per_gebruiksdoel := for_each_nedv(
 			 typeringen/gebruiksdoel_vbo/name 
-			,'sum(ReadSnapshot/vbo/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ' ? ReadSnapshot/vbo/oppervlakte : 0[eenheden/m2_int32] , vbo/pand_rel)'
+			,'sum(ReadSnapshot/bag/vbo/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ' ? ReadSnapshot/afgeleid/vbo/oppervlakte : 0[eenheden/m2_int32] , vbo/pand_rel)'
 			, pand
 			, eenheden/m2_int32); // sommeer voor ieder gebruiksdoel de verblijfsobject oppervlakte in het pand.
 

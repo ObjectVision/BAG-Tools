@@ -17,19 +17,18 @@ container Geografie: Using = "Eenheden"
 	#include<wmts_layer.dms>
 
 	unit<dpoint> rdc_base
-	: format     = "EPSG:28992"
+	: SpatialReference = "EPSG:28992"
 	, DialogData = "wmts_layer";
 
 	unit<dpoint> rdc    := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
-	unit<ipoint> rdc_mm := gridset(rdc, point_yx(0.001,0.001), point_yx(0.0, 0.0), ipoint);
 
 	// %% grid afmetingen
 	container Studiegebied
 	{
-		parameter<m> left   := min(pointCol(ReadSnapshot/adres/Geometry))[m] - 250[m];
-		parameter<m> right  := max(pointCol(ReadSnapshot/adres/Geometry))[m] + 250[m];
-		parameter<m> bottom := min(pointRow(ReadSnapshot/adres/Geometry))[m] - 250[m]; 
-		parameter<m> top    := max(pointRow(ReadSnapshot/adres/Geometry))[m] + 250[m]; 
+		parameter<m> left   := min(pointCol(ReadSnapshot/bag/nummeraanduiding/geometry))[m] - 250[m];
+		parameter<m> right  := max(pointCol(ReadSnapshot/bag/nummeraanduiding/geometry))[m] + 250[m];
+		parameter<m> bottom := min(pointRow(ReadSnapshot/bag/nummeraanduiding/geometry))[m] - 250[m]; 
+		parameter<m> top    := max(pointRow(ReadSnapshot/bag/nummeraanduiding/geometry))[m] + 250[m]; 
 	}// /%%
 
 	container gridcel_250m:= DefineGrid(250[m], Studiegebied);
@@ -65,15 +64,15 @@ container Geografie: Using = "Eenheden"
 			attribute<.>                 id                                      := id(.);
 			attribute<int16>             row                                     := PointRow(id);
 			attribute<int16>             col                                     := PointCol(id);
-			attribute<ReadSnapshot/pand> pand_rel_via_centroid_cell              := poly2grid(ReadSnapshot/pand/Geometry, domain);
+			attribute<ReadSnapshot/bag/pand> pand_rel_via_centroid_cell              := poly2grid(ReadSnapshot/bag/pand/Geometry, domain);
 
-			attribute<rdc>               pand_centroid       (ReadSnapshot/pand) := centroid(ReadSnapshot/pand/Geometry);
-			attribute<domain>            domain_rel_centroid (ReadSnapshot/pand) := pand_centroid[domain];
+			attribute<rdc>               pand_centroid       (ReadSnapshot/bag/pand) := centroid(ReadSnapshot/bag/pand/Geometry);
+			attribute<domain>            domain_rel_centroid (ReadSnapshot/bag/pand) := pand_centroid[domain];
 
-			attribute<ReadSnapshot/pand> pand_rel_via_centroid_pand              := invert(domain_rel_centroid);
+			attribute<ReadSnapshot/bag/pand> pand_rel_via_centroid_pand              := invert(domain_rel_centroid);
 
-			attribute<ReadSnapshot/pand> pand_rel                                := MakeDefined(pand_rel_via_centroid_cell, pand_rel_via_centroid_pand);
-			attribute<domain>            domain_rel          (ReadSnapshot/pand) := pand_centroid[domain];
+			attribute<ReadSnapshot/bag/pand> pand_rel                                := MakeDefined(pand_rel_via_centroid_cell, pand_rel_via_centroid_pand);
+			attribute<domain>            domain_rel          (ReadSnapshot/bag/pand) := pand_centroid[domain];
 		}
 	}
 

@@ -683,11 +683,8 @@ template MakeSnapshot
 				attribute<string> Label := typeringen/status/ligplaats/label, DialogType = "LabelText";
 				attribute<bool>   selected := typeringen/status/ligplaats/selected;
 			}
-			unit<uint8> status_standplaats := typeringen/status/standplaats
-			{
-				attribute<string> Label := typeringen/status/standplaats/label, DialogType = "LabelText";
-				attribute<bool>   selected := typeringen/status/standplaats/selected;
-			}
+			// standplaats deelt de codelijst van ligplaats (zie status.dms: standplaats := ligplaats),
+			// dus standplaats/meta/status_rel verwijst hieronder naar status_ligplaats.
 			unit<uint8> status_pand := typeringen/status/pand
 			{
 				attribute<string> Label := typeringen/status/pand/label, DialogType = "LabelText";
@@ -776,6 +773,13 @@ template MakeSnapshot
 				attribute<openbareruimte>     openbareruimte_rel     := rlookup(object/nummeraanduiding/result/openbareruimte_id, openbareruimte/identificatie);
 				attribute<woonplaats>         woonplaats_rel         := rlookup(object/nummeraanduiding/result/woonplaats_id, woonplaats/identificatie);
 
+				// het adres zelf: de geometrie van het bijbehorende object en de namen die daarbij horen
+				attribute<geometries/rdc>     geometry               := object/afleidingen/adres/geometry;
+				attribute<float64>            X                      := object/afleidingen/adres/X;
+				attribute<float64>            Y                      := object/afleidingen/adres/Y;
+				attribute<string>             straatnaam             := object/afleidingen/adres/straatnaam;
+				attribute<string>             woonplaatsnaam         := object/afleidingen/adres/woonplaatsnaam;
+
 				container meta
 				{
 					// de status als code in plaats van als string; status_nummeraanduiding draagt de labels
@@ -826,8 +830,8 @@ template MakeSnapshot
 
 				container meta
 				{
-					// de status als code in plaats van als string; status_standplaats draagt de labels
-					attribute<status_standplaats> status_rel (standplaats) := rlookup(lowercase(object/standplaats/result/meta/Status), status_standplaats/Label);
+					// de status als code in plaats van als string; status_ligplaats draagt de labels
+					attribute<status_ligplaats>   status_rel (standplaats) := rlookup(lowercase(object/standplaats/result/meta/Status), status_ligplaats/Label);
 					attribute<eenheden/datum>   BEGINDATUM              (standplaats) := object/standplaats/result/meta/BEGINDATUM;
 					attribute<eenheden/datum>   EINDDATUM               (standplaats) := object/standplaats/result/meta/EINDDATUM;
 					attribute<uint32>           VOORKOMENIDENTIFICATIE  (standplaats) := object/standplaats/result/meta/VOORKOMENIDENTIFICATIE;
@@ -914,19 +918,8 @@ template MakeSnapshot
 				}
 			}
 
-			unit<uint32> adres := object/afleidingen/adres
-			{
-				attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/afleidingen/adres/nummeraanduiding_id, nummeraanduiding/identificatie);
-				attribute<string>           straatnaam           := object/afleidingen/adres/straatnaam;
-				attribute<string>           postcode             := object/afleidingen/adres/postcode;
-				attribute<int32>            huisnummer           := object/afleidingen/adres/huisnummer;
-				attribute<string>           huisletter           := object/afleidingen/adres/huisletter;
-				attribute<string>           toevoeging           := object/afleidingen/adres/toevoeging;
-				attribute<string>           woonplaatsnaam       := object/afleidingen/adres/woonplaatsnaam;
-				attribute<geometries/rdc>   geometry             := object/afleidingen/adres/geometry;
-				attribute<float64>          X                    := object/afleidingen/adres/X;
-				attribute<float64>          Y                    := object/afleidingen/adres/Y;
-			}
+			// Een aparte adressentabel is er niet meer: die was dezelfde domein-eenheid als
+			// nummeraanduiding, met dezelfde postcode, huisnummer, huisletter en toevoeging.
 	}
 
 	// De PHN-hoogte is optioneel en heeft eigen brondata, dus die blijft een eigen store,

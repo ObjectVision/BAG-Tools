@@ -37,6 +37,14 @@ container BAG20_ReadAndProcessSnapshot
 
 	#include <geografie.dms>
 
+	// De snapshot noemt zijn externe eenheden met een absoluut pad: /geometries/rdc,
+	// /eenheden/jaar en /eenheden/datum. De laatste twee staan hierboven; rdc heet in dit
+	// project geografie/rdc, dus die krijgt hier de naam waaronder de store hem zoekt.
+	container geometries
+	{
+		unit<dpoint> rdc := geografie/rdc;
+	}
+
 	container klassificaties // klassificatie units om (continue) data te klassificeren
 	{
 		unit<uint8> oppervlakte_11K: nrofrows = 10
@@ -103,22 +111,7 @@ container BAG20_ReadAndProcessSnapshot
 			attribute<string> name := replace(replace(label,' ','_'), 'functie','');
 		}
 
-		unit<uint8> type_woonpand: nrofrows = 6
-		{
-			attribute<string> label     : ['geen woonpand','vrijstaand','twee onder 1 kap','hoekwoning','tussenwoning','meergezinspand'], DialogType = "LabelText";
-			attribute<string> name      := replace(label, ' ', '_');
-			attribute<uint32> PenColor  := BrushColor, DialogType = "PenColor";
-			attribute<uint32> BrushColor:              DialogType = "BrushColor",
-			[
-				4294967295 // missing value used for transparant visualisation
-				,rgb(26 ,150,  80)
-				,rgb(166,217, 106)
-				,rgb(100,100, 255)
-				,rgb(255,255,  62)
-				,rgb(255, 60,  60)
-			];
-			container V := for_each_nedv(name, String(ID(.))+'[..]', void, .);
-		}
+		// type_woonpand staat met label en kleuren in de snapshot zelf, zie ReadSnapshot/bag/type_woonpand
 	}
 
 	#include<ReadSnapshot.dms>
