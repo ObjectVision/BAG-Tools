@@ -55,8 +55,13 @@ container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS
 		? 'Store/ligplaats;Store/standplaats;Store/pand;Store/vbo;Store/nummeraanduiding;Store/openbareruimte;Store/woonplaats;Store/overzicht'
 		: '';
 
-	unit<dpoint> rdc_base;
-	unit<dpoint> rdc_meter := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
+	// De MMD-dictionary noemt units die buiten de store staan bij hun absolute pad, dus deze naam
+	// moet gelijk zijn aan die in BAG20_MakeSnaphot: /geometries/rdc.
+	container geometries
+	{
+		unit<dpoint> rdc_base : SpatialReference = "EPSG:28992";
+		unit<dpoint> rdc      := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
+	}
 
 	parameter<uint32> srsDimensionDefaultValue := 2;
 

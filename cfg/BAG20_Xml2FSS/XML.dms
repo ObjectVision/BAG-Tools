@@ -298,7 +298,7 @@ container XML
 
 			unit<uint32> pand := ParsedXML/Objecten_Pand, StorageName= "= StoreDir + '/pand/fs_' + string(fileset_rel) + '.mmd'"
 			{
-				attribute<rdc_meter> geometry (polygon)  := geoBuilder/result;
+				attribute<geometries/rdc> geometry (polygon)  := geoBuilder/result;
 				attribute<string> identificatie          := Objecten_identificatie;
 				attribute<int16>  oorspronkelijkBouwjaar := Objecten_oorspronkelijkBouwjaar[int16];
 
@@ -497,12 +497,12 @@ container XML
 				{
 					attribute<uint32> ReadPos (vbo); // expliciete configuratie is noodzakelijk, anders wordt domain unit vbo niet gevonden
 				}
-				attribute<rdc_meter> geometry := point_yx(y, x, rdc_meter);
+				attribute<geometries/rdc> geometry := point_yx(y, x, geometries/rdc);
 
 				unit<uint32> polygon := vbo/gml_Polygon
 				{
 					attribute<string> identificatie      := vbo/Objecten_identificatie[value(vbo_impl/gml_Polygon/Parent_rel, vbo_impl)];
-					attribute<rdc_meter> geometry (poly) := geoBuilder/polygon/result;
+					attribute<geometries/rdc> geometry (poly) := geoBuilder/polygon/result;
 				}
 
 				attribute<int32> oppervlakte := vbo/Objecten_oppervlakte[int32];
@@ -541,7 +541,7 @@ container XML
 			{
 				attribute<string> identificatie       := vbo/Objecten_identificatie;
 				attribute<string> nummeraanduiding_id := vbo_impl/nummeraanduiding_id;
-				attribute<rdc_meter> geometry         := vbo_impl/geometry;
+				attribute<geometries/rdc> geometry         := vbo_impl/geometry;
 				attribute<int32>  oppervlakte         := vbo_impl/Objecten_oppervlakte[int32];
 
 				unit<uint32> nevenadres := vbo_impl/nevenadres // 1->0..n relatie
@@ -553,7 +553,7 @@ container XML
 				unit<uint32> polygon := vbo_impl/gml_Polygon
 				{
 					attribute<string> identificatie      := vbo_impl/polygon/identificatie;
-					attribute<rdc_meter> geometry (poly) := vbo_impl/polygon/geometry;
+					attribute<geometries/rdc> geometry (poly) := vbo_impl/polygon/geometry;
 				}
 
 				unit<uint32> gerelateerdPand := vbo_impl/gerelateerdPand

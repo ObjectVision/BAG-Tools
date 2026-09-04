@@ -93,18 +93,18 @@ container Templates: IsHidden = "True"
 			{
 				attribute<float64>     x    := point;
 				attribute<float64>     y    := coordinates/point[org_rel + 1];
-				attribute<rdc_meter>   p_m  := point_yx(y, x, rdc_meter);
+				attribute<geometries/rdc>   p_m  := point_yx(y, x, geometries/rdc);
 				attribute<posListUnit> s    := Sequence_rel;
 				attribute<uint32>      fo   := ordinal / posListUnit/nrCoordPerPoint[s]; // forward winding
 				attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding*/
 			}
 
-			attribute<rdc_meter> geometry (poly) := union_data(posList, points2polygon_pso(p/p_m, p/s, isExterior ? p/ro : p/fo));
+			attribute<geometries/rdc> geometry (poly) := union_data(posList, points2polygon_pso(p/p_m, p/s, isExterior ? p/ro : p/fo));
 		}
-		attribute<rdc_meter> result (posList, poly) := impl/geometry;
+		attribute<geometries/rdc> result (posList, poly) := impl/geometry;
 	}
 
-	// Alles rekent in rdc_meter (dpoint), van het parsen van de posList tot de MMD-store. De geos_*-
+	// Alles rekent in geometries/rdc (dpoint), van het parsen van de posList tot de MMD-store. De geos_*-
 	// polygoonoperatoren accepteren sinds GeoDMS 20.16.0 alleen nog dpoint, en ook '-' en '+' worden op
 	// dpoint door GEOS uitgevoerd in plaats van door boost::polygon, dat integer-coordinaten vereist.
 	// Zie GitHub issue #1.
@@ -113,11 +113,11 @@ container Templates: IsHidden = "True"
 		// begin case parameters
 		unit<uint32>         child;
 		unit<uint32>         parent;
-		attribute<rdc_meter> geometry   (child, poly);
+		attribute<geometries/rdc> geometry   (child, poly);
 		attribute<parent>    parent_rel (child);
 		// end case parameters
 
-		attribute<rdc_meter> result (poly, parent) := geos_union_polygon(geometry, parent_rel);
+		attribute<geometries/rdc> result (poly, parent) := geos_union_polygon(geometry, parent_rel);
 	}
 
 	Template optimized_union
@@ -125,7 +125,7 @@ container Templates: IsHidden = "True"
 		// begin case parameters
 		unit<uint32>         child;
 		unit<uint32>         parent;
-		attribute<rdc_meter> geometry   (child, poly);
+		attribute<geometries/rdc> geometry   (child, poly);
 		attribute<parent>    parent_rel (child);
 		// end case parameters
 
@@ -137,11 +137,11 @@ container Templates: IsHidden = "True"
 			unit<uint32> nonTrivialChild := select_with_org_rel((count != 1)[union_data(childCopy, parent_rel)])
 			{
 				attribute<child>  child_rel            := value(org_rel, child);
-				attribute<rdc_meter> union (poly, parent) := geos_union_polygon(geometry[child_rel], parent_rel[child_rel]);
+				attribute<geometries/rdc> union (poly, parent) := geos_union_polygon(geometry[child_rel], parent_rel[child_rel]);
 			}
 		}
-		attribute<rdc_meter> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
-		attribute<float64> area  (parent)      := area(result, float64); // DEBUG; float64 want rdc_meter-coordinaten hebben een metriek
+		attribute<geometries/rdc> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
+		attribute<float64> area  (parent)      := area(result, float64); // DEBUG; float64 want geometries/rdc-coordinaten hebben een metriek
 	}
 
 	Template one2one_union
@@ -149,7 +149,7 @@ container Templates: IsHidden = "True"
 		// begin case parameters
 		unit<uint32>         child;
 		unit<uint32>         parent;
-		attribute<rdc_meter> geometry   (child, poly);
+		attribute<geometries/rdc> geometry   (child, poly);
 		attribute<parent>    parent_rel (child);
 		// end case parameters
 
@@ -157,7 +157,7 @@ container Templates: IsHidden = "True"
 		{
 			parameter<bool> Check := (#child == #parent) && all(parent_rel == ID(child)[parent]);
 		}
-		attribute<rdc_meter> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
+		attribute<geometries/rdc> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
 	}
 
 	Template LinearRing
@@ -173,16 +173,16 @@ container Templates: IsHidden = "True"
 			container posList := posListProcessor(parsedXMLsrc/gml_posList, isExterior, polygon_rel);
 			container union   := one2one_union(parsedXMLsrc/gml_posList, parsedXMLsrc, posList/result, parsedXMLsrc/gml_posList/Parent_rel);
 		}
-		attribute<rdc_meter> geometry (poly,parsedXMLsrc) := impl/union/result;
+		attribute<geometries/rdc> geometry (poly,parsedXMLsrc) := impl/union/result;
 	}
 
 	Template Polygon
 	{
 		// begin case parameters
 		unit<uint32>         Exterior;
-		attribute<rdc_meter> ExtGeometry (Exterior, poly);
+		attribute<geometries/rdc> ExtGeometry (Exterior, poly);
 		unit<uint32>         Interior;
-		attribute<rdc_meter> IntGeometry (Interior, poly);
+		attribute<geometries/rdc> IntGeometry (Interior, poly);
 		attribute<Exterior>  Parent_rel  (Interior);
 		// end case parameters
 
@@ -199,16 +199,16 @@ container Templates: IsHidden = "True"
 			unit<uint32> nonTrivialExterior := select_with_org_rel(ExtCopy/count2 > 0)
 			{
 				attribute<Exterior> Exterior_rel := value(org_rel, Exterior);
-				attribute<rdc_meter> diff (poly) := ExtGeometry[Exterior_rel] - IntUnion/result[Exterior_rel];
+				attribute<geometries/rdc> diff (poly) := ExtGeometry[Exterior_rel] - IntUnion/result[Exterior_rel];
 			}
 
-			attribute<rdc_meter> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
+			attribute<geometries/rdc> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
 		}
-		attribute<rdc_meter> result (poly,Exterior) :=
+		attribute<geometries/rdc> result (poly,Exterior) :=
 			impl/count == 0
 				? ExtGeometry 
 				: impl/result;
-		attribute<float64> area  (Exterior)    := area(result, float64); // DEBUG; float64 want rdc_meter-coordinaten hebben een metriek
+		attribute<float64> area  (Exterior)    := area(result, float64); // DEBUG; float64 want geometries/rdc-coordinaten hebben een metriek
 	}
 
 	Template ProcessGmlPolygonImpl
@@ -243,6 +243,6 @@ container Templates: IsHidden = "True"
 			: 'Templates/one2one_union(impl/gmlPolygon, gmlContext, impl/Polygon/result, impl/gmlPolygon/Parent_rel)';
 
 		container geometry := = geometry_expr;
-		attribute<rdc_meter> result (gmlContext, polygon) := geometry/result;
+		attribute<geometries/rdc> result (gmlContext, polygon) := geometry/result;
 	}
 }

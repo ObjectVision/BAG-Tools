@@ -16,7 +16,7 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 	unit<uint32> ligplaats := xml/ligplaats/ParsedXML/Objecten_ligplaats
 	, StorageName = "= StoreDir + '/ligplaats.mmd'"
 	{
-		attribute<rdc_meter> geometry (polygon) := xml/ligplaats/geoBuilder/result;
+		attribute<geometries/rdc> geometry (polygon) := xml/ligplaats/geoBuilder/result;
 		attribute<string> identificatie         := ligplaats/Objecten_identificatie;
 		attribute<string> nummeraanduiding_id   :=
 			ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
@@ -34,7 +34,7 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 	unit<uint32> standplaats := xml/standplaats/ParsedXML/Objecten_standplaats
 	, StorageName = "= StoreDir + '/standplaats.mmd'"
 	{
-		attribute<rdc_meter> geometry (polygon) := xml/standplaats/geoBuilder/result;
+		attribute<geometries/rdc> geometry (polygon) := xml/standplaats/geoBuilder/result;
 		attribute<string> identificatie         := standplaats/Objecten_identificatie;
 		attribute<string> nummeraanduiding_id   :=
 			standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
@@ -94,7 +94,7 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 	unit<uint32> woonplaats := XML/woonplaats/ParsedXML/Objecten_Woonplaats
 	, StorageName = "= StoreDir + '/woonplaats.mmd'"
 	{
-		attribute<rdc_meter> geometry (polygon) := XML/woonplaats/geoBuilder/result;
+		attribute<geometries/rdc> geometry (polygon) := XML/woonplaats/geoBuilder/result;
 		attribute<string> identificatie         := woonplaats/Objecten_identificatie;
 		attribute<string> woonplaatsNaam        := woonplaats/Objecten_Naam;
 
