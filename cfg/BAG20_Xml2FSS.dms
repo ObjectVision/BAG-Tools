@@ -25,8 +25,8 @@
 //                                                                                    //
 // 4. Open deze configuratie en activeer de optie: MaakFSSBestanden                   //
 //                                                                                    //
-//  De BAG inclusief historie wordt nu weggeschreven naar een set van FSS Files in    //
-//  de FSSDir.                                                                        //
+//  De BAG inclusief historie wordt nu weggeschreven naar een set van MMD stores in   //
+//  de StoreDir.                                                                      //
 //                                                                                    //
 // Voor meer informatie, zie:                                                         //
 //  https://github.com/ObjectVision/BAG-Tools/wiki/BAG20-Xml2FSS                      //
@@ -42,7 +42,7 @@ container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS
 	parameter<string> date_dir := '%SourceDataDir%/BAG/' + date;
 
 	parameter<string> XmlDir   := date_dir + '/NGR';
-	parameter<string> FSSDir   := date_dir + '/fss.new';
+	parameter<string> StoreDir := date_dir + '/mmd';
 
 	parameter<string> MaakFSSBestanden := xml/folderinfo/CanGenerate == 2b
 		? 'Cannot make list of files, ' + expand(., XmlDir) + ' does not consist or contains no .xml files.'
@@ -52,12 +52,11 @@ container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS
 	, ExplicitSuppliers = "= SupplierList";
 
 	parameter<string> SupplierList     := xml/folderinfo/CanGenerate == 0b
-		? 'FSS/ligplaats;FSS/standplaats;FSS/pand;FSS/vbo;FSS/nummeraanduiding;FSS/openbareruimte;FSS/woonplaats;FSS/overzicht'
+		? 'Store/ligplaats;Store/standplaats;Store/pand;Store/vbo;Store/nummeraanduiding;Store/openbareruimte;Store/woonplaats;Store/overzicht'
 		: '';
 
 	unit<dpoint> rdc_base;
 	unit<dpoint> rdc_meter := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
-	unit<ipoint> rdc_mm    := gridset(rdc_meter, point_yx(0.001, 0.001), point_yx(0.0,0.0), ipoint);
 
 	parameter<uint32> srsDimensionDefaultValue := 2;
 
@@ -75,7 +74,7 @@ container BAG20_Xml2FSS: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS
 		}
 	}
 
-	#include<FSS.dms>
+	#include<Store.dms>
 	#include<XML.dms>
 	#include<Templates.dms>
 	#include<overzichten.dms>

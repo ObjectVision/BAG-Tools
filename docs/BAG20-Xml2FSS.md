@@ -2,12 +2,12 @@ The [[BAG]] 2.0 can be downloaded (monthly update) from the [Kadaster BAG 2.0 do
 
 The download consists of a zip file with more than 3.000 xml files. Xml files are used as exchange formats but less suitable for processing.
 
-Therefore the BAG20_Xml2FSS tool is used to convert these xml files to a [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS) storage (GeoDMS native fast primary data format).
+Therefore the BAG20_Xml2FSS tool is used to convert these xml files to a [MMD](https://github.com/ObjectVision/GeoDMS/wiki/MMD) storage (GeoDMS native fast primary data format, the successor to [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS)). Geometry is stored in RD metres as dpoint.
 
-## FSS data structure
+## MMD data structure
 
 The BAG is a historical database with one or multiple mutations per object. The BAG20 Xml2FSS tool stores this historical information in a
-FSS storage per BAG object type.
+MMD storage per BAG object type.
 
 The data structure used is similar to the BAG, with one major exception. As the number of gebruiksdoelen of a VBO in the BAG is limited, the relation between VBO and gebruiksdoel is implemented as a set of boolean attributes for each VBO indicating if this VBO has this gebruiksdoel or not. This makes it easier to work with the gebruiksdoelen. The same data structure is also used in the [[BAG20 MakeSnapshot]].
 
@@ -26,7 +26,7 @@ parameter&lt;string&gt; date     := '<I>20230113</I>';
 //
 </pre>
 5. Open the BAG20_Xml2FSS.dms in the GeoDMS and update the item: _MaakFSSBestanden_, e.g. by double clicking on this item in the TreeView. This can take some time.
-6. The resulting FSS storages become folders in your _%SourceDataDir%/BAG20/date/FSS.new_ folder. Rename this FSS.new subfolder to FSS.
+6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG20/date/mmd_ folder.
 
 ## requirements/licensing/download
 
@@ -43,7 +43,7 @@ Ignore the error(s) and reload the configuration file.
 
 ## result
 
-The result of this script is a collection of FSS storages (folders) for each BAG object type, which can be used to make snapshots from the BAG. Use the [[BAG20 MakeSnapshot]] tool for this purpose.
+The result of this script is a collection of MMD storages (folders) for each BAG object type, which can be used to make snapshots from the BAG. Use the [[BAG20 MakeSnapshot]] tool for this purpose.
 
-In the resulting FSS folder also meta information is stored in a file called: _overzicht.txt_. This files describes the number of xml files
-processed and the number of objects for each BAG object type. The information can be used as an indicator to check if all data is used in the FSS files.
+In the resulting mmd folder also meta information is stored in a file called: _overzicht.txt_. This files describes the number of xml files
+processed and the number of objects for each BAG object type. The information can be used as an indicator to check if all data is used in the MMD storages.

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
 //                                                                                    //
-//              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
+//              Configuratie voor project: BAG 2.0 XML bronfiles > MMD                //
 //                                                                                    //
 //                              Object Vision 2023                                    //
 //                                                                                    //
@@ -43,7 +43,7 @@ container overzichten: IsHidden = "True"
 				, seperator
 			);
 		parameter<string> genereer_rapport := = genereer_rapport_expr
-		,	StorageName = "= FSSDir + '/overzicht.txt'"
+		,	StorageName = "= StoreDir + '/overzicht.txt'"
 		,	StorageType = "str";
 	}
 
@@ -51,7 +51,7 @@ container overzichten: IsHidden = "True"
 	{
 		parameter<string> datum      := date;
 		parameter<string> XML_folder := expand(.,XmlDir);
-		parameter<string> FSS_folder := expand(.,FSSDir);
+		parameter<string> Store_folder := expand(.,StoreDir);
 
 		container xml_bestanden
 		{
@@ -65,11 +65,11 @@ container overzichten: IsHidden = "True"
 		}
 		container bag_objecten
 		{
-			parameter<uint32> nr_ligplaats_mutaties        := #FSS/ligplaats;
-			parameter<uint32> nr_standplaats_mutaties      := #FSS/standplaats;
-			parameter<uint32> nr_nummeraanduiding_mutaties := #FSS/nummeraanduiding;
-			parameter<uint32> nr_openbareruimte_mutaties   := #FSS/openbareruimte;
-			parameter<uint32> nr_woonplaats_mutaties       := #FSS/woonplaats;
+			parameter<uint32> nr_ligplaats_mutaties        := #Store/ligplaats;
+			parameter<uint32> nr_standplaats_mutaties      := #Store/standplaats;
+			parameter<uint32> nr_nummeraanduiding_mutaties := #Store/nummeraanduiding;
+			parameter<uint32> nr_openbareruimte_mutaties   := #Store/openbareruimte;
+			parameter<uint32> nr_woonplaats_mutaties       := #Store/woonplaats;
 		}
 	}
 }

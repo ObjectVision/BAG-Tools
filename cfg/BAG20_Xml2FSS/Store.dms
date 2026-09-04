@@ -7,16 +7,16 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-//                 Configuratie voor resulterende FSS Files                           //
+//                 Configuratie voor resulterende MMD stores                          //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container FSS // Resultaten wegschrijven naar FSS files per BAG object
+container Store // Resultaten wegschrijven naar een MMD store per BAG object
 {
 	unit<uint32> ligplaats := xml/ligplaats/ParsedXML/Objecten_ligplaats
-	, StorageName = "= FSSDir + '/ligplaats.fss'"
+	, StorageName = "= StoreDir + '/ligplaats.mmd'"
 	{
-		attribute<rdc_mm> geometry_mm (polygon) := xml/ligplaats/geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
+		attribute<rdc_meter> geometry (polygon) := xml/ligplaats/geoBuilder/result;
 		attribute<string> identificatie         := ligplaats/Objecten_identificatie;
 		attribute<string> nummeraanduiding_id   :=
 			ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
@@ -26,15 +26,15 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 
 		unit<uint32> nevenadres := ligplaats/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef  // 1->0..n relatie
 		{
-			attribute<FSS/ligplaats> mutatie_rel         := ligplaats/Objecten_heeftAlsNevenadres/Parent_rel[nevenadres/Parent_rel];
+			attribute<Store/ligplaats> mutatie_rel         := ligplaats/Objecten_heeftAlsNevenadres/Parent_rel[nevenadres/Parent_rel];
 			attribute<string>        nummeraanduiding_id := nevenadres/_ValuesTable/Values[nevenadres/value_rel];
 		}
 	}
 
 	unit<uint32> standplaats := xml/standplaats/ParsedXML/Objecten_standplaats
-	, StorageName = "= FSSDir + '/standplaats.fss'"
+	, StorageName = "= StoreDir + '/standplaats.mmd'"
 	{
-		attribute<rdc_mm> geometry_mm (polygon) := xml/standplaats/geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
+		attribute<rdc_meter> geometry (polygon) := xml/standplaats/geoBuilder/result;
 		attribute<string> identificatie         := standplaats/Objecten_identificatie;
 		attribute<string> nummeraanduiding_id   :=
 			standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef
@@ -44,29 +44,29 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 
 		unit<uint32> nevenadres := standplaats/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef  // 1->0..n relatie
 		{
-			attribute<FSS/standplaats> mutatie_rel         := standplaats/Objecten_heeftAlsNevenadres/Parent_rel[nevenadres/Parent_rel];
+			attribute<Store/standplaats> mutatie_rel         := standplaats/Objecten_heeftAlsNevenadres/Parent_rel[nevenadres/Parent_rel];
 			attribute<string>          nummeraanduiding_id := nevenadres/_ValuesTable/Values[nevenadres/value_rel];
 		}
 	}
 
 	container pand
 	{
-		parameter<string> generate_all_expr := AsList('xml/pand/PerFileSet/fs_' + string(xml/pand/fileset/Values) + '/pand', ';') + ';nr_fss';
-		parameter<string> nr_fss            := string(#xml/pand/fileset) + ';',  StorageName = "= FSSDir + '/pand/nr_fss.csv'", StorageType = "str";
+		parameter<string> generate_all_expr := AsList('xml/pand/PerFileSet/fs_' + string(xml/pand/fileset/Values) + '/pand', ';') + ';nr_stores';
+		parameter<string> nr_stores         := string(#xml/pand/fileset) + ';',  StorageName = "= StoreDir + '/pand/nr_stores.csv'", StorageType = "str";
 
 		parameter<string> generate_all      := 'OK', ExplicitSuppliers = "= generate_all_expr";
 	}
 
 	unit<uint32> vbo
 	{
-		parameter<string> generate_all_expr := AsList('xml/vbo/PerFileSet/fs_' + string(xml/vbo/fileset/Values) + '/vbo', ';') + ';nr_fss';
-		parameter<string> nr_fss            := string(#xml/vbo/fileset) + ';',  StorageName = "= FSSDir + '/vbo/nr_fss.csv'", StorageType = "str";
+		parameter<string> generate_all_expr := AsList('xml/vbo/PerFileSet/fs_' + string(xml/vbo/fileset/Values) + '/vbo', ';') + ';nr_stores';
+		parameter<string> nr_stores         := string(#xml/vbo/fileset) + ';',  StorageName = "= StoreDir + '/vbo/nr_stores.csv'", StorageType = "str";
 
 		parameter<string> generate_all      := 'OK', ExplicitSuppliers = "= generate_all_expr ";
 	}
 
 	unit<uint32> nummeraanduiding := ='union_unit(' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/ParsedXML/Objecten_Nummeraanduiding') + ')'
-	, StorageName = "= FSSDir + '/nummeraanduiding.fss'"
+	, StorageName = "= StoreDir + '/nummeraanduiding.mmd'"
 	{
 		attribute<string> identificatie           := ='union_data(.,' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/ParsedXML/Objecten_Nummeraanduiding/Objecten_identificatie ') + ')';
 		attribute<int32>  huisnummer              := ='union_data(.,' + AsItemList('XML/nummeraanduiding/PerFileSet/fs_' + string(XML/nummeraanduiding/fileset/values) + '/ParsedXML/Objecten_Nummeraanduiding/Objecten_huisnummer[int32]') + ')';
@@ -81,7 +81,7 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	}
 
 	unit<uint32> openbareruimte := XML/openbareruimte/ParsedXML/Objecten_openbareruimte
-	, StorageName = "= FSSDir + '/openbareruimte.fss'"
+	, StorageName = "= StoreDir + '/openbareruimte.mmd'"
 	{
 		attribute<string> identificatie := openbareruimte/Objecten_identificatie;
 		attribute<string> naam          := openbareruimte/Objecten_Naam;
@@ -92,9 +92,9 @@ container FSS // Resultaten wegschrijven naar FSS files per BAG object
 	}
 
 	unit<uint32> woonplaats := XML/woonplaats/ParsedXML/Objecten_Woonplaats
-	, StorageName = "= FSSDir + '/woonplaats.fss'"
+	, StorageName = "= StoreDir + '/woonplaats.mmd'"
 	{
-		attribute<rdc_mm> geometry_mm (polygon) := XML/woonplaats/geoBuilder/result[rdc_mm]; // afleiding in meters, opslag in mm
+		attribute<rdc_meter> geometry (polygon) := XML/woonplaats/geoBuilder/result;
 		attribute<string> identificatie         := woonplaats/Objecten_identificatie;
 		attribute<string> woonplaatsNaam        := woonplaats/Objecten_Naam;
 

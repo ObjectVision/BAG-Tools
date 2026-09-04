@@ -104,10 +104,10 @@ container Templates: IsHidden = "True"
 		attribute<rdc_meter> result (posList, poly) := impl/geometry;
 	}
 
-	// De hele geometrie-afleiding werkt in rdc_meter (dpoint). De geos_*-polygoonoperatoren accepteren sinds
-	// GeoDMS 20.16.0 alleen nog dpoint, en ook '-' en '+' worden op dpoint door GEOS uitgevoerd in plaats van
-	// door boost::polygon, die op RD-coordinaten in mm meer dan de beschikbare 25 bits nodig heeft.
-	// Pas bij het wegschrijven naar FSS wordt met [rdc_mm] naar millimeters teruggerekend. Zie GitHub issue #1.
+	// Alles rekent in rdc_meter (dpoint), van het parsen van de posList tot de MMD-store. De geos_*-
+	// polygoonoperatoren accepteren sinds GeoDMS 20.16.0 alleen nog dpoint, en ook '-' en '+' worden op
+	// dpoint door GEOS uitgevoerd in plaats van door boost::polygon, dat integer-coordinaten vereist.
+	// Zie GitHub issue #1.
 	Template union 
 	{
 		// begin case parameters
