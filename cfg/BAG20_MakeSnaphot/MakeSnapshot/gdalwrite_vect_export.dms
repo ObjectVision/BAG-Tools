@@ -52,7 +52,7 @@ container gdalwrite_vect_export
 			unit<uint32> ligplaats := object/ligplaats/result
 			{
 				attribute<string>         identificatie       := object/ligplaats/result/identificatie;
-				attribute<geometries/rdc> geometry     (poly) := object/ligplaats/result/geometry_mm[geometries/rdc];
+				attribute<geometries/rdc> geometry     (poly) := object/ligplaats/result/geometry;
 				attribute<string>         nummeraanduiding_id := object/ligplaats/result/nummeraanduiding_id;
 
 				container meta := meta_write_template(ligplaats, object/ligplaats/result/meta )
@@ -76,7 +76,7 @@ container gdalwrite_vect_export
 			unit<uint32> standplaats := object/standplaats/result
 			{
 				attribute<string>         identificatie       := object/standplaats/result/identificatie;
-				attribute<geometries/rdc> geometry     (poly) := object/standplaats/result/geometry_mm[geometries/rdc];
+				attribute<geometries/rdc> geometry     (poly) := object/standplaats/result/geometry;
 				attribute<string>         nummeraanduiding_id := object/standplaats/result/nummeraanduiding_id;
 
 				container meta := meta_write_template(standplaats, object/standplaats/result/meta )
@@ -100,7 +100,7 @@ container gdalwrite_vect_export
 			unit<uint32> pand := object/pand/result
 			{
 				attribute<string>                                                     identificatie   := object/pand/result/identificatie;
-				attribute<geometries/rdc>                                             geometry (poly) := object/pand/result/geometry_mm[geometries/rdc];
+				attribute<geometries/rdc>                                             geometry (poly) := object/pand/result/geometry;
 				attribute<eenheden/jaar>                                              bouwjaar        := object/pand/result/bouwjaar;
 				attribute<object/afleidingen/pand_attributen/geometrie/type_woonpand> woningtype      := object/pand/result/woningtype/woonpand_type;
 
@@ -132,7 +132,7 @@ container gdalwrite_vect_export
 			unit<uint32> vbo := object/vbo/result
 			{
 				attribute<string>         identificatie       := object/vbo/result/identificatie;
-				attribute<geometries/rdc> geometry            := object/vbo/result/geometry_mm[geometries/rdc];
+				attribute<geometries/rdc> geometry            := object/vbo/result/geometry;
 				attribute<int32>          oppervlakte         := object/vbo/result/oppervlakte;
 				attribute<string>         nummeraanduiding_id := object/vbo/result/nummeraanduiding_id;
 				attribute<string>         pand_id             := object/vbo/result/pand_id;
@@ -145,7 +145,7 @@ container gdalwrite_vect_export
 
 				container gebruiksdoelen := for_each_nedv(
 						typeringen/gebruiksdoel_vbo/name
-						, 'last(object/vbo/impl/selectie/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ', object/vbo/impl/selectie/result_rel)'
+						, 'last(object/vbo/selectie/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ', object/vbo/selectie/result_rel)'
 						, vbo
 						, bool
 					);
@@ -213,7 +213,7 @@ container gdalwrite_vect_export
 
 			unit<uint32> woonplaats := object/woonplaats/result
 			{
-				attribute<geometries/rdc> geometry (poly) := object/woonplaats/result/geometry_mm[geometries/rdc];
+				attribute<geometries/rdc> geometry (poly) := object/woonplaats/result/geometry;
 				attribute<string>         identificatie   := object/woonplaats/result/identificatie;
 				attribute<string>         woonplaatsNaam  := object/woonplaats/result/woonplaatsNaam;
 

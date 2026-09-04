@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
 //                                                                                    //
-//              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
+//              Configuratie voor project: BAG 2.0 MMD stores > snapshot              //
 //                                                                                    //
 //                              Object Vision 2023                                    //
 //                                                                                    //
@@ -25,33 +25,33 @@ template MakeSnapshot
 	parameter<string> SnapshotGeoDirPart := met_geo_sel ? geo_selectie/Label + '/' : '';
 	parameter<string> SnapshotDir        := SnapshotBaseDir + '/' + SnapshotGeoDirPart + string(prik_datum) + '.new';
 
-	parameter<bool> WriteToFSS := lowercase(format_export) = 'fss';
+	parameter<bool> WriteToMMD := lowercase(format_export) = 'mmd';
 
-	parameter<string> SuppliersExprAll := isValidFSSDir
-		? 	WriteToFSS
+	parameter<string> SuppliersExprAll := isValidStoreDir
+		? 	WriteToMMD
 			?
-				'object/ligplaats/result_fss;'
-				'object/standplaats/result_fss;'
-				'object/pand/result_fss;'
-				'object/vbo/result_fss;'
-				'object/nummeraanduiding/result_fss;'
-				'object/openbareruimte/result_fss;'
-				'object/woonplaats/result_fss;'
-				'object/afleidingen/adres_fss;'
+				'object/ligplaats/result_store;'
+				'object/standplaats/result_store;'
+				'object/pand/result_store;'
+				'object/vbo/result_store;'
+				'object/nummeraanduiding/result_store;'
+				'object/openbareruimte/result_store;'
+				'object/woonplaats/result_store;'
+				'object/afleidingen/adres_store;'
 				'object/overzichten/impl/genereer_rapport' 
-				+ (met_pandhoogte_attributen ? ';object/pand/phn_fss' : '')
+				+ (met_pandhoogte_attributen ? ';object/pand/phn_store' : '')
 			: 'gdalwrite_vect_export/result/make_geopackage '
 		: ''; 
 
-	parameter<string> SuppliersExprAdres := isValidFSSDir
+	parameter<string> SuppliersExprAdres := isValidStoreDir
 		?
-			'object/afleidingen/adres_fss;'
+			'object/afleidingen/adres_store;'
 		: ''; 
 
-	parameter<string> MaakVolledigeSnapshot := isValidFSSDir ? 'ready' : 'Folder : ' + expand(., FSSDir) + ' bevat geen volledige set van FSS bestanden'
+	parameter<string> MaakVolledigeSnapshot := isValidStoreDir ? 'ready' : 'Folder : ' + expand(., StoreDir) + ' bevat geen volledige set van MMD stores'
 	,  ExplicitSuppliers = "= SuppliersExprAll";
 
-	parameter<string> MaakAlleenFSSAdressenTabel := isValidFSSDir ? 'ready' : 'Folder : ' + expand(., FSSDir)+ ' bevat geen volledige set van FSS bestanden'
+	parameter<string> MaakAlleenAdressenTabel := isValidStoreDir ? 'ready' : 'Folder : ' + expand(., StoreDir)+ ' bevat geen volledige set van MMD stores'
 	,  ExplicitSuppliers = "= SuppliersExprAdres";
 
 	container object
@@ -59,63 +59,64 @@ template MakeSnapshot
 		container ligplaats
 		{
 			unit<uint32> src
-			: StorageName     = "= FSSDir + '/ligplaats.fss' "
+			: StorageName     = "= StoreDir + '/ligplaats.mmd'"
 			, StorageReadOnly = "True"
 			{
-				attribute<geometries/rdc_mm> geometry_mm (polygon);
-				attribute<string>            identificatie;
-				attribute<string>            nummeraanduiding_id;
+			}
 
-				container meta          := meta_src_template(src, typeringen/status/ligplaats);
-				container geo_selectie  := = met_geo_sel
-					? 'polygon_selectie(src, geometry_mm)'
+			// Een MMD-leesholder mag zelf niets declareren; de dictionary van de store doet dat.
+			// Alles wat niet uit de store komt, staat daarom hier.
+			container afgeleid
+			{
+				container status := status_selectie(src, typeringen/status/ligplaats, src/meta/STATUS);
+				container geo_selectie := = met_geo_sel
+					? 'polygon_selectie(src, src/geometry)'
 					: 'nl_selectie(src)';
-
-				unit<uint32> nevenadres // 1->0..n relatie
-				{
-					attribute<string> nummeraanduiding_id;
-					attribute<uint32> mutatie_rel;
-				}
 			}
 			container impl:=
-				='datum_selectie(src, prik_datum, '+ (met_geo_sel 
-						? 'True,  src/geo_selectie/result'
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, afgeleid/status/status_sel, '+ (met_geo_sel 
+						? 'True,  afgeleid/geo_selectie/result'
 						: 'False'
 					)
 				+ ')'
+			;
+
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
 			{
-				unit<uint32> selectie
-				{
-					attribute<result> result_rel := rlookup(identificatie, result/values);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
-				}
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<result> result_rel := rlookup(identificatie, result/values);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
-			unit<uint32> result := unique(impl/selectie/identificatie)
+			unit<uint32> result := unique(selectie/identificatie)
 			{
-				attribute<uint32>            count                 := pcount(impl/selectie/result_rel), DisableStorage = "True";
-				attribute<geometries/rdc_mm> geometry_mm (polygon) := rjoin(key, impl/selectie/key, impl/selectie/geometry_mm);
+				attribute<uint32>            count                 := pcount(selectie/result_rel), DisableStorage = "True";
+				attribute<geometries/rdc>    geometry    (polygon) := rjoin(key, selectie/key, selectie/geometry);
 
 				attribute<string>            values                : DisableStorage = "True";
 				attribute<string>            identificatie         := values;
-				attribute<string>            key                   := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
+				attribute<string>            key                   := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
 				
-				attribute<string>            nummeraanduiding_id   := rjoin(key, impl/selectie/key, impl/selectie/nummeraanduiding_id);
+				attribute<string>            nummeraanduiding_id   := rjoin(key, selectie/key, selectie/nummeraanduiding_id);
 
-				container meta := meta_template(impl/selectie, .);
+				container meta := meta_template(selectie, .);
 
-				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, selectie/org_rel))) // is een 1->0..n relatie
 				{
 					attribute<string> identificatie := src/identificatie[mutatie_rel];
 				}
 			}
 
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/ligplaats.mmd'"
 			{
 				attribute<uint32> count  : DisableStorage = "True";
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 
 				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
@@ -124,63 +125,64 @@ template MakeSnapshot
 		container standplaats
 		{
 			unit<uint32> src
-			: StorageName     = "= FSSDir + '/standplaats.fss'"
+			: StorageName     = "= StoreDir + '/standplaats.mmd'"
 			, StorageReadOnly = "True"
 			{
-				attribute<geometries/rdc_mm> geometry_mm (polygon);
-				attribute<string>            identificatie;
-				attribute<string>            nummeraanduiding_id;
+			}
 
-				container meta          := meta_src_template(src, typeringen/status/standplaats);
-				container geo_selectie  := = met_geo_sel
-					? 'polygon_selectie(src, geometry_mm)'
+			// Een MMD-leesholder mag zelf niets declareren; de dictionary van de store doet dat.
+			// Alles wat niet uit de store komt, staat daarom hier.
+			container afgeleid
+			{
+				container status := status_selectie(src, typeringen/status/standplaats, src/meta/STATUS);
+				container geo_selectie := = met_geo_sel
+					? 'polygon_selectie(src, src/geometry)'
 					: 'nl_selectie(src)';
-
-				unit<uint32> nevenadres // 1->0..n relatie
-				{
-					attribute<string> nummeraanduiding_id;
-					attribute<uint32> mutatie_rel;
-				}
 			}
 			container impl :=
-				='datum_selectie(src, prik_datum, '+ (met_geo_sel 
-						? 'True,  src/geo_selectie/result'
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, afgeleid/status/status_sel, '+ (met_geo_sel 
+						? 'True,  afgeleid/geo_selectie/result'
 						: 'False'
 					)
 				+ ')'
+			;
+
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
 			{
-				unit<uint32> selectie
-				{
-					attribute<result> result_rel := rlookup(identificatie, result/values);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
-				}
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<result> result_rel := rlookup(identificatie, result/values);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
 
-			unit<uint32> result := unique(impl/selectie/identificatie)
+			unit<uint32> result := unique(selectie/identificatie)
 			{
-				attribute<uint32>            count                 := pcount(impl/selectie/result_rel), DisableStorage = "True";
-				attribute<geometries/rdc_mm> geometry_mm (polygon) := rjoin(key, impl/selectie/key, impl/selectie/geometry_mm);
+				attribute<uint32>            count                 := pcount(selectie/result_rel), DisableStorage = "True";
+				attribute<geometries/rdc>    geometry    (polygon) := rjoin(key, selectie/key, selectie/geometry);
 
 				attribute<string>            values                : DisableStorage = "True";
 				attribute<string>            identificatie         := values;
-				attribute<string>            key                   := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
+				attribute<string>            key                   := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
 
-				attribute<string>            nummeraanduiding_id   := rjoin(key, impl/selectie/key, impl/selectie/nummeraanduiding_id);
+				attribute<string>            nummeraanduiding_id   := rjoin(key, selectie/key, selectie/nummeraanduiding_id);
 
-				container meta := meta_template(impl/selectie, .);
+				container meta := meta_template(selectie, .);
 
-				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, impl/selectie/org_rel))) // is een 1->0..n relatie
+				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres, IsDefined(rlookup(src/nevenadres/mutatie_rel, selectie/org_rel))) // is een 1->0..n relatie
 				{
 					attribute<string> identificatie := src/identificatie[mutatie_rel];
 				}
 			}
 
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName = "= SnapshotDir + '/standplaats.mmd'"
 			{
 				attribute<string> values : DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 
 				unit<uint32> nevenadres := select_with_attr_by_org_rel(result/nevenadres, const(true,result/nevenadres));
 			}
@@ -188,8 +190,8 @@ template MakeSnapshot
 
 		container pand
 		{
-			parameter<string> nr_fss : StorageName = "= FSSDir + '/pand/nr_fss.csv'", StorageType = "str";
-			unit<uint32> fileset := range(uint32,1, uint32(nr_fss) +1);
+			parameter<string> nr_stores : StorageName = "= StoreDir + '/pand/nr_stores.csv'", StorageType = "str";
+			unit<uint32> fileset := range(uint32,1, uint32(nr_stores) +1);
 			container Filesets   := for_each_ne(
 				  'nr_' + string(id(fileset))
 				, 'per_fileset(' + string(id(fileset)) + '[fileset])'
@@ -201,49 +203,44 @@ template MakeSnapshot
 				parameter<fileset> nr_fileseset;
 				// end case parameters
 
-				unit<uint32> file
-				: StorageName     = "= FSSDir + '/pand/fs_' +  string(nr_fileseset) +'.fss'"
+				// Een MMD-leesholder declareert niets; de dictionary van de store bepaalt de inhoud.
+				unit<uint32> store
+				: StorageName     = "= StoreDir + '/pand/fs_' +  string(nr_fileseset) +'.mmd'"
 				, StorageReadOnly = "True"
 				{
-					attribute<geometries/rdc_mm> geometry_mm (polygon);
-					attribute<string>            identificatie;
-					attribute<eenheden/jaar>     oorspronkelijkBouwjaar;
-
-					container meta := meta_src_template(file, typeringen/status/pand);
 				}
 			}
 
-			unit<uint32> src := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/File', ',') + ')'
+			unit<uint32> src := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/store', ',') + ')'
 			{
-				attribute<geometries/rdc_mm> geometry_mm   (polygon) := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/geometry_mm', ',') + ')';
-				attribute<geometries/rdc>    geometry      (polygon) := geometry_mm[geometries/rdc];
+				attribute<geometries/rdc>    geometry      (polygon) := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/geometry', ',') + ')';
 				
-				attribute<geometries/rdc>    bg_simplified (polygon) := geos_simplify_polygon(geometry, 1.0);
+				attribute<geometries/rdc>    bg_simplified (polygon) := geos_simplify_multi_polygon(geometry, 1.0); // geos_simplify_polygon bestaat niet
 
-				attribute<string>            identificatie           := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/identificatie', ',') + ')';
-				attribute<eenheden/jaar>     oorspronkelijkBouwjaar  := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/oorspronkelijkBouwjaar', ',') + ')';
+				attribute<string>            identificatie           := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/identificatie', ',') + ')';
+				attribute<eenheden/jaar>     oorspronkelijkBouwjaar  := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/oorspronkelijkBouwjaar', ',') + ')[eenheden/jaar]';
 
 				container meta
 				{
-					attribute<string>                  STATUS     (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/STATUS', ',') + ')';
+					attribute<string>                  STATUS     (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/STATUS', ',') + ')';
 					attribute<typeringen/status/pand>  status_rel (src) := rlookup(lowercase(STATUS), typeringen/status/pand/label);
 					attribute<bool>                    status_sel (src) := typeringen/status/pand/Selected[status_rel];
 
-					attribute<int32 > BEGINDATUM                  (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/BEGINDATUM', ',') + ')';
-					attribute<int32>  EINDDATUM                   (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/EINDDATUM', ',') + ')';
+					attribute<int32 > BEGINDATUM                  (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/BEGINDATUM', ',') + ')';
+					attribute<int32>  EINDDATUM                   (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/EINDDATUM', ',') + ')';
 
-					attribute<int32>  DOCUMENTDATUM               (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/DOCUMENTDATUM', ',') + ')';
-					attribute<string> DOCUMENTNUMMER              (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/DOCUMENTNUMMER', ',') + ')';
+					attribute<int32>  DOCUMENTDATUM               (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/DOCUMENTDATUM', ',') + ')';
+					attribute<string> DOCUMENTNUMMER              (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/DOCUMENTNUMMER', ',') + ')';
 
-					attribute<uint32> VOORKOMENIDENTIFICATIE      (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/VOORKOMENIDENTIFICATIE', ',') + ')';
+					attribute<uint32> VOORKOMENIDENTIFICATIE      (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/VOORKOMENIDENTIFICATIE', ',') + ')';
 
-					attribute<string> TIJDSTIPREGISTRATIE         (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/TIJDSTIPREGISTRATIE', ',') + ')';
-					attribute<string> EINDREGISTRATIE             (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/EINDREGISTRATIE', ',') + ')';
+					attribute<string> TIJDSTIPREGISTRATIE         (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/TIJDSTIPREGISTRATIE', ',') + ')';
+					attribute<string> EINDREGISTRATIE             (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/EINDREGISTRATIE', ',') + ')';
 
-					attribute<bool>   IS_GECONSTATEERD            (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/IS_GECONSTATEERD', ',') + ')';
+					attribute<bool>   IS_GECONSTATEERD            (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/IS_GECONSTATEERD', ',') + ')';
 				}
 				container geo_selectie  := = met_geo_sel
-					? 'polygon_selectie(src, geometry_mm)'
+					? 'polygon_selectie(src, geometry)'
 					: 'nl_selectie(src)';
 			}
 			container vreemde_waarden_filter
@@ -281,37 +278,42 @@ template MakeSnapshot
 					);
 			}
 			container impl :=
-				='datum_selectie(src, prik_datum, '+ ((met_geo_sel || met_vreemde_waarden_sel)
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, src/meta/status_sel, '+ ((met_geo_sel || met_vreemde_waarden_sel)
 						? 'True,  overig_filter/in_selectie'
 						: 'False'
 					)
 				+ ')'
+			;
+
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
 			{
-				unit<uint32> selectie
-				{
-					attribute<result> result_rel := rlookup(identificatie, result/identificatie);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
-				}
-
-				unit<uint32> result_base := unique(impl/selectie/identificatie);
-
-				unit<uint32> phn := result
-				{
-					attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte;
-					attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar;
-				}
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<result> result_rel := rlookup(identificatie, result/identificatie);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
 
-			unit<uint32> result :=  TiledUnit(1000000[impl/result_base])
-			, DialogType  = "Map"
-			, DialogData  = "geometry_mm"
-			{
-				attribute<uint32>                                              sel_count             := pcount(impl/selectie/result_rel) , DisableStorage = "True";
-				attribute<uint32>                                              vbo_count             := pcount(vbo/result/pand_rel)      , DisableStorage = "True";
-				attribute<geometries/rdc_mm>                                   geometry_mm (polygon) := rjoin(identificatie, impl/selectie/identificatie, impl/selectie/geometry_mm);
+			unit<uint32> result_base := unique(selectie/identificatie);
 
-				attribute<string>                                              identificatie         := impl/result_base/values[mapping(result, impl/result_base)];
-				attribute<eenheden/jaar>                                       bouwjaar              := last(impl/selectie/oorspronkelijkBouwjaar, impl/selectie/result_rel);
+			unit<uint32> phn := result
+			{
+				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte;
+				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar;
+			}
+
+			unit<uint32> result :=  TiledUnit(1000000[result_base])
+			, DialogType  = "Map"
+			, DialogData  = "geometry"
+			{
+				attribute<uint32>                                              sel_count             := pcount(selectie/result_rel) , DisableStorage = "True";
+				attribute<uint32>                                              vbo_count             := pcount(vbo/result/pand_rel)      , DisableStorage = "True";
+				attribute<geometries/rdc>                                      geometry    (polygon) := rjoin(identificatie, selectie/identificatie, selectie/geometry);
+
+				attribute<string>                                              identificatie         := result_base/values[mapping(result, result_base)];
+				attribute<eenheden/jaar>                                       bouwjaar              := last(selectie/oorspronkelijkBouwjaar, selectie/result_rel);
 
 				container woningtype
 				{
@@ -319,9 +321,9 @@ template MakeSnapshot
 					attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE  (..) := afleidingen/pand_attributen/geometrie/results/type_woonpand_rel;
 				}
 				
-				attribute<string>                                              key                       := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
+				attribute<string>                                              key                       := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
 
-				container meta := meta_template(impl/selectie, .);
+				container meta := meta_template(selectie, .);
 
 				container gebruiksdoelen:=
 					for_each_nedv(
@@ -332,7 +334,7 @@ template MakeSnapshot
 					);
 			}
 
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/pand.mmd'"
 			{
 				attribute<uint32> sel_count: DisableStorage = "True";
 				attribute<uint32> vbo_count: DisableStorage = "True";
@@ -340,25 +342,25 @@ template MakeSnapshot
 				
 				attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE [org_rel];
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 
-				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
+				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_store, org_rel);
 			}
 
-			unit<uint32> phn_fss := result_fss
-			,	StorageName = "= SnapshotDir + '/pand.fss'"
+			unit<uint32> phn_store := result_store
+			,	StorageName = "= SnapshotDir + '/pand.mmd'"
 			,	DialogType  = "Map"
-			,	DialogData  = "geometry_mm"
+			,	DialogData  = "geometry"
 			{
-				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte[result_fss/org_rel];
-				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar[result_fss/org_rel];
+				attribute<eenheden/cm_uint16> AHN_hoogte    := afleidingen/pand_attributen/hoogte/AHN_hoogte[result_store/org_rel];
+				attribute<uint16>             AHN_inwinjaar := afleidingen/pand_attributen/hoogte/AHN_inwinjaar[result_store/org_rel];
 			}
 		}
 
 		container vbo
 		{
-			parameter<string> nr_fss : StorageName = "= FSSDir + '/vbo/nr_fss.csv'", StorageType = "str";
-			unit<uint32> fileset := range(uint32,1, uint32(nr_fss) +1);
+			parameter<string> nr_stores : StorageName = "= StoreDir + '/vbo/nr_stores.csv'", StorageType = "str";
+			unit<uint32> fileset := range(uint32,1, uint32(nr_stores) +1);
 			container Filesets   := for_each_ne(
 				  'nr_' + string(id(fileset))
 				, 'per_fileset(' + string(id(fileset)) + '[fileset])'
@@ -370,63 +372,44 @@ template MakeSnapshot
 				parameter<fileset> nr_fileseset;
 				// end case parameters
 
-				unit<uint32> file
-				: StorageName     = "= FSSDir + '/vbo/fs_' +  string(nr_fileseset) +'.fss'"
+				// Een MMD-leesholder declareert niets; de dictionary van de store bepaalt de inhoud.
+				unit<uint32> store
+				: StorageName     = "= StoreDir + '/vbo/fs_' +  string(nr_fileseset) +'.mmd'"
 				, StorageReadOnly = "True"
 				{
-					attribute<geometries/rdc_mm> geometry_mm;
-					attribute<string>            identificatie;
-					attribute<string>            nummeraanduiding_id;
-					attribute<int32>             oppervlakte;
+				}
 
-					attribute<uint32>            mutatie_rel := id(.);
-					attribute<uint32>            fileset_rel := const(nr_fileseset,.);
+				// De relaties naar het fileset waar een rij vandaan komt staan niet in de store.
+				container afgeleid
+				{
+					attribute<uint32> mutatie_rel (store) := id(store);
+					attribute<uint32> fileset_rel (store) := const(nr_fileseset, store);
 
-					container gebruiksdoelen :=
-						for_each_ndv(
-							typeringen/gebruiksdoel_vbo/name
-							, file
-							, bool
-						);
-
-					unit<uint32> polygon // is een 1->0..1 relatie
+					container gerelateerdPand
 					{
-						attribute<geometries/rdc_mm> geometry_mm (polygon);
-						attribute<string>            identificatie;
+						attribute<uint32> fileset_rel (store/gerelateerdPand) := const(nr_fileseset, store/gerelateerdPand);
 					}
-
-					unit<uint32> gerelateerdPand // is een 1->0..n relatie
+					container nevenadres
 					{
-						attribute<string> pand_id;
-						attribute<uint32> mutatie_rel;
-						attribute<uint32> fileset_rel := const(nr_fileseset,.);
+						attribute<uint32> fileset_rel (store/nevenadres) := const(nr_fileseset, store/nevenadres);
 					}
-
-					unit<uint32> nevenadres // is een 1->0..n relatie
-					{
-						attribute<string> nummeraanduiding_id;
-						attribute<uint32> mutatie_rel;
-						attribute<uint32> fileset_rel := const(nr_fileseset,.);
-					}
-
-					container meta := meta_src_template(file, typeringen/status/vbo);
 				}
 			}
 
-			unit<uint32> src := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/File', ',') + ')'
+			unit<uint32> src := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/store', ',') + ')'
 			{
-				attribute<geometries/rdc_mm> geometry_mm         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/geometry_mm', ',') + ')';
-				attribute<string>            identificatie       := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/identificatie', ',') + ')';
-				attribute<string>            nummeraanduiding_id := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/nummeraanduiding_id', ',') + ')';
-				attribute<int32>             oppervlakte         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/oppervlakte', ',') + ')';
+				attribute<geometries/rdc>    geometry            := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/geometry', ',') + ')';
+				attribute<string>            identificatie       := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/identificatie', ',') + ')';
+				attribute<string>            nummeraanduiding_id := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/nummeraanduiding_id', ',') + ')';
+				attribute<int32>             oppervlakte         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/oppervlakte', ',') + ')';
 
-				attribute<uint32>            mutatie_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/mutatie_rel', ',') + ')';
-				attribute<uint32>            fileset_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/fileset_rel', ',') + ')';
+				attribute<uint32>            mutatie_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/afgeleid/mutatie_rel', ',') + ')';
+				attribute<uint32>            fileset_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/afgeleid/fileset_rel', ',') + ')';
 
-				parameter<string>    gebruiksdoelen_expr         := 'union_data(src, ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/gebruiksdoelen/@@@', ',') + ')';
+				parameter<string>    gebruiksdoelen_expr         := 'union_data(src, ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/gebruiksdoelen/@@@', ',') + ')';
 				parameter<string>    gebruiksdoelen_tobereplaced := '@@@';
 
-				attribute<bool>              geo_selectie        := isDefined(point_in_polygon(geometry_mm[geometries/rdc], /geo_selectie/Geometry));
+				attribute<bool>              geo_selectie        := isDefined(point_in_polygon(geometry, /geo_selectie/Geometry));
 				
 				container gebruiksdoelen :=
 					for_each_nedv(
@@ -436,107 +419,112 @@ template MakeSnapshot
 						, bool
 					);
 
-				unit<uint32> polygon := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/polygon', ',') + ')' // is een 1->0..1 relatie
+				unit<uint32> polygon := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/polygon', ',') + ')' // is een 1->0..1 relatie
 				{
-					attribute<geometries/rdc_mm> geometry_mm (polygon) := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/polygon/geometry_mm', ',') + ')';
-					attribute<string>            identificatie         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/polygon/identificatie', ',') + ')';
-					attribute<geometries/rdc_mm> centroid_mm           := centroid(geometry_mm);
+					attribute<geometries/rdc> geometry (polygon) := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/polygon/geometry', ',') + ')';
+					attribute<string>         identificatie      := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/polygon/identificatie', ',') + ')';
+					attribute<geometries/rdc> centroid           := centroid(geometry);
 				}
 
-				attribute<geometries/rdc_mm> centroid_mm := rjoin(identificatie, polygon/identificatie, polygon/centroid_mm);
+				attribute<geometries/rdc> centroid := rjoin(identificatie, polygon/identificatie, polygon/centroid);
 
-				unit<uint32> gerelateerdPand := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/gerelateerdPand', ',') + ')' // is een 1->0..1 relatie
+				unit<uint32> gerelateerdPand := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/gerelateerdPand', ',') + ')' // is een 1->0..1 relatie
 				{
-					attribute<uint32> fileset_rel := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/gerelateerdPand/fileset_rel', ',') + ')';
-					attribute<uint32> mutatie_rel := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/gerelateerdPand/mutatie_rel', ',') + ')';
-					attribute<string> pand_id     := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/gerelateerdPand/pand_id ', ',') + ')';
+					attribute<uint32> fileset_rel := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/afgeleid/gerelateerdPand/fileset_rel', ',') + ')';
+					attribute<uint32> mutatie_rel := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/gerelateerdPand/mutatie_rel', ',') + ')';
+					attribute<string> pand_id     := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/gerelateerdPand/pand_id ', ',') + ')';
 				}
 
-				unit<uint32> nevenadres := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/nevenadres', ',') + ')' // is een 1->0..1 relatie
+				unit<uint32> nevenadres := = 'union_unit(' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/nevenadres', ',') + ')' // is een 1->0..1 relatie
 				{
-					attribute<uint32> fileset_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/nevenadres/fileset_rel', ',') + ')';
-					attribute<uint32> mutatie_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/nevenadres/mutatie_rel', ',') + ')';
-					attribute<string> nummeraanduiding_id := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/nevenadres/nummeraanduiding_id ', ',') + ')';
+					attribute<uint32> fileset_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/afgeleid/nevenadres/fileset_rel', ',') + ')';
+					attribute<uint32> mutatie_rel         := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/nevenadres/mutatie_rel', ',') + ')';
+					attribute<string> nummeraanduiding_id := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/nevenadres/nummeraanduiding_id ', ',') + ')';
 				}
 
 				container meta
 				{
-					attribute<string>                STATUS     (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/STATUS', ',') + ')';
+					attribute<string>                STATUS     (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/STATUS', ',') + ')';
 					attribute<typeringen/status/vbo> status_rel (src) := rlookup(lowercase(STATUS), typeringen/status/vbo/label);
 					attribute<bool>                  status_sel (src) := typeringen/status/vbo/Selected[status_rel];
 
-					attribute<int32 > BEGINDATUM                (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/BEGINDATUM', ',') + ')';
-					attribute<int32>  EINDDATUM                 (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/EINDDATUM', ',') + ')';
+					attribute<int32 > BEGINDATUM                (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/BEGINDATUM', ',') + ')';
+					attribute<int32>  EINDDATUM                 (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/EINDDATUM', ',') + ')';
 
-					attribute<uint32> VOORKOMENIDENTIFICATIE    (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/VOORKOMENIDENTIFICATIE', ',') + ')';
-					attribute<string> TIJDSTIPREGISTRATIE       (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/TIJDSTIPREGISTRATIE', ',') + ')';
-					attribute<string> EINDREGISTRATIE           (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/EINDREGISTRATIE', ',') + ')';
+					attribute<uint32> VOORKOMENIDENTIFICATIE    (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/VOORKOMENIDENTIFICATIE', ',') + ')';
+					attribute<string> TIJDSTIPREGISTRATIE       (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/TIJDSTIPREGISTRATIE', ',') + ')';
+					attribute<string> EINDREGISTRATIE           (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/EINDREGISTRATIE', ',') + ')';
 
-					attribute<int32>  DOCUMENTDATUM             (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/DOCUMENTDATUM', ',') + ')';
-					attribute<string> DOCUMENTNUMMER            (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/DOCUMENTNUMMER', ',') + ')';
+					attribute<int32>  DOCUMENTDATUM             (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/DOCUMENTDATUM', ',') + ')';
+					attribute<string> DOCUMENTNUMMER            (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/DOCUMENTNUMMER', ',') + ')';
 
-					attribute<bool>   IS_GECONSTATEERD          (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/File/meta/IS_GECONSTATEERD', ',') + ')';
+					attribute<bool>   IS_GECONSTATEERD          (src) := = 'union_data(.., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/meta/IS_GECONSTATEERD', ',') + ')';
 				}
 			}
 
 			container impl :=
-				='datum_selectie(src, prik_datum, ' + (met_geo_sel 
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, src/meta/status_sel, ' + (met_geo_sel 
 						? 'True,  src/geo_selectie'
 						: 'False'
 					)
 				+ ')'
+			;
+
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
 			{
-				unit<uint32> selectie
-				{
-					attribute<geometries/rdc_mm> geometry_mm_raw_or_centroid := MakeDefined(domain/geometry_mm, domain/centroid_mm)[selectie/org_rel]; // Op snapshot moment willen we alleen punt geometrien hebben voor vbo's
-					attribute<int32> X := PointCol(geometry_mm_raw_or_centroid);
-					attribute<int32> Y := PointRow(geometry_mm_raw_or_centroid);
-					attribute<geometries/rdc_mm> geometry_mm_in_nl :=
-						   X >=  -8000000i &&  X <= 300000000i
-						&& Y >= 289000000i &&  Y <= 629000000i
-							? geometry_mm_raw_or_centroid
-							: point_xy(0i/0i, 0i/0i, geometries/rdc_mm);
-					// Op snapshot moment willen we alleen geometrien in NL (https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten), dit ten behoeve van gemiddelde bepalingen (denk aan coordinaten voor geocode)
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<geometries/rdc> geometry_raw_or_centroid := MakeDefined(src/geometry, src/centroid)[org_rel]; // Op snapshot moment willen we alleen punt geometrien hebben voor vbo's
+				attribute<float64> X := PointCol(geometry_raw_or_centroid);
+				attribute<float64> Y := PointRow(geometry_raw_or_centroid);
+				attribute<geometries/rdc> geometry_in_nl :=
+					   X >=  -8000d &&  X <= 300000d
+					&& Y >= 289000d &&  Y <= 629000d
+						? geometry_raw_or_centroid
+						: point_xy(0d/0d, 0d/0d, geometries/rdc);
+				// Op snapshot moment willen we alleen geometrien in NL (https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten), dit ten behoeve van gemiddelde bepalingen (denk aan coordinaten voor geocode)
 
-					attribute<result> result_rel := rlookup(identificatie,result/identificatie);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
+				attribute<result> result_rel := rlookup(identificatie,result/identificatie);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 
-					container gebruiksdoelen := collect_attr_by_org_rel(src/gebruiksdoelen, selectie, selectie/org_rel);
-				}
-
-				unit<uint32> result_base := unique(selectie/identificatie);
+				container gebruiksdoelen := collect_attr_by_org_rel(src/gebruiksdoelen, selectie, org_rel);
 			}
 
-			unit<uint32> result := TiledUnit(1000000[impl/result_base])
-			,	DialogType  = "Map"
-			,	DialogData  = "geometry_mm"
-			{
-				attribute<uint32>            count               := pcount(impl/selectie/result_rel), DisableStorage = "True";
+			unit<uint32> result_base := unique(selectie/identificatie);
 
-				attribute<geometries/rdc_mm> geometry_mm         := rjoin(identificatie, impl/selectie/identificatie, impl/selectie/geometry_mm_in_nl);
-				attribute<string>            identificatie       := impl/result_base/values[mapping(result, impl/result_base)];
-				attribute<int32>             oppervlakte         := last(impl/selectie/oppervlakte, impl/selectie/result_rel);
-				attribute<string>            nummeraanduiding_id := last(impl/selectie/nummeraanduiding_id, impl/selectie/result_rel);
+			unit<uint32> result := TiledUnit(1000000[result_base])
+			,	DialogType  = "Map"
+			,	DialogData  = "geometry"
+			{
+				attribute<uint32>            count               := pcount(selectie/result_rel), DisableStorage = "True";
+
+				attribute<geometries/rdc>    geometry            := rjoin(identificatie, selectie/identificatie, selectie/geometry_in_nl);
+				attribute<string>            identificatie       := result_base/values[mapping(result, result_base)];
+				attribute<int32>             oppervlakte         := last(selectie/oppervlakte, selectie/result_rel);
+				attribute<string>            nummeraanduiding_id := last(selectie/nummeraanduiding_id, selectie/result_rel);
 
 				attribute<string>            pand_id             := last(gerelateerdPand/pand_id, rlookup(gerelateerdPand/identificatie, identificatie));
-				attribute<pand/result>       pand_rel            := point_in_polygon(geometry_mm, pand/result/geometry_mm), DisableStorage = "True";
+				attribute<pand/result>       pand_rel            := point_in_polygon(geometry, pand/result/geometry), DisableStorage = "True";
 				attribute<string>            pand_id_geom        := pand/result/identificatie[pand_rel];
-				attribute<string>            key                 := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
+				attribute<string>            key                 := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
 
 				container gebruiksdoelen:=
 					for_each_nedv(
 						typeringen/gebruiksdoel_vbo/name
-						, 'last(impl/selectie/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ', impl/selectie/result_rel)'
+						, 'last(selectie/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name + ', selectie/result_rel)'
 						, result
 						, bool
 					);
 
-				container meta := meta_template(impl/selectie,.);
+				container meta := meta_template(selectie,.);
 
 				unit<uint32> gerelateerdPand := select_with_attr_by_cond(src/gerelateerdPand,
 					IsDefined(
 						rlookup(  string(src/gerelateerdPand/fileset_rel)        + '_' + string(src/gerelateerdPand/mutatie_rel)
-								, string(src/fileset_rel[impl/selectie/org_rel]) + '_' + string(src/mutatie_rel[impl/selectie/org_rel])
+								, string(src/fileset_rel[selectie/org_rel]) + '_' + string(src/mutatie_rel[selectie/org_rel])
 							)
 						)
 					), DisableStorage = "True"
@@ -553,7 +541,7 @@ template MakeSnapshot
 				unit<uint32> nevenadres := select_with_attr_by_cond(src/nevenadres,  // is een 1->0..n relatie
 					IsDefined(
 						rlookup(  string(src/nevenadres/fileset_rel)             + '_' + string(src/nevenadres/mutatie_rel)
-								, string(src/fileset_rel[impl/selectie/org_rel]) + '_' + string(src/mutatie_rel[impl/selectie/org_rel])
+								, string(src/fileset_rel[selectie/org_rel]) + '_' + string(src/mutatie_rel[selectie/org_rel])
 							)
 						)
 					)
@@ -567,15 +555,15 @@ template MakeSnapshot
 						, src/identificatie);
 				}
 			}
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/vbo.mmd'"
 			{
 				attribute<uint32>      count:    DisableStorage = "True";
 				attribute<pand/result> pand_rel: DisableStorage = "True";
 				attribute<result>      org_rel:  DisableStorage = "True";
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 
-				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_fss, org_rel);
+				container gebruiksdoelen:= collect_attr_by_org_rel(result/gebruiksdoelen, result_store, org_rel);
 
 				unit<uint32> gerelateerdPand := select_with_attr_by_org_rel(result/gerelateerdPand, const(true,result/gerelateerdPand))
 				{
@@ -594,169 +582,180 @@ template MakeSnapshot
 		container nummeraanduiding
 		{
 			unit<uint32> src
-			:	StorageName     = "= FSSDir + '/nummeraanduiding.fss'"
+			:	StorageName     = "= StoreDir + '/nummeraanduiding.mmd'"
 			,	StorageReadOnly = "True"
 			{
-				attribute<string> identificatie;
-				attribute<int32>  huisnummer;
-				attribute<string> huisletter;
-				attribute<string> toevoeging;
-				attribute<string> postcode;
-				attribute<string> typeAdresseerbaarObject;
-				attribute<string> openbareruimte_id;
-				attribute<string> woonplaats_id;
+			}
 
-				container meta := meta_src_template(src, typeringen/status/nummeraanduiding);
-				attribute<bool> OpenbareruimteInSelectie := isDefined(rlookup(openbareruimte_id, openbareruimte/result/identificatie));
+			// Een MMD-leesholder mag zelf niets declareren; de dictionary van de store doet dat.
+			container afgeleid
+			{
+				container status := status_selectie(src, typeringen/status/nummeraanduiding, src/meta/STATUS);
+				attribute<bool> OpenbareruimteInSelectie (src) := isDefined(rlookup(src/openbareruimte_id, openbareruimte/result/identificatie));
 			}
 
 			container impl:=
-				='datum_selectie(src, prik_datum, ' + (met_geo_sel 
-						? 'True,  src/OpenbareruimteInSelectie'
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, afgeleid/status/status_sel, ' + (met_geo_sel 
+						? 'True,  afgeleid/OpenbareruimteInSelectie'
 						: 'False'
 					)
 				+ ')'
-			{
-				unit<uint32> selectie
-				{
-					attribute<result> result_rel := rlookup(identificatie, result/identificatie);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
-				}
+			;
 
-				unit<uint32> result_base := unique(selectie/identificatie);
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
+			{
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<result> result_rel := rlookup(identificatie, result/identificatie);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
 
-			unit<uint32> result := TiledUnit(1000000[impl/result_base])
+			unit<uint32> result_base := unique(selectie/identificatie);
+
+			unit<uint32> result := TiledUnit(1000000[result_base])
 			{
-				attribute<uint32> count := pcount(impl/selectie/result_rel), DisableStorage = "True";
+				attribute<uint32> count := pcount(selectie/result_rel), DisableStorage = "True";
 
-				attribute<string> identificatie           := impl/result_base/values[mapping(result, impl/result_base)];
-				attribute<int32>  huisnummer              := last(impl/selectie/huisnummer              , impl/selectie/result_rel);
-				attribute<string> huisletter              := last(impl/selectie/huisletter              , impl/selectie/result_rel);
-				attribute<string> toevoeging              := last(impl/selectie/toevoeging              , impl/selectie/result_rel);
-				attribute<string> postcode                := last(impl/selectie/postcode                , impl/selectie/result_rel);
-				attribute<string> typeAdresseerbaarObject := last(impl/selectie/typeAdresseerbaarObject , impl/selectie/result_rel);
-				attribute<string> openbareruimte_id       := last(impl/selectie/openbareruimte_id       , impl/selectie/result_rel);
-				attribute<string> woonplaats_id           := last(impl/selectie/woonplaats_id           , impl/selectie/result_rel);
+				attribute<string> identificatie           := result_base/values[mapping(result, result_base)];
+				attribute<int32>  huisnummer              := last(selectie/huisnummer              , selectie/result_rel);
+				attribute<string> huisletter              := last(selectie/huisletter              , selectie/result_rel);
+				attribute<string> toevoeging              := last(selectie/toevoeging              , selectie/result_rel);
+				attribute<string> postcode                := last(selectie/postcode                , selectie/result_rel);
+				attribute<string> typeAdresseerbaarObject := last(selectie/typeAdresseerbaarObject , selectie/result_rel);
+				attribute<string> openbareruimte_id       := last(selectie/openbareruimte_id       , selectie/result_rel);
+				attribute<string> woonplaats_id           := last(selectie/woonplaats_id           , selectie/result_rel);
 
-				attribute<string> key                     := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
+				attribute<string> key                     := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
 
-				container meta := meta_template(impl/selectie, .);
+				container meta := meta_template(selectie, .);
 			}
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)),  StorageName = "= SnapshotDir + '/nummeraanduiding.mmd'"
 			{
 				attribute<uint32> key: DisableStorage = "True";
 				attribute<result> org_rel:   DisableStorage = "True";
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 			}
 		}
 
 		container openbareruimte
 		{
 			unit<uint32> src
-			: StorageName     = "= FSSDir + '/openbareruimte.fss'"
+			: StorageName     = "= StoreDir + '/openbareruimte.mmd'"
 			, StorageReadOnly = "True"
 			{
-				attribute<string> identificatie;
-				attribute<string> naam;
-				attribute<string> type;
-				attribute<string> woonplaats_id;
+			}
 
-				container meta := meta_src_template(src, typeringen/status/openbareruimte);
-				attribute<bool> Woonplaatsgeo_selectie := isDefined(rlookup(woonplaats_id, woonplaats/result/identificatie));
+			// Een MMD-leesholder mag zelf niets declareren; de dictionary van de store doet dat.
+			container afgeleid
+			{
+				container status := status_selectie(src, typeringen/status/openbareruimte, src/meta/STATUS);
+				attribute<bool> Woonplaatsgeo_selectie (src) := isDefined(rlookup(src/woonplaats_id, woonplaats/result/identificatie));
 			}
 
 			container impl :=
-				='datum_selectie(src, prik_datum, ' + (met_geo_sel 
-						? 'True,  src/Woonplaatsgeo_selectie'
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, afgeleid/status/status_sel, ' + (met_geo_sel 
+						? 'True,  afgeleid/Woonplaatsgeo_selectie'
 						: 'False'
 					)
 				+ ')'
+			;
+
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
 			{
-				unit<uint32> selectie
-				{
-					attribute<result> result_rel := rlookup(identificatie,result/values);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
-				}
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<result> result_rel := rlookup(identificatie,result/values);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
 
-			unit<uint32> result := unique(impl/selectie/identificatie)
+			unit<uint32> result := unique(selectie/identificatie)
 			{
-				attribute<uint32> count  := pcount(impl/selectie/result_rel), DisableStorage = "True";
+				attribute<uint32> count  := pcount(selectie/result_rel), DisableStorage = "True";
 				attribute<string> values : DisableStorage = "True";
 
 				attribute<string> identificatie := values;
-				attribute<string> naam          := last(impl/selectie/naam         , impl/selectie/result_rel);
-				attribute<string> type          := last(impl/selectie/type         , impl/selectie/result_rel);
-				attribute<string> woonplaats_id := last(impl/selectie/woonplaats_id, impl/selectie/result_rel);
-				attribute<string> key           := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)), DisableStorage = "True";
-				container meta := meta_template(impl/selectie, .);
+				attribute<string> naam          := last(selectie/naam         , selectie/result_rel);
+				attribute<string> type          := last(selectie/type         , selectie/result_rel);
+				attribute<string> woonplaats_id := last(selectie/woonplaats_id, selectie/result_rel);
+				attribute<string> key           := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
+				container meta := meta_template(selectie, .);
 			}
 
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/openbareruimte.mmd'"
 			{
 				attribute<string> values : DisableStorage = "True";
 				attribute<uint32> key:     DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 			}
 		}
 
 		container woonplaats
 		{
 			unit<uint32> src
-			:	StorageName     = "= FSSDir + '/woonplaats.fss'"
+			:	StorageName     = "= StoreDir + '/woonplaats.mmd'"
 			,	StorageReadOnly = "True"
 			{
-				attribute<geometries/rdc_mm> geometry_mm (polygon);
-				attribute<geometries/rdc>    geometry    (polygon) := geometry_mm[geometries/rdc];
-				attribute<string>            identificatie;
-				attribute<string>            woonplaatsNaam;
+			}
 
-				container meta         := meta_src_template(src, typeringen/status/woonplaats);
+			// Een MMD-leesholder mag zelf niets declareren; de dictionary van de store doet dat.
+			container afgeleid
+			{
+				container status       := status_selectie(src, typeringen/status/woonplaats, src/meta/STATUS);
 				container geo_selectie := = met_geo_sel
-					? 'polygon_selectie(src, geometry_mm)'
+					? 'polygon_selectie(src, src/geometry)'
 					: 'nl_selectie(src)';
 			}
 
 			container impl :=
-				='datum_selectie(src, prik_datum, ' + (met_geo_sel 
-						? 'True,  src/geo_selectie/result'
+				='datum_conditie(src, prik_datum, src/meta/BEGINDATUM, src/meta/EINDDATUM, afgeleid/status/status_sel, ' + (met_geo_sel 
+						? 'True,  afgeleid/geo_selectie/result'
 						: 'False'
 					)
 				+ ')'
+			;
+
+			// De selectie hoort hier en niet in de template: een unit die als case parameter wordt
+			// meegegeven draagt de sub-items van een MMD store niet mee (GeoDMS 20.19.1).
+			unit<uint32> selectie := select_with_attr_by_org_rel(src, impl/conditie)
+			, DialogType = "Map"
+			, DialogData = "geometry"
 			{
-				unit<uint32> selectie
-				{
-					attribute<result> result_rel := rlookup(identificatie,result/values);
-					attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
-				}
+				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
+				attribute<result> result_rel := rlookup(identificatie,result/values);
+				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
-			unit<uint32> result := unique(impl/selectie/identificatie)
+			unit<uint32> result := unique(selectie/identificatie)
 			{
-				attribute<uint32> count  := pcount(impl/selectie/result_rel), DisableStorage = "True";
+				attribute<uint32> count  := pcount(selectie/result_rel), DisableStorage = "True";
 				attribute<string> values : DisableStorage = "True";
 
-				attribute<geometries/rdc_mm> geometry_mm (polygon) := rjoin(values, impl/selectie/identificatie, impl/selectie/geometry_mm);
+				attribute<geometries/rdc>    geometry    (polygon) := rjoin(values, selectie/identificatie, selectie/geometry);
 				attribute<string>            identificatie         := values;
-				attribute<string>            woonplaatsNaam        := last(impl/selectie/woonplaatsNaam, impl/selectie/result_rel);
+				attribute<string>            woonplaatsNaam        := last(selectie/woonplaatsNaam, selectie/result_rel);
 
-				attribute<string>            key                   := identificatie + '_' + string(max(impl/selectie/meta/VOORKOMENIDENTIFICATIE, impl/selectie/result_rel)),
+				attribute<string>            key                   := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)),
 					DisableStorage = "True";
 
-				container meta := meta_template(impl/selectie, .);
+				container meta := meta_template(selectie, .);
 			}
 
-			unit<uint32> result_fss := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.fss'"
+			unit<uint32> result_store := select_with_attr_by_org_rel(result, const(true,result)), StorageName= "= SnapshotDir + '/woonplaats.mmd'"
 			{
 				attribute<uint32> count:   DisableStorage = "True";
 				attribute<string> values:  DisableStorage = "True";
 				attribute<uint32> key:     DisableStorage = "True";
 				attribute<result> org_rel: DisableStorage = "True";
 
-				container meta := collect_attr_by_org_rel(result/meta, result_fss, org_rel);
+				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 			}
 		}
 		#include<afleidingen.dms>

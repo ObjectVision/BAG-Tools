@@ -49,18 +49,18 @@ container afleidingen: Using = "eenheden;geometries"
 
 			container extents
 			{
-				attribute<geometries/rdc_mm> NW (pand/result) := lower_bound(pand/result/geometry_mm);
-				attribute<geometries/rdc_mm> SE (pand/result) := upper_bound(pand/result/geometry_mm);
-				attribute<int32> X_ext          (pand/result) := PointCol(SE) - PointCol(NW);
-				attribute<int32> Y_ext          (pand/result) := PointRow(SE) - PointRow(NW);
+				attribute<geometries/rdc> NW (pand/result) := lower_bound(pand/result/geometry);
+				attribute<geometries/rdc> SE (pand/result) := upper_bound(pand/result/geometry);
+				attribute<float64> X_ext        (pand/result) := PointCol(SE) - PointCol(NW);
+				attribute<float64> Y_ext        (pand/result) := PointRow(SE) - PointRow(NW);
 			}
 
-			unit<uint32> functioneel_pand := select_with_attr_by_org_rel(pand/result, pand/result/vbo_count > 0 && extents/X_ext < 10000000i && extents/Y_ext < 10000000i)
+			unit<uint32> functioneel_pand := select_with_attr_by_org_rel(pand/result, pand/result/vbo_count > 0 && extents/X_ext < 10000d && extents/Y_ext < 10000d)
 			, DialogType = "Map"
-			, DialogData = "geometry_mm"
+			, DialogData = "geometry"
 			{
-				attribute<geometries/rdc_mm> NW := lower_bound(geometry_mm);
-				attribute<geometries/rdc_mm> SE := upper_bound(geometry_mm);
+				attribute<geometries/rdc> NW := lower_bound(geometry);
+				attribute<geometries/rdc> SE := upper_bound(geometry);
 
 				// results collection
 				container result
@@ -91,7 +91,7 @@ container afleidingen: Using = "eenheden;geometries"
 
 			parameter<uint32>  nr_x         :=   7;
 			parameter<uint32>  nr_y         :=  13;
-			parameter<mm>      inflate_size := 200[mm];
+			parameter<m>       inflate_size := 0.2[m]; // was 200[mm]; de geometrie staat nu in meters
 
 			unit<uint32> rectangle := range(uint32, 0, nr_x * nr_y)
 			{
@@ -99,25 +99,25 @@ container afleidingen: Using = "eenheden;geometries"
 				attribute<uint32> seq_x  := id(.) % nr_x;
 				attribute<string> name   := 'R'+string(seq_y)+'_C'+string(seq_x);
 				attribute<string> label  := name;
-				parameter<uint32> size_x := uint32(pointcol(BoundRange(geometries/rdc_mm))) / uint32(nr_x);
-				parameter<uint32> size_y := uint32(pointrow(BoundRange(geometries/rdc_mm))) / uint32(nr_y);
+				parameter<float64> size_x := pointcol(BoundRange(geometries/rdc)) / float64(nr_x);
+				parameter<float64> size_y := pointrow(BoundRange(geometries/rdc)) / float64(nr_y);
 
-				attribute<uint32> min_x  := uint32(pointcol(lowerbound(geometries/rdc_mm))) + seq_x * size_x;
-				attribute<uint32> max_x  := min_x + size_x;
-				attribute<uint32> min_y  := uint32(pointrow(lowerbound(geometries/rdc_mm))) + seq_y * size_y;
-				attribute<uint32> max_y  := min_y + size_y;
+				attribute<float64> min_x  := pointcol(lowerbound(geometries/rdc)) + float64(seq_x) * size_x;
+				attribute<float64> max_x  := min_x + size_x;
+				attribute<float64> min_y  := pointrow(lowerbound(geometries/rdc)) + float64(seq_y) * size_y;
+				attribute<float64> max_y  := min_y + size_y;
 				
-				attribute<rdc_mm> geometry (poly) := points2sequence(point_set/point, point_set/sequence_rel); //, point_set/ordinal);
+				attribute<geometries/rdc> geometry (poly) := points2polygon(point_set/point, point_set/sequence_rel); //, point_set/ordinal);
 				
 				
-				attribute<rdc_mm> top_left     := point_xy(int32(min_x), int32(max_y), rdc_mm); 
-				attribute<rdc_mm> top_right    := point_xy(int32(max_x), int32(max_y), rdc_mm);
-				attribute<rdc_mm> bottom_left  := point_xy(int32(min_x), int32(min_y), rdc_mm);
-				attribute<rdc_mm> bottom_right := point_xy(int32(max_x), int32(min_y), rdc_mm);
+				attribute<geometries/rdc> top_left     := point_xy(min_x, max_y, geometries/rdc); 
+				attribute<geometries/rdc> top_right    := point_xy(max_x, max_y, geometries/rdc);
+				attribute<geometries/rdc> bottom_left  := point_xy(min_x, min_y, geometries/rdc);
+				attribute<geometries/rdc> bottom_right := point_xy(max_x, min_y, geometries/rdc);
 				
 				unit<uint32> point_set := union_unit(.,.,.,.,.)
 				{
-					attribute<rdc_mm>  point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
+					attribute<geometries/rdc> point        := union_data(., top_left, top_right, bottom_right, bottom_left, top_left);
 					attribute<..>      sequence_rel := union_data(., id(..), id(..), id(..), id(..), id(..));
 				}
 			}
@@ -132,23 +132,23 @@ container afleidingen: Using = "eenheden;geometries"
 
 				unit<uint32> domain :=
 					select_with_attr_by_org_rel(functioneel_pand,
-						uint32(PointCol(functioneel_pand/NW)) <= rectangle/max_x[rectangle_sel]
-					&&	uint32(PointRow(functioneel_pand/NW)) <= rectangle/max_y[rectangle_sel]
-					&&	uint32(PointCol(functioneel_pand/SE)) >= rectangle/min_x[rectangle_sel]
-					&&	uint32(PointRow(functioneel_pand/SE)) >= rectangle/min_y[rectangle_sel]
+						PointCol(functioneel_pand/NW) <= rectangle/max_x[rectangle_sel]
+					&&	PointRow(functioneel_pand/NW) <= rectangle/max_y[rectangle_sel]
+					&&	PointCol(functioneel_pand/SE) >= rectangle/min_x[rectangle_sel]
+					&&	PointRow(functioneel_pand/SE) >= rectangle/min_y[rectangle_sel]
 					)
-					, DialogType = "Map", DialogData = "geometry_mm";
+					, DialogType = "Map", DialogData = "geometry";
 
-				// attribute<geometries/rdc_mm> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry_mm, float64(inflate_size));
-				// attribute<geometries/rdc_mm> i8D_mm     (domain, polygon) := polygon_I8D(domain/geometry_mm, float64(inflate_size));
-				attribute<geometries/rdc_mm> buffer_8_mm     (domain, polygon) := geos_buffer_multi_polygon(domain/geometry_mm, float64(inflate_size), 8b); // for future use
+				// attribute<geometries/rdc> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry, float64(inflate_size));
+				// attribute<geometries/rdc> i8D_mm     (domain, polygon) := polygon_I8D(domain/geometry, float64(inflate_size));
+				attribute<geometries/rdc> buffer_8     (domain, polygon) := geos_buffer_multi_polygon(domain/geometry, float64(inflate_size), 8b); // for future use
 
-				unit<uint32> neighbours := geos_polygon_connectivity(buffer_8_mm)
+				unit<uint32> neighbours := geos_polygon_connectivity(buffer_8)
 				{
 					attribute<upoint> coded_pair := point_yx(domain/org_rel[first_rel], domain/org_rel[second_rel]);
-					attribute<geometries/rdc_mm> joint(., arc):=
+					attribute<geometries/rdc> joint(., arc):=
 						points2sequence_ps(
-							union_data(combine(., bool), centroid(domain/geometry_mm)[first_rel], centroid(domain/geometry_mm)[second_rel]),
+							union_data(combine(., bool), centroid(domain/geometry)[first_rel], centroid(domain/geometry)[second_rel]),
 							union_data(combine(., bool), id(.), id(.))
 						);
 				}
@@ -160,9 +160,9 @@ container afleidingen: Using = "eenheden;geometries"
 					attribute<functioneel_pand> F2 := pointcol(values)[functioneel_pand];
 
 					// nice to see
-					attribute<geometries/rdc_mm> joint (.,arc):=
+					attribute<geometries/rdc> joint (.,arc):=
 						points2sequence_ps(
-							union_data(combine(., bool), centroid(functioneel_pand/geometry_mm)[F1], centroid(functioneel_pand/geometry_mm)[F2]),
+							union_data(combine(., bool), centroid(functioneel_pand/geometry)[F1], centroid(functioneel_pand/geometry)[F2]),
 							union_data(combine(., bool), ID(.), ID(.))
 						);
 				}
@@ -202,9 +202,9 @@ container afleidingen: Using = "eenheden;geometries"
 				attribute<functioneel_pand> F2 := pointcol(values)[functioneel_pand];
 
 				// nice to see
-				attribute<geometries/rdc_mm> joint(.,arc):=
+				attribute<geometries/rdc> joint(.,arc):=
 					points2sequence_ps(
-						union_data(Combine(., bool), centroid(functioneel_pand/geometry_mm)[F1], centroid(functioneel_pand/geometry_mm)[F2]),
+						union_data(Combine(., bool), centroid(functioneel_pand/geometry)[F1], centroid(functioneel_pand/geometry)[F2]),
 						union_data(Combine(., bool), id(.), id(.))
 					);
 			}
@@ -220,21 +220,21 @@ container afleidingen: Using = "eenheden;geometries"
 		attribute<string>         huisletter          := impl/nummeraanduiding_met_geom/huisletter;
 		attribute<string>         toevoeging          := impl/nummeraanduiding_met_geom/toevoeging;
 
-		attribute<geometries/rdc> geometry            := impl/nummeraanduiding_met_geom/geometry_mm[geometries/rdc];
-		attribute<float64>        X                   := pointcol(geometry_mm[geometries/rdc]);
-		attribute<float64>        Y                   := pointrow(geometry_mm[geometries/rdc]);
+		attribute<geometries/rdc> geometry            := impl/nummeraanduiding_met_geom/geometry;
+		attribute<float64>        X                   := pointcol(geometry);
+		attribute<float64>        Y                   := pointrow(geometry);
 
-		attribute<string>         woonplaatsnaam      := woonplaats/result/woonplaatsNaam[point_in_polygon(geometry_mm,woonplaats/result/geometry_mm)];
+		attribute<string>         woonplaatsnaam      := woonplaats/result/woonplaatsNaam[point_in_polygon(geometry,woonplaats/result/geometry)];
 	}
 
-	unit<uint32> adres_fss := select_with_attr_by_org_rel(adres, const(true, adres)), StorageName = "=SnapshotDir + '/adres.fss'"
+	unit<uint32> adres_store := select_with_attr_by_org_rel(adres, const(true, adres)), StorageName = "=SnapshotDir + '/adres.mmd'"
 	{
 		attribute<adres> org_rel: DisableStorage = "True";
 	}
 
 	container impl
 	{
-		unit<uint32> nummeraanduiding_met_geom := nummeraanduiding/result, DialogType = "Map", DialogData = "geometry_mm"
+		unit<uint32> nummeraanduiding_met_geom := nummeraanduiding/result, DialogType = "Map", DialogData = "geometry"
 		{
 			attribute<string> nummeraanduiding_id := nummeraanduiding/result/identificatie;
 			attribute<string> postcode            := nummeraanduiding/result/postcode;
@@ -243,38 +243,38 @@ container afleidingen: Using = "eenheden;geometries"
 			attribute<string> toevoeging          := nummeraanduiding/result/toevoeging;
 	
 			// Ook locaties van alleen nevenadressen meenemen
-			attribute<geometries/rdc_mm> vbo_point_hoofadres  := rjoin(nummeraanduiding_id, vbo/result/nummeraanduiding_id, vbo/result/geometry_mm);
+			attribute<geometries/rdc> vbo_point_hoofadres  := rjoin(nummeraanduiding_id, vbo/result/nummeraanduiding_id, vbo/result/geometry);
 			attribute<string>            vbo_id_nevenadres    := rjoin(nummeraanduiding_id, vbo/result/nevenadres/nummeraanduiding_id, vbo/result/nevenadres/identificatie);
-			attribute<geometries/rdc_mm> vbo_point_nevenadres := rjoin(vbo_id_nevenadres,   vbo/result/identificatie, vbo/result/geometry_mm);
-			attribute<geometries/rdc_mm> vbo_point            := MakeDefined(vbo_point_hoofadres,vbo_point_nevenadres);
+			attribute<geometries/rdc> vbo_point_nevenadres := rjoin(vbo_id_nevenadres,   vbo/result/identificatie, vbo/result/geometry);
+			attribute<geometries/rdc> vbo_point            := MakeDefined(vbo_point_hoofadres,vbo_point_nevenadres);
 	
 			container lp // ligplaatsen
 			{
-				attribute<geometries/rdc_mm> point_src (nummeraanduiding_met_geom) := rjoin(nummeraanduiding_id, ligplaats/result/nummeraanduiding_id   , centroid(ligplaats/result/geometry_mm));
-				attribute<int32>             X         (nummeraanduiding_met_geom) := PointCol(point_src);
-				attribute<int32>             Y         (nummeraanduiding_met_geom) := PointRow(point_src);
-				attribute<geometries/rdc_mm> point     (nummeraanduiding_met_geom) := 
-					   X >=  -8000000i &&  X <= 300000000i
-					&& Y >= 289000000i &&  Y <= 629000000i
+				attribute<geometries/rdc> point_src (nummeraanduiding_met_geom) := rjoin(nummeraanduiding_id, ligplaats/result/nummeraanduiding_id   , centroid(ligplaats/result/geometry));
+				attribute<float64>        X         (nummeraanduiding_met_geom) := PointCol(point_src);
+				attribute<float64>        Y         (nummeraanduiding_met_geom) := PointRow(point_src);
+				attribute<geometries/rdc> point     (nummeraanduiding_met_geom) := 
+					   X >=  -8000d &&  X <= 300000d
+					&& Y >= 289000d &&  Y <= 629000d
 						? point_src
-						: point_yx(0i/0i, 0i/0i, geometries/rdc_mm);
+						: point_yx(0d/0d, 0d/0d, geometries/rdc);
 			}
 			container sp // standplaatsen
 			{
-				attribute<geometries/rdc_mm> point_src (nummeraanduiding_met_geom) := rjoin(nummeraanduiding_id, standplaats/result/nummeraanduiding_id , centroid(standplaats/result/geometry_mm));
-				attribute<int32> X                     (nummeraanduiding_met_geom) := PointCol(point_src);
-				attribute<int32> Y                     (nummeraanduiding_met_geom) := PointRow(point_src);
-				attribute<geometries/rdc_mm> point     (nummeraanduiding_met_geom) :=
-					   X >=  -8000000i &&  X <= 300000000i
-					&& Y >= 289000000i &&  Y <= 629000000i
+				attribute<geometries/rdc> point_src (nummeraanduiding_met_geom) := rjoin(nummeraanduiding_id, standplaats/result/nummeraanduiding_id , centroid(standplaats/result/geometry));
+				attribute<float64>        X         (nummeraanduiding_met_geom) := PointCol(point_src);
+				attribute<float64>        Y         (nummeraanduiding_met_geom) := PointRow(point_src);
+				attribute<geometries/rdc> point     (nummeraanduiding_met_geom) := 
+					   X >=  -8000d &&  X <= 300000d
+					&& Y >= 289000d &&  Y <= 629000d
 						? point_src
-						: point_yx(0i/0i, 0i/0i, geometries/rdc_mm);
+						: point_yx(0d/0d, 0d/0d, geometries/rdc);
 			}
 
-			attribute<geometries/rdc_mm> geometry_mm := MakeDefined(MakeDefined(MakeDefined(vbo_point,lp/point),sp/point));
+			attribute<geometries/rdc> geometry    := MakeDefined(MakeDefined(MakeDefined(vbo_point,lp/point),sp/point));
 
-			attribute<int32> X                       := PointCol(geometry_mm);
-			attribute<int32> Y                       := PointRow(geometry_mm);
+			attribute<float64> X                   := PointCol(geometry);
+			attribute<float64> Y                   := PointRow(geometry);
 
 			attribute<string> postcode_huisnr        := postcode + '_' + string(huisnummer);
 			attribute<string> postcode4              := substr(postcode, 0, 4);
@@ -290,8 +290,8 @@ container afleidingen: Using = "eenheden;geometries"
 			attribute<string>            toevoeging        := rjoin(vbo/result/nummeraanduiding_id, nummeraanduiding/result/identificatie, nummeraanduiding/result/toevoeging);
 			attribute<string>            postcode          := rjoin(vbo/result/nummeraanduiding_id, nummeraanduiding/result/identificatie, nummeraanduiding/result/postcode);
 
-			attribute<string>            woonplaatsnaam    := woonplaats/result/woonplaatsNaam[point_in_polygon(geometry,woonplaats/result/geometry_mm)];
-			attribute<geometries/rdc_mm> geometry          := vbo/result/geometry_mm;
+			attribute<string>            woonplaatsnaam    := woonplaats/result/woonplaatsNaam[point_in_polygon(geometry,woonplaats/result/geometry)];
+			attribute<geometries/rdc> geometry          := vbo/result/geometry;
 		}
 	}
 }

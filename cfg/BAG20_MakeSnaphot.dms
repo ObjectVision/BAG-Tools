@@ -1,14 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
 //                                                                                    //
-//              Configuratie voor project: BAG 2.0 XML bronfiles > FSS                //
+//              Configuratie voor project: BAG 2.0 MMD stores > snapshot              //
 //                                                                                    //
 //                              Object Vision 2023                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-// Met deze configuratie kan uit een historische BAG database (in FSS formaat)        //
-// een snapshot op een bepaalde datum gegenereerd worden (ook in FSS formaat)         //
+// Met deze configuratie kan uit een historische BAG database (in MMD formaat)        //
+// een snapshot op een bepaalde datum gegenereerd worden (ook in MMD formaat)         //
 //                                                                                    //
 // De snapshot kan ook voor een ruimtelijke selectie gemaakt worden                   //
 //                                                                                    //
@@ -31,24 +31,24 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 	parameter<string> Snapshot_Date_Input := '20260101';
 	//
 
-	parameter<string> FSSDir              := '%SourceDataDir%/BAG/' + BAG_Date + '/fss';
+	parameter<string> StoreDir            := '%SourceDataDir%/BAG/' + BAG_Date + '/mmd';
 
 	parameter<string> SnapshotBaseDir     := '%SourceDataDir%/BAG/snapshots.ext';
 
 	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
 	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
 
-	parameter<string>  FileNeeded         := expand(., FSSDir) + '/pand/nr_fss.csv';
-	parameter<bool>    isValidFSSDir      := ExistingFile('missing', FileNeeded) == FileNeeded;
+	parameter<string>  FileNeeded         := expand(., StoreDir) + '/pand/nr_stores.csv';
+	parameter<bool>    isValidStoreDir    := ExistingFile('missing', FileNeeded) == FileNeeded;
 
 	container snapshots
 	{
 		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format)
-		container nl_status_sel_with_strangevalues_no_height_fss         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''FSS'')';
-		container nl_status_sel_without_strangevalues_no_height_fss      := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,True              ,False          ,''FSS'')', Descr = "oa gebruikt voor Vesta";
-		container geo_sel_status_sel_with_strangevalues_with_heigth_fss  := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''FSS'')';
-		container geo_sel_status_sel_without_strangevalues_no_heigth_fss := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,True              ,False          ,''FSS'')';
-		container nl_status_all_with_strangevalues_no_heigth_fss         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''FSS'')';
+		container nl_status_sel_with_strangevalues_no_height_mmd         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''MMD'')';
+		container nl_status_sel_without_strangevalues_no_height_mmd      := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,True              ,False          ,''MMD'')', Descr = "oa gebruikt voor Vesta";
+		container geo_sel_status_sel_with_strangevalues_with_heigth_mmd  := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''MMD'')';
+		container geo_sel_status_sel_without_strangevalues_no_heigth_mmd := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,True              ,False          ,''MMD'')';
+		container nl_status_all_with_strangevalues_no_heigth_mmd         := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''MMD'')';
 
 		container nl_geoparaat_gpkg                                      := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'')';
 		container geosel_geoparaat_gpkg                                  := ='MakeSnapshot(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False,          ''GPKG'')';
@@ -69,8 +69,7 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 
 		unit<dpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "wmts_layer";
 		unit<dpoint> rdc      := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
-		unit<ipoint> rdc_cm   := gridset(rdc, point_yx(0.01,0.01), point_yx(0.0, 0.0), ipoint);
-		unit<ipoint> rdc_mm   := gridset(rdc, point_yx(0.001,0.001), point_yx(0.0, 0.0), ipoint);
+		// rdc_cm en rdc_mm zijn vervallen: de hele keten rekent en bewaart in rdc (dpoint, meters).
 	}
 
 	unit<uint32> geo_selectie
@@ -128,30 +127,22 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 
 	#include<MakeSnapshot.dms>
 
-	template meta_src_template // Voor het inlezen van de generieke BAG attributen
+	template status_selectie // Leidt uit de STATUS van een BAG object af of het geselecteerd is
 	{
 		// begin case parameters
-		unit<uint32> domain;
-		unit<uint8>  statustype;
+		unit<uint32>      domain;
+		unit<uint8>       statustype;
+		attribute<string> STATUS (domain);
 		// end case parameters
 
-		attribute<string>     STATUS                 (domain);
-		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), statustype/label);
-		attribute<bool>       status_sel             (domain) := statustype/Selected[status_rel];
-
-		attribute<int32>      BEGINDATUM             (domain);
-		attribute<int32>      EINDDATUM              (domain);
-		attribute<uint32>     VOORKOMENIDENTIFICATIE (domain);
-
-		attribute<string>     TIJDSTIPREGISTRATIE    (domain);
-		attribute<string>     EINDREGISTRATIE        (domain);
-
-		attribute<int32>      DOCUMENTDATUM          (domain);
-		attribute<string>     DOCUMENTNUMMER         (domain);
-
-		attribute<bool>       IS_GECONSTATEERD       (domain);
+		// De overige generieke BAG attributen (BEGINDATUM, VOORKOMENIDENTIFICATIE, ...) staan in de
+		// MMD store en worden door de dictionary gedeclareerd; alleen deze afleiding komt erbij.
+		attribute<statustype> status_rel (domain) := rlookup(lowercase(STATUS), statustype/label);
+		attribute<bool>       status_sel (domain) := statustype/Selected[status_rel];
 	}
 
+	// src_domain is de selectie van het objecttype; die werd hier als 'impl/selectie' uit de
+	// omliggende container gehaald, wat alleen werkte zolang de selectie daar zo heette.
 	template meta_template // Voor het aggregeren van de generieke BAG attributen
 	{
 		// begin case parameters
@@ -159,15 +150,15 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 		unit<uint32> target_domain;
 		// end case parameters
 
-		attribute<string>         Status                 (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/Status);
-		attribute<eenheden/datum> BEGINDATUM             (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/BEGINDATUM);
-		attribute<eenheden/datum> EINDDATUM              (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/EINDDATUM);
-		attribute<uint32>         VOORKOMENIDENTIFICATIE (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/VOORKOMENIDENTIFICATIE);
-		attribute<string>         TIJDSTIPREGISTRATIE    (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/TIJDSTIPREGISTRATIE);
-		attribute<string>         EINDREGISTRATIE        (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/EINDREGISTRATIE);
-		attribute<eenheden/datum> DOCUMENTDATUM          (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/DOCUMENTDATUM);
-		attribute<string>         DOCUMENTNUMMER         (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/DOCUMENTNUMMER);
-		attribute<bool>           IS_GECONSTATEERD       (target_domain) := rjoin(key, impl/selectie/key, src_domain/meta/IS_GECONSTATEERD);
+		attribute<string>         Status                 (target_domain) := rjoin(key, src_domain/key, src_domain/meta/Status);
+		attribute<eenheden/datum> BEGINDATUM             (target_domain) := rjoin(key, src_domain/key, src_domain/meta/BEGINDATUM);
+		attribute<eenheden/datum> EINDDATUM              (target_domain) := rjoin(key, src_domain/key, src_domain/meta/EINDDATUM);
+		attribute<uint32>         VOORKOMENIDENTIFICATIE (target_domain) := rjoin(key, src_domain/key, src_domain/meta/VOORKOMENIDENTIFICATIE);
+		attribute<string>         TIJDSTIPREGISTRATIE    (target_domain) := rjoin(key, src_domain/key, src_domain/meta/TIJDSTIPREGISTRATIE);
+		attribute<string>         EINDREGISTRATIE        (target_domain) := rjoin(key, src_domain/key, src_domain/meta/EINDREGISTRATIE);
+		attribute<eenheden/datum> DOCUMENTDATUM          (target_domain) := rjoin(key, src_domain/key, src_domain/meta/DOCUMENTDATUM);
+		attribute<string>         DOCUMENTNUMMER         (target_domain) := rjoin(key, src_domain/key, src_domain/meta/DOCUMENTNUMMER);
+		attribute<bool>           IS_GECONSTATEERD       (target_domain) := rjoin(key, src_domain/key, src_domain/meta/IS_GECONSTATEERD);
 	}
 
 	template meta_write_template // Voor het aggregeren van de generieke BAG attributen
@@ -188,32 +179,30 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 		attribute<bool>           IS_GECONSTATEERD       (domain) := meta_src/IS_GECONSTATEERD, DisableStorage = "True";
 	}
 
-	template datum_selectie
+	// Levert alleen de conditie. De selectie zelf gebeurt per objecttype, want een unit die als
+	// case parameter aan een template wordt meegegeven draagt de sub-items van een MMD store niet mee.
+	template datum_conditie
 	{
 		// begin case parameters
 		unit<uint32>              domain;
 		parameter<eenheden/datum> prik_datum;
+		attribute<int32>          BEGINDATUM (domain);
+		attribute<int32>          EINDDATUM  (domain);
+		attribute<bool>           status_sel (domain);
 		parameter<bool>           overig_filter_actief;
 		attribute<bool>           overig_filter (domain) := const(true, domain);
 		// einde case parameters
 
-		attribute<bool> WasGestart   (domain) := domain/meta/BEGINDATUM <= prik_datum;
-		attribute<bool> WasBeeindigd (domain) := domain/meta/EINDDATUM  <= prik_datum && domain/meta/EINDDATUM > 0i;
+		attribute<bool> WasGestart   (domain) := BEGINDATUM <= prik_datum;
+		attribute<bool> WasBeeindigd (domain) := EINDDATUM  <= prik_datum && EINDDATUM > 0i;
 
 		attribute<bool> conditie     (domain) := = 'WasGestart && not(WasBeeindigd) ' +
 				(met_status_sel 
-					? '&& domain/Meta/status_sel ' 
+					? '&& status_sel ' 
 					: '') +
 				(overig_filter_actief 
 					? '&& overig_filter' 
 					: '');
-
-		unit<uint32> selectie := select_with_attr_by_org_rel(src, conditie)
-		, DialogType = "Map"
-		, DialogData = "geometry_mm"
-		{
-			container meta := collect_attr_by_org_rel(src/meta, selectie, selectie/org_rel);
-		}
 
 	}
 
@@ -221,16 +210,16 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 	{
 		// begin case parameters
 		unit<uint32> domain;
-		attribute<geometries/rdc_mm> geometry_mm (polygon, domain);
+		attribute<geometries/rdc> geometry (polygon, domain);
 		// end case parameters
 
-		container bbox := bbox_min_max(domain,geometry_mm);
+		container bbox := bbox_min_max(domain,geometry);
 
 		attribute<geometries/rdc> x_min_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
 		attribute<geometries/rdc> x_min_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
 		attribute<geometries/rdc> x_max_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
 		attribute<geometries/rdc> x_max_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> centroid    (domain) := centroid(geometry_mm)[geometries/rdc];
+		attribute<geometries/rdc> centroid    (domain) := centroid(geometry);
 
 		attribute<bool> result (domain) :=
 			   isDefined(point_in_polygon(x_min_y_min, /geo_selectie/geometry))
@@ -253,16 +242,16 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 	{
 		// begin case parameters
 		unit<uint32> domain;
-		attribute<geometries/rdc_mm> geometry_mm (polygon, domain);
+		attribute<geometries/rdc> geometry (polygon, domain);
 		// end case parameters
 
-		attribute<geometries/rdc_mm> lowerbound (domain) := lower_bound(geometry_mm);
-		attribute<geometries/rdc_mm> upperbound (domain) := upper_bound(geometry_mm);
+		attribute<geometries/rdc> lowerbound (domain) := lower_bound(geometry);
+		attribute<geometries/rdc> upperbound (domain) := upper_bound(geometry);
 
-		attribute<eenheden/mm>       x_min      (domain) := PointCol(lowerbound)[eenheden/mm];
-		attribute<eenheden/mm>       x_max      (domain) := PointCol(upperbound)[eenheden/mm];
-		attribute<eenheden/mm>       y_min      (domain) := PointRow(lowerbound)[eenheden/mm];
-		attribute<eenheden/mm>       y_max      (domain) := PointRow(upperbound)[eenheden/mm];
+		attribute<eenheden/m>     x_min      (domain) := PointCol(lowerbound)[eenheden/m];
+		attribute<eenheden/m>     x_max      (domain) := PointCol(upperbound)[eenheden/m];
+		attribute<eenheden/m>     y_min      (domain) := PointRow(lowerbound)[eenheden/m];
+		attribute<eenheden/m>     y_max      (domain) := PointRow(upperbound)[eenheden/m];
 	}
 	
 	#include<ExportSettings.dms>

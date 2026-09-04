@@ -61,7 +61,7 @@ container overzichten
 
 	container rapport
 	{
-		parameter<string> BAG_historie      := FSSDir;
+		parameter<string> BAG_historie      := StoreDir;
 		parameter<int32>  BAG_snapshotdatum := prik_datum;
 
 		container per_objecttype := for_each_ne(
@@ -76,11 +76,11 @@ container overzichten
 		{
 			container missing
 			{
-				parameter<uint32> ligplaats_zonder_geometry            := sum(uint32(isNull(ligplaats/result/geometry_mm)));
-				parameter<uint32> standplaats_zonder_geometry          := sum(uint32(isNull(standplaats/result/geometry_mm)));
-				parameter<uint32> pand_zonder_geometry                 := sum(uint32(isNull(pand/result/geometry_mm)));
-				parameter<uint32> vbo_zonder_geometry                  := sum(uint32(isNull(vbo/result/geometry_mm)));
-				parameter<uint32> woonplaats_zonder_geometry           := sum(uint32(isNull(woonplaats/result/geometry_mm)));
+				parameter<uint32> ligplaats_zonder_geometry            := sum(uint32(isNull(ligplaats/result/geometry)));
+				parameter<uint32> standplaats_zonder_geometry          := sum(uint32(isNull(standplaats/result/geometry)));
+				parameter<uint32> pand_zonder_geometry                 := sum(uint32(isNull(pand/result/geometry)));
+				parameter<uint32> vbo_zonder_geometry                  := sum(uint32(isNull(vbo/result/geometry)));
+				parameter<uint32> woonplaats_zonder_geometry           := sum(uint32(isNull(woonplaats/result/geometry)));
 
 				parameter<uint32> pand_zonder_bouwjaar                 := sum(uint32(isNull(pand/result/bouwjaar)));
 
@@ -145,16 +145,16 @@ container overzichten
 
 				container impl
 				{
-					unit<uint32>      ligplaats_pointset  := Sequence2Points(ligplaats/result/geometry_mm);
+					unit<uint32>      ligplaats_pointset  := Sequence2Points(ligplaats/result/geometry);
 					attribute<uint32> ligplaats_nr_points (ligplaats/result) := max(ligplaats_pointset/ordinal, ligplaats_pointset/Sequence_rel) + 1;
 
-					unit<uint32>      standplaats_pointset  := Sequence2Points(standplaats/result/geometry_mm);
+					unit<uint32>      standplaats_pointset  := Sequence2Points(standplaats/result/geometry);
 					attribute<uint32> standplaats_nr_points (standplaats/result) := max(standplaats_pointset/ordinal, standplaats_pointset/Sequence_rel) + 1;
 
-					unit<uint32>      pand_pointset  := Sequence2Points(pand/result/geometry_mm);
+					unit<uint32>      pand_pointset  := Sequence2Points(pand/result/geometry);
 					attribute<uint32> pand_nr_points (pand/result) := max(pand_pointset/ordinal, pand_pointset/Sequence_rel) + 1;
 
-					unit<uint32>      woonplaats_pointset  := Sequence2Points(woonplaats/result/geometry_mm);
+					unit<uint32>      woonplaats_pointset  := Sequence2Points(woonplaats/result/geometry);
 					attribute<uint32> woonplaats_nr_points (woonplaats/result) := max(woonplaats_pointset/ordinal, woonplaats_pointset/Sequence_rel) + 1;
 				}
 			}
