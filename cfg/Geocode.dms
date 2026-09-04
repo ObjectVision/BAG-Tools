@@ -110,6 +110,13 @@ container Geocode
 		#include<ngr_layer.dms> // reference WMS layer
 	}
 
+	// De BAG stores noemen hun coordinateneenheid met een absoluut pad, /geometries/rdc.
+	// Hier heet die Geography/rdc_meter, dus die krijgt de naam waaronder de store hem zoekt.
+	container geometries
+	{
+		unit<dpoint> rdc := Geography/rdc_meter;
+	}
+
 	container SourceData
 	:	using = "ModelParameters;Units;Classifications;Geography"
 	{

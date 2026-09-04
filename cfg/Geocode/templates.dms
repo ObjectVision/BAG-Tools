@@ -205,49 +205,29 @@ container Templates
 		;
 	}
 	
-	template date_selection
-	{
-		// begin case parameters
-		unit<uint32>              domain;
-		parameter<int32>          snapshot_date;
-		attribute<bool>           other_filter (domain);
-		// einde case parameters
-
-		attribute<bool> HasStarted   (domain) := domain/meta/BEGINDATUM <= snapshot_date;
-		attribute<bool> HasEnded (domain) := domain/meta/EINDDATUM  <= snapshot_date && domain/meta/EINDDATUM > 0i;
-
-		attribute<bool> condition     (domain) := ='HasStarted && not(HasEnded) && domain/Meta/status_sel && other_filter';
-
-		unit<uint32> selection := select_with_attr_by_org_rel(import, condition)
-		, DialogType = "Map"
-		, DialogData = "geometry_mm"
-		{
-			container meta := collect_attr_by_org_rel(import/meta, selection, selection/org_rel);
-		}
-	}
+	// date_selection is vervallen: de selectie op prikdatum staat nu bij het objecttype zelf,
+	// omdat een store-eenheid die als case parameter wordt meegegeven haar dictionary-items
+	// niet meedraagt en select_with_attr_by_org_rel er dan niets van terugvindt.
 	
-	template meta_src_template // Voor het inlezen van de generieke BAG attributen
+	template meta_src_template // De generieke BAG-meta bij een objecttype, met de status als code
 	{
 		// begin case parameters
 		unit<uint32> domain;
 		unit<uint8>  statustype;
+		container    meta_src;    // het meta-blok van de store, of de samengevoegde variant daarvan
 		// end case parameters
 
-		// attribute<string>     STATUS                 (domain);
-		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), statustype/label);
+		attribute<string>     STATUS                 (domain) := meta_src/STATUS;
+		// de BAG levert de status met hoofdletters, de codelijsten hier niet altijd
+		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), lowercase(statustype/label));
 		attribute<bool>       status_sel             (domain) := statustype/IsSelected[status_rel];
 
-		// attribute<int32>      BEGINDATUM             (domain);
-		// attribute<int32>      EINDDATUM              (domain);
-		// attribute<uint32>     VOORKOMENIDENTIFICATIE (domain);
+		attribute<int32>      BEGINDATUM             (domain) := meta_src/BEGINDATUM;
+		attribute<int32>      EINDDATUM              (domain) := meta_src/EINDDATUM;
+		attribute<uint32>     VOORKOMENIDENTIFICATIE (domain) := meta_src/VOORKOMENIDENTIFICATIE;
 
-		// attribute<string>     TIJDSTIPREGISTRATIE    (domain);
-		// attribute<string>     EINDREGISTRATIE        (domain);
-
-		// attribute<int32>      DOCUMENTDATUM          (domain);
-		// attribute<string>     DOCUMENTNUMMER         (domain);
-
-		// attribute<bool>       IS_GECONSTATEERD       (domain);
+		attribute<string>     TIJDSTIPREGISTRATIE    (domain) := meta_src/TIJDSTIPREGISTRATIE;
+		attribute<string>     EINDREGISTRATIE        (domain) := meta_src/EINDREGISTRATIE;
 	}
 	
 }
