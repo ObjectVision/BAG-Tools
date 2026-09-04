@@ -340,7 +340,18 @@ template MakeSnapshot
 				attribute<uint32> vbo_count: DisableStorage = "True";
 				attribute<result> org_rel:   DisableStorage = "True";
 				
-				attribute<afleidingen/pand_attributen/geometrie/type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE [org_rel];
+				// De classificatie gaat mee de store in. Zonder deze lokale kopie noemt de dictionary de
+				// unit bij haar absolute pad in de schrijvende configuratie, dat een lezer van de
+				// snapshot niet kan declareren.
+				unit<uint8> type_woonpand := afleidingen/pand_attributen/geometrie/type_woonpand
+				{
+					attribute<string> label      := afleidingen/pand_attributen/geometrie/type_woonpand/label,      DialogType = "LabelText";
+					attribute<string> name       := afleidingen/pand_attributen/geometrie/type_woonpand/name;
+					attribute<uint32> BrushColor := afleidingen/pand_attributen/geometrie/type_woonpand/BrushColor, DialogType = "BrushColor";
+					attribute<uint32> PenColor   := BrushColor,    DialogType = "PenColor";
+				}
+
+				attribute<type_woonpand> WOONPAND_TYPE := result/woningtype/WOONPAND_TYPE[org_rel][type_woonpand];
 
 				container meta := collect_attr_by_org_rel(result/meta, result_store, org_rel);
 
