@@ -77,7 +77,26 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 
 	container pand
 	{
-		parameter<string> generate_all_expr := AsList('xml/pand/PerFileSet/fs_' + string(xml/pand/fileset/Values) + '/pand', ';') + ';nr_stores';
+		// Een driver per fileset, in plaats van alle filesets als ExplicitSuppliers van een enkel
+		// item. ExplicitSuppliers-belang is leverancierbelang, en dat wordt losgelaten op het moment
+		// dat het houdende item Committed is (TreeItem::DoUpdate). Met een enkele generate_all is dat
+		// pas na de laatste fileset, zodat van elke fileset de ingelezen XML en het parse_xml-resultaat
+		// tot het eind blijven staan; met een driver per fileset laat elke fileset los zodra zijn eigen
+		// .mmd geschreven is. Zie ObjectVision/GeoDMS#1259.
+		Template VerwerkFileSet
+		{
+			parameter<uint32> fileset_rel;
+			parameter<string> fileset_expr := 'xml/pand/PerFileSet/fs_' + string(fileset_rel) + '/pand';
+			parameter<string> result       := 'OK', ExplicitSuppliers = "= fileset_expr";
+		}
+
+		container drivers :=
+			for_each_ne(
+				'd_' + string(xml/pand/fileset/Values)
+				,'VerwerkFileSet(' + string(xml/pand/fileset/Values) + ')'
+			);
+
+		parameter<string> generate_all_expr := AsList('drivers/d_' + string(xml/pand/fileset/Values) + '/result', ';') + ';nr_stores';
 		parameter<string> nr_stores         := string(#xml/pand/fileset) + ';',  StorageName = "= StoreDir + '/pand/nr_stores.csv'", StorageType = "str";
 
 		parameter<string> generate_all      := 'OK', ExplicitSuppliers = "= generate_all_expr";
@@ -85,7 +104,26 @@ container Store // Resultaten wegschrijven naar een MMD store per BAG object
 
 	unit<uint32> vbo
 	{
-		parameter<string> generate_all_expr := AsList('xml/vbo/PerFileSet/fs_' + string(xml/vbo/fileset/Values) + '/vbo', ';') + ';nr_stores';
+		// Een driver per fileset, in plaats van alle filesets als ExplicitSuppliers van een enkel
+		// item. ExplicitSuppliers-belang is leverancierbelang, en dat wordt losgelaten op het moment
+		// dat het houdende item Committed is (TreeItem::DoUpdate). Met een enkele generate_all is dat
+		// pas na de laatste fileset, zodat van elke fileset de ingelezen XML en het parse_xml-resultaat
+		// tot het eind blijven staan; met een driver per fileset laat elke fileset los zodra zijn eigen
+		// .mmd geschreven is. Zie ObjectVision/GeoDMS#1259.
+		Template VerwerkFileSet
+		{
+			parameter<uint32> fileset_rel;
+			parameter<string> fileset_expr := 'xml/vbo/PerFileSet/fs_' + string(fileset_rel) + '/vbo';
+			parameter<string> result       := 'OK', ExplicitSuppliers = "= fileset_expr";
+		}
+
+		container drivers :=
+			for_each_ne(
+				'd_' + string(xml/vbo/fileset/Values)
+				,'VerwerkFileSet(' + string(xml/vbo/fileset/Values) + ')'
+			);
+
+		parameter<string> generate_all_expr := AsList('drivers/d_' + string(xml/vbo/fileset/Values) + '/result', ';') + ';nr_stores';
 		parameter<string> nr_stores         := string(#xml/vbo/fileset) + ';',  StorageName = "= StoreDir + '/vbo/nr_stores.csv'", StorageType = "str";
 
 		parameter<string> generate_all      := 'OK', ExplicitSuppliers = "= generate_all_expr ";
