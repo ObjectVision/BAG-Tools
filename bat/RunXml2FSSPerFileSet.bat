@@ -15,7 +15,11 @@ rem  (1,7 GB XML, 169 MB per fileset): een proces voor alle filesets piekt op
 rem  3809 MB, een los proces per fileset op 651 MB. De piek per fileset is
 rem  ongeveer 3,1x de XML van die fileset en groeit niet mee met het aantal.
 rem
-rem  Gebruik:   RunXml2FSSPerFileSet.bat
+rem  Gebruik:   RunXml2FSSPerFileSet.bat [GEO_ENGINE=geos|dms]
+rem    GEO_ENGINE kiest de familie polygoonoperatoren waarmee de pandgeometrieen
+rem    worden samengevoegd: geos (default) of dms (GeoDMS 20.20.0 of later). Het
+rem    argument wordt doorgegeven als GEODMS_Overridable_GEO_ENGINE, de
+rem    ConfigSettings/Overridable-instelling van de configuratie.
 rem  Instelbaar via omgevingsvariabelen (met de defaults hieronder):
 rem    GEODMS_DIR   map met GeoDmsRun.exe
 rem    XML2FSS_CFG  pad naar BAG20_Xml2FSS.dms
@@ -23,6 +27,31 @@ rem    XML2FSS_LOG  pad naar het logbestand
 rem ---------------------------------------------------------------------------
 
 setlocal enabledelayedexpansion
+
+rem --- argumenten: GEO_ENGINE=geos|dms ---------------------------------------
+rem  cmd splitst "GEO_ENGINE=dms" op de = in twee argumenten; tussen aanhalingstekens
+rem  blijft het een argument. Beide vormen worden hier begrepen.
+:Args
+if "%~1"=="" goto :ArgsDone
+set "_key="
+set "_val="
+for /f "tokens=1,* delims==" %%a in ("%~1") do (set "_key=%%a" & set "_val=%%b")
+if /i not "%_key%"=="GEO_ENGINE" (
+	echo Onbekend argument: %~1
+	exit /b 2
+)
+if "%_val%"=="" (
+	set "_val=%~2"
+	shift
+)
+if /i "%_val%"=="geos" (set GEODMS_Overridable_GEO_ENGINE=geos) else if /i "%_val%"=="dms" (set GEODMS_Overridable_GEO_ENGINE=dms) else (
+	echo Onbekende GEO_ENGINE: %_val%; kies geos of dms.
+	exit /b 2
+)
+shift
+goto :Args
+:ArgsDone
+if not "%GEODMS_Overridable_GEO_ENGINE%"=="" echo GEO_ENGINE=%GEODMS_Overridable_GEO_ENGINE%
 
 if "%GEODMS_DIR%"==""  set GEODMS_DIR=C:\Program Files\ObjectVision\GeoDms20.19.3.m
 if "%XML2FSS_CFG%"=="" set XML2FSS_CFG=%~dp0..\cfg\BAG20_Xml2FSS.dms

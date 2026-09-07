@@ -28,6 +28,15 @@ parameter&lt;string&gt; date     := '<I>20230113</I>';
 5. Open the BAG20_Xml2FSS.dms in the GeoDMS and update the item: _MaakFSSBestanden_, e.g. by double clicking on this item in the TreeView. This can take some time.
 6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG20/date/mmd_ folder.
 
+## polygon engine (GEO_ENGINE)
+
+The pand geometries are dissolved per pand with a polygon union. Which family of polygon operators does that is set by **GEO_ENGINE**, a `ConfigSettings/Overridable` setting of the configuration:
+
+- `geos` (default): the [geos_](https://github.com/ObjectVision/GeoDMS/wiki/Geos) operators, which need valid polygons and repair them first;
+- `dms` (GeoDMS 20.20.0 or later): the [dms_](https://github.com/ObjectVision/GeoDMS/wiki/dms-polygon-operators) operators, GeoDMS's own sweep, which read every ring under the even-odd rule and so need no repair of rings stored the wrong way round.
+
+Like every overridable setting it is given on the command line through an environment variable, `GEODMS_Overridable_GEO_ENGINE=dms`, or in the GeoDMS GUI under Tools > Options. The batch file `bat/RunXml2FSSPerFileSet.bat` takes it as an argument: `RunXml2FSSPerFileSet.bat GEO_ENGINE=dms`. On a GeoDMS before 20.20.0 the value `dms` fails with an unknown operator `dms_union_polygon`.
+
 ## requirements/licensing/download
 
 - See [[BAG Toolkit|Home]]

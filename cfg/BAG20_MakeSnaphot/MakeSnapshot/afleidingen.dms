@@ -150,9 +150,16 @@ container afleidingen: Using = "eenheden;geometries"
 
 				// attribute<geometries/rdc> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry, float64(inflate_size));
 				// attribute<geometries/rdc> i8D_mm     (domain, polygon) := polygon_I8D(domain/geometry, float64(inflate_size));
-				attribute<geometries/rdc> buffer_8     (domain, polygon) := geos_buffer_multi_polygon(domain/geometry, float64(inflate_size), 8b); // for future use
+				// De woonpandtypering telt buren via de overlap van iets opgeblazen pandgeometrieen. Op de geos-weg
+				// is dat een buffer plus geos_polygon_connectivity; de dms-familie kent geen buffer maar wel de
+				// minkowski_sum met een achthoekige kern, en dms_polygon_connectivity telt alleen paren met een
+				// overlappend oppervlak, wat na het opblazen van beide panden precies de rakende buren zijn.
+				parameter<string> buffer_expr := GeoEngine == 'dms'
+					? 'dms_minkowski_sum(domain/geometry, float64(inflate_size), ''8D'')'
+					: 'geos_buffer_multi_polygon(domain/geometry, float64(inflate_size), 8b)';
+				attribute<geometries/rdc> buffer_8     (domain, polygon) := = buffer_expr;
 
-				unit<uint32> neighbours := geos_polygon_connectivity(buffer_8)
+				unit<uint32> neighbours := = GeoEngine + '_polygon_connectivity(buffer_8)'
 				{
 					attribute<upoint> coded_pair := point_yx(domain/org_rel[first_rel], domain/org_rel[second_rel]);
 					attribute<geometries/rdc> joint(., arc):=

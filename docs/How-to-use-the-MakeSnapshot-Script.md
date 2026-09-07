@@ -22,6 +22,15 @@ After opening the BAG20_MakeSnaphot.dms script in the GeoDMS GUI, the _snapshots
 
 The other parameters define the snapshot options, described in the next paragraphs.
 
+## polygon engine (GEO_ENGINE)
+
+The woonpandtypering (vrijstaand, twee onder 1 kap, hoekwoning, tussenwoning) counts the neighbours of a pand by inflating the pand geometries a little and pairing the ones that then overlap. Which family of polygon operators does that is set by **GEO_ENGINE**, a `ConfigSettings/Overridable` setting of the configuration:
+
+- `geos` (default): `geos_buffer_multi_polygon` and `geos_polygon_connectivity`;
+- `dms` (GeoDMS 20.20.0 or later): `dms_minkowski_sum` with an octagonal kernel and `dms_polygon_connectivity`, GeoDMS's own sweep, which accepts polygons that are not valid.
+
+It is given on the command line through the environment variable `GEODMS_Overridable_GEO_ENGINE=dms`, or in the GeoDMS GUI under Tools > Options. The default is `geos`. The simplification of the pand geometries stays a geos operation under both settings, since the dms family has no simplify.
+
 ## snapshot options configuration
 
 The following options need to be configured for a snapshot.

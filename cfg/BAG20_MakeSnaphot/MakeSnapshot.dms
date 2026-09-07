@@ -189,7 +189,7 @@ template MakeSnapshot
 			{
 				attribute<geometries/rdc>    geometry      (polygon) := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/geometry', ',') + ')';
 				
-				attribute<geometries/rdc>    bg_simplified (polygon) := geos_simplify_multi_polygon(geometry, 1.0); // geos_simplify_polygon bestaat niet
+				attribute<geometries/rdc>    bg_simplified (polygon) := geos_simplify_multi_polygon(geometry, 1.0); // geos_simplify_polygon bestaat niet; de dms-familie kent geen simplify, dus dit blijft geos onder elke GEO_ENGINE
 
 				attribute<string>            identificatie           := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/identificatie', ',') + ')';
 				attribute<eenheden/jaar>     oorspronkelijkBouwjaar  := = 'union_data(., ' + asList('Filesets/nr_' +  string(id(fileset)) + '/store/oorspronkelijkBouwjaar', ',') + ')[eenheden/jaar]';

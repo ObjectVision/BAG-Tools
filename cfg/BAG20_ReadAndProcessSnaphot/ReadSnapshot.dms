@@ -30,9 +30,17 @@ container ReadSnapshot
 	{
 		container pand
 		{
-			// een polygoon met zichzelf snijden ruimt zelfdoorsnijdingen op
-			attribute<geografie/rdc> geometry_cleaned (bag/pand, polygon) := bag/pand/geometry * bag/pand/geometry;
-			attribute<geografie/rdc> buffer_m1        (bag/pand, polygon) := geos_buffer_multi_polygon(geometry_cleaned, 1.0, 8b);
+			// Opruimen van zelfdoorsnijdingen: op de geos-weg door een polygoon met zichzelf te snijden, op de
+			// dms-weg met dms_polygon, dat elke ring onder de even-odd-regel leest en als geldige polygoon terugschrijft.
+			parameter<string> cleaned_expr := GeoEngine == 'dms'
+				? 'dms_polygon(bag/pand/geometry)'
+				: 'bag/pand/geometry * bag/pand/geometry';
+			attribute<geografie/rdc> geometry_cleaned (bag/pand, polygon) := = cleaned_expr;
+			// een meter opblazen: geos met een buffer, dms met de minkowski_sum met een achthoekige kern
+			parameter<string> buffer_expr := GeoEngine == 'dms'
+				? 'dms_minkowski_sum(geometry_cleaned, 1.0, ''8D'')'
+				: 'geos_buffer_multi_polygon(geometry_cleaned, 1.0, 8b)';
+			attribute<geografie/rdc> buffer_m1        (bag/pand, polygon) := = buffer_expr;
 
 			// bouwjaren voor 1000 en na 2100 beschouwen we als missing data
 			attribute<eenheden/jaar> bouwjaar_cleaned (bag/pand) :=

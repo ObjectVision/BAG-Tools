@@ -21,6 +21,18 @@
 container BAG20_ReadAndProcessSnapshot
 {
 //	parameter<string> SnapshotBaseDir := '%ProjDir%/data/nwg_20210401';
+	// GEO_ENGINE kiest de familie polygoonoperatoren: 'geos' (default) of 'dms'. De waarde is een
+	// ConfigSettings/Overridable-instelling, dus op de commandoregel te zetten met de omgevingsvariabele
+	// GEODMS_Overridable_GEO_ENGINE=dms (de batchbestanden vertalen het argument GEO_ENGINE=dms daarheen).
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			parameter<string> GEO_ENGINE := 'geos';
+		}
+	}
+	parameter<string> GeoEngine := expand(., '%GEO_ENGINE%');
+
 	parameter<string> SnapshotBaseDir := 'D:SourceData/BAG20/snapshots.ext/20220401';
 
 	container eenheden
