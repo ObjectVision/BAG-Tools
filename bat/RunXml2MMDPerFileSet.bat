@@ -15,15 +15,15 @@ rem  (1,7 GB XML, 169 MB per fileset): een proces voor alle filesets piekt op
 rem  3809 MB, een los proces per fileset op 651 MB. De piek per fileset is
 rem  ongeveer 3,1x de XML van die fileset en groeit niet mee met het aantal.
 rem
-rem  Gebruik:   RunXml2FSSPerFileSet.bat [GEO_ENGINE=geos|dms]
+rem  Gebruik:   RunXml2MMDPerFileSet.bat [GEO_ENGINE=geos|dms]
 rem    GEO_ENGINE kiest de familie polygoonoperatoren waarmee de pandgeometrieen
 rem    worden samengevoegd: geos (default) of dms (GeoDMS 20.20.0 of later). Het
 rem    argument wordt doorgegeven als GEODMS_Overridable_GEO_ENGINE, de
 rem    ConfigSettings/Overridable-instelling van de configuratie.
 rem  Instelbaar via omgevingsvariabelen (met de defaults hieronder):
 rem    GEODMS_DIR   map met GeoDmsRun.exe
-rem    XML2FSS_CFG  pad naar BAG20_Xml2FSS.dms
-rem    XML2FSS_LOG  pad naar het logbestand
+rem    XML2MMD_CFG  pad naar BAG20_Xml2MMD.dms
+rem    XML2MMD_LOG  pad naar het logbestand
 rem ---------------------------------------------------------------------------
 
 setlocal enabledelayedexpansion
@@ -54,8 +54,8 @@ goto :Args
 if not "%GEODMS_Overridable_GEO_ENGINE%"=="" echo GEO_ENGINE=%GEODMS_Overridable_GEO_ENGINE%
 
 if "%GEODMS_DIR%"==""  set GEODMS_DIR=C:\Program Files\ObjectVision\GeoDms20.19.3.m
-if "%XML2FSS_CFG%"=="" set XML2FSS_CFG=%~dp0..\cfg\BAG20_Xml2FSS.dms
-if "%XML2FSS_LOG%"=="" set XML2FSS_LOG=%~dp0..\BAG20_Xml2FSS.log
+if "%XML2MMD_CFG%"=="" set XML2MMD_CFG=%~dp0..\cfg\BAG20_Xml2MMD.dms
+if "%XML2MMD_LOG%"=="" set XML2MMD_LOG=%~dp0..\BAG20_Xml2MMD.log
 
 set ProgramPath=%GEODMS_DIR%\GeoDmsRun.exe
 
@@ -63,8 +63,8 @@ if not exist "%ProgramPath%" (
 	echo GeoDmsRun.exe niet gevonden in %GEODMS_DIR%; zet GEODMS_DIR.
 	exit /b 2
 )
-if not exist "%XML2FSS_CFG%" (
-	echo Configuratie niet gevonden: %XML2FSS_CFG%; zet XML2FSS_CFG.
+if not exist "%XML2MMD_CFG%" (
+	echo Configuratie niet gevonden: %XML2MMD_CFG%; zet XML2MMD_CFG.
 	exit /b 2
 )
 
@@ -73,9 +73,9 @@ echo %DATE% %TIME%  start
 rem --- 1. de stores zonder filesets, plus het aantal filesets per objecttype ---
 rem  nr_stores schrijft '<n>;' naar <StoreDir>/<type>/nr_stores.csv en is
 rem  daarmee ook de controle dat de bestandenlijst gelezen kan worden.
-"%ProgramPath%" /L"%XML2FSS_LOG%" "%XML2FSS_CFG%" /Store/pand/nr_stores /Store/vbo/nr_stores
+"%ProgramPath%" /L"%XML2MMD_LOG%" "%XML2MMD_CFG%" /Store/pand/nr_stores /Store/vbo/nr_stores
 if errorlevel 1 (
-	echo %DATE% %TIME%  FOUT bij het bepalen van het aantal filesets; zie %XML2FSS_LOG%
+	echo %DATE% %TIME%  FOUT bij het bepalen van het aantal filesets; zie %XML2MMD_LOG%
 	exit /b 1
 )
 
@@ -90,9 +90,9 @@ rem  LET OP: /Store/nummeraanduiding is een union_unit over ALLE NUM-filesets en
 rem  is dus niet per fileset te splitsen; die houdt zijn filesets wel samen in
 rem  het geheugen. Voor NUM is dat tot nu toe geen probleem gebleken.
 echo %DATE% %TIME%  overige stores
-"%ProgramPath%" /L"%XML2FSS_LOG%" "%XML2FSS_CFG%" /Store/ligplaats /Store/standplaats /Store/openbareruimte /Store/woonplaats /Store/nummeraanduiding /Store/overzicht
+"%ProgramPath%" /L"%XML2MMD_LOG%" "%XML2MMD_CFG%" /Store/ligplaats /Store/standplaats /Store/openbareruimte /Store/woonplaats /Store/nummeraanduiding /Store/overzicht
 if errorlevel 1 (
-	echo %DATE% %TIME%  FOUT bij de overige stores; zie %XML2FSS_LOG%
+	echo %DATE% %TIME%  FOUT bij de overige stores; zie %XML2MMD_LOG%
 	exit /b 1
 )
 
@@ -111,7 +111,7 @@ set _type=%~1
 set _i=0
 :PerFileSetLoop
 set /a _i+=1
-"%ProgramPath%" /L"%XML2FSS_LOG%" "%XML2FSS_CFG%" /XML/%_type%/PerFileSet/fs_%_i%/%_type%
+"%ProgramPath%" /L"%XML2MMD_LOG%" "%XML2MMD_CFG%" /XML/%_type%/PerFileSet/fs_%_i%/%_type%
 if errorlevel 1 goto :PerFileSetDone
 echo %DATE% %TIME%  %_type% fileset %_i% geschreven
 goto :PerFileSetLoop
@@ -119,7 +119,7 @@ goto :PerFileSetLoop
 :PerFileSetDone
 set /a _i-=1
 if %_i%==0 (
-	echo %DATE% %TIME%  FOUT: geen enkele %_type%-fileset verwerkt; zie %XML2FSS_LOG%
+	echo %DATE% %TIME%  FOUT: geen enkele %_type%-fileset verwerkt; zie %XML2MMD_LOG%
 	exit /b 1
 )
 echo %DATE% %TIME%  %_type%: %_i% filesets verwerkt

@@ -2,7 +2,7 @@ This page describes how to use the BAG20_MakeSnaphot.dms script to make a [[BAG2
 
 ## date configuration
 
-Make sure your _%SourceDataDir%_/BAG/_date_/FSS folder contains FSS folders for each BAG object type, resulting from [[BAG20 Xml2FSS]].
+Make sure your _%SourceDataDir%_/BAG/_date_/FSS folder contains FSS folders for each BAG object type, resulting from [[BAG20 Xml2MMD]].
 
 Then configure the code lines (in the top of the BAG20_MakeSnapshot.dms scriptfile):
 
@@ -11,8 +11,8 @@ parameter&lt;string&gt; BAG_Date            := '<I>20230113</I>';
 parameter&lt;string&gt; Snapshot_Date_Input := '<I>20230101</I>';
 //</pre>
 
-Adapt the **BAG_Date** to the date for the downloaded BAG source, also configured as date in the [[BAG20 Xml2FSS]] script.
-The source FSS files for making the snapshot will now be read from the FSSDir, configured as:  <BR><I>'%SourceDataDir%/BAG20/' + BAG_Date + '/fss'</I>;<BR> If the results of [[BAG20 Xml2FSS]] are saved in another folder, adjust also the FSSDir.
+Adapt the **BAG_Date** to the date for the downloaded BAG source, also configured as date in the [[BAG20 Xml2MMD]] script.
+The source FSS files for making the snapshot will now be read from the FSSDir, configured as:  <BR><I>'%SourceDataDir%/BAG20/' + BAG_Date + '/fss'</I>;<BR> If the results of [[BAG20 Xml2MMD]] are saved in another folder, adjust also the FSSDir.
 
 The **Snapshot_Date_Input** defines for which date the snapshot is made. Always chose a date before the BAG_Date.
 

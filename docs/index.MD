@@ -18,7 +18,7 @@ The snapshot process also generates an address table, with [RD-coordinates](http
 
 The BAG Toolkit consists of three tools:
 
-1. [[BAG20 Xml2FSS]] -> To make the BAG available in a format suitable for modelling.
+1. [[BAG20 Xml2MMD]] -> To make the BAG available in a format suitable for modelling.
 2. [[BAG20 MakeSnapshot]] -> To make a snapshot of the BAG at a specific date. 
 3. [[GeoCode]] -> To geocode addresses with meta information on how the results are derived. This tool we developed with the [Spinlab department of the VU](https://spinlab.vu.nl/).
 

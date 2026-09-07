@@ -2,11 +2,11 @@ The [[BAG]] 2.0 can be downloaded (monthly update) from the [Kadaster BAG 2.0 do
 
 The download consists of a zip file with more than 3.000 xml files. Xml files are used as exchange formats but less suitable for processing.
 
-Therefore the BAG20_Xml2FSS tool is used to convert these xml files to a [MMD](https://github.com/ObjectVision/GeoDMS/wiki/MMD) storage (GeoDMS native fast primary data format, the successor to [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS)). Geometry is stored in RD metres as dpoint.
+Therefore the BAG20_Xml2MMD tool (until 2026 called BAG20_Xml2FSS, after the storage format it wrote then) is used to convert these xml files to a [MMD](https://github.com/ObjectVision/GeoDMS/wiki/MMD) storage (GeoDMS native fast primary data format, the successor to [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS)). Geometry is stored in RD metres as dpoint.
 
 ## MMD data structure
 
-The BAG is a historical database with one or multiple mutations per object. The BAG20 Xml2FSS tool stores this historical information in a
+The BAG is a historical database with one or multiple mutations per object. The BAG20 Xml2MMD tool stores this historical information in a
 MMD storage per BAG object type.
 
 The data structure used is similar to the BAG, with one major exception. As the number of gebruiksdoelen of a VBO in the BAG is limited, the relation between VBO and gebruiksdoel is implemented as a set of boolean attributes for each VBO indicating if this VBO has this gebruiksdoel or not. This makes it easier to work with the gebruiksdoelen. The same data structure is also used in the [[BAG20 MakeSnapshot]].
@@ -19,13 +19,13 @@ The data structure used is similar to the BAG, with one major exception. As the 
      - Use for the _date_ placeholder the date of your download with as format: _yyyymmdd_.
      - The subfoldername NGR stands for: Nationaal GeoRegister.
 3. Make sure all zip files are extracted (your NGR subfolder need to have more than 3.000 xml files).
-4. Open the BAG20_Xml2FSS.dms file from the [[BAG Toolkit|Home]] scripts (in the cfg subfolder of your chosen project folder) in a text editor, configure the date of your download for the parameter _date_ (_yyyymmdd_) and save your file:
+4. Open the BAG20_Xml2MMD.dms file from the [[BAG Toolkit|Home]] scripts (in the cfg subfolder of your chosen project folder) in a text editor, configure the date of your download for the parameter _date_ (_yyyymmdd_) and save your file:
 <pre>
 // te configureren
 parameter&lt;string&gt; date     := '<I>20230113</I>';
 //
 </pre>
-5. Open the BAG20_Xml2FSS.dms in the GeoDMS and update the item: _MaakFSSBestanden_, e.g. by double clicking on this item in the TreeView. This can take some time.
+5. Open the BAG20_Xml2MMD.dms in the GeoDMS and update the item: _MaakFSSBestanden_, e.g. by double clicking on this item in the TreeView. This can take some time.
 6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG20/date/mmd_ folder.
 
 ## polygon engine (GEO_ENGINE)
@@ -35,7 +35,7 @@ The pand geometries are dissolved per pand with a polygon union. Which family of
 - `geos` (default): the [geos_](https://github.com/ObjectVision/GeoDMS/wiki/Geos) operators, which need valid polygons and repair them first;
 - `dms` (GeoDMS 20.20.0 or later): the [dms_](https://github.com/ObjectVision/GeoDMS/wiki/dms-polygon-operators) operators, GeoDMS's own sweep, which read every ring under the even-odd rule and so need no repair of rings stored the wrong way round.
 
-Like every overridable setting it is given on the command line through an environment variable, `GEODMS_Overridable_GEO_ENGINE=dms`, or in the GeoDMS GUI under Tools > Options. The batch file `bat/RunXml2FSSPerFileSet.bat` takes it as an argument: `RunXml2FSSPerFileSet.bat GEO_ENGINE=dms`. On a GeoDMS before 20.20.0 the value `dms` fails with an unknown operator `dms_union_polygon`.
+Like every overridable setting it is given on the command line through an environment variable, `GEODMS_Overridable_GEO_ENGINE=dms`, or in the GeoDMS GUI under Tools > Options. The batch file `bat/RunXml2MMDPerFileSet.bat` takes it as an argument: `RunXml2MMDPerFileSet.bat GEO_ENGINE=dms`. The configuration itself requires GeoDMS 20.20.0 or later: its root container carries the IntegrityCheck `GeoDMSVersion() >= 20.20`, so an older GeoDMS refuses it before anything is read.
 
 ## requirements/licensing/download
 

@@ -3,7 +3,7 @@
 ### **BAG ToolKit**
 
 - [[Home]]
-    - [[Xml2FSS|BAG20 Xml2FSS]]
+    - [[Xml2MMD|BAG20 Xml2MMD]]
     - [[MakeSnapshot|BAG20 MakeSnapshot]]
         - [[How to use the MakeSnapshot script]]
     - [[GeoCode]]

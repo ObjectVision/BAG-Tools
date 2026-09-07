@@ -1,6 +1,6 @@
-After processing the [[BAG (Dutch)|BAG]] data to [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS) format with the [[BAG20 Xml2FSS]], you can start making snapshots. 
+After processing the [[BAG (Dutch)|BAG]] data to [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS) format with the [[BAG20 Xml2MMD]], you can start making snapshots. 
 
-The BAG20 Xml2FSS is part of the [[BAG Toolkit|Home]]
+The BAG20 Xml2MMD is part of the [[BAG Toolkit|Home]]
 
 A snapshot is defined as a **state of the BAG at a specific date**, in which the identifiers of each BAG object can be used as primary keys.
 
@@ -45,7 +45,7 @@ Optional, if the height information parameter is set to True (see [[How to use t
 
 If updating item: MaakVolledigeSnapshot or MaakAdressenTabe results in an error, check if:
 
-1. your _%SourceDataDir%_/BAG20/_date_/FSS folder contains FSS folders for each BAG object type (don't forget step 6 of the [[BAG20 Xml2FSS]] process).
+1. your _%SourceDataDir%_/BAG20/_date_/FSS folder contains FSS folders for each BAG object type (don't forget step 6 of the [[BAG20 Xml2MMD]] process).
 2. your _%SourceDataDir%_/PHN folder contains a PHN_<I>date</I>.fss folder with 7 files, see also [requirements](https://github.com/ObjectVision/BAG-Tools/wiki#requirements).
 
 After solving, ignore the error(s) and reload the configuration file.
