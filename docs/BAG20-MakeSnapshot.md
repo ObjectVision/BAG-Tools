@@ -1,4 +1,4 @@
-After processing the [[BAG (Dutch)|BAG]] data to [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS) format with the [[BAG20 Xml2MMD]], you can start making snapshots. 
+After processing the [[BAG (Dutch)|BAG]] data to [MMD](https://github.com/ObjectVision/GeoDMS/wiki/MMD) format with the [[BAG20 Xml2MMD]], you can start making snapshots. 
 
 The BAG20 Xml2MMD is part of the [[BAG Toolkit|Home]]
 
@@ -10,7 +10,7 @@ Snapshots can also made for:
 - with or without 'stange values' (probably data errors)
 
 Snapshots can be made in the following formats:
-- [FSS](https://github.com/ObjectVision/GeoDMS/wiki/FSS): advised if the resulting data is used in other GeoDMS projects.
+- [MMD](https://github.com/ObjectVision/GeoDMS/wiki/MMD): advised if the resulting data is used in other GeoDMS projects.
 - [GeoPackage](https://github.com/ObjectVision/GeoDMS/wiki/Geopackage): advised if the resulting data is used to work with also in other tools like QGIS. [[GeoParaat]] is an example of snapshots made available in GeoPackage format.  
 
 ## date selection
@@ -45,7 +45,7 @@ Optional, if the height information parameter is set to True (see [[How to use t
 
 If updating item: MaakVolledigeSnapshot or MaakAdressenTabe results in an error, check if:
 
-1. your _%SourceDataDir%_/BAG20/_date_/FSS folder contains FSS folders for each BAG object type (don't forget step 6 of the [[BAG20 Xml2MMD]] process).
+1. your _%SourceDataDir%_/BAG/_date_/mmd folder contains an .mmd store for each BAG object type (don't forget step 6 of the [[BAG20 Xml2MMD]] process).
 2. your _%SourceDataDir%_/PHN folder contains a PHN_<I>date</I>.fss folder with 7 files, see also [requirements](https://github.com/ObjectVision/BAG-Tools/wiki#requirements).
 
 After solving, ignore the error(s) and reload the configuration file.
@@ -54,7 +54,7 @@ After solving, ignore the error(s) and reload the configuration file.
 
 Based on the chosen item, you will get a full snapshot of all BAG object types with additional attributes /entities or only an address table for a specific date and optionally extent and states.
 
-Both date and extent become subfoldernames of the resulting FSS files. The address table can be used for geocoding, for instance with [[this script|GeoCode]].
+Both date and extent become subfoldernames of the resulting MMD stores. The address table can be used for geocoding, for instance with [[this script|GeoCode]].
  
 The full snapshot can also be used for many applications that need a snapshot of the BAG.
 

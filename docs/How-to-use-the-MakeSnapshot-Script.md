@@ -2,7 +2,7 @@ This page describes how to use the BAG20_MakeSnaphot.dms script to make a [[BAG2
 
 ## date configuration
 
-Make sure your _%SourceDataDir%_/BAG/_date_/FSS folder contains FSS folders for each BAG object type, resulting from [[BAG20 Xml2MMD]].
+Make sure your _%SourceDataDir%_/BAG/_date_/mmd folder contains an .mmd store for each BAG object type, resulting from [[BAG20 Xml2MMD]].
 
 Then configure the code lines (in the top of the BAG20_MakeSnapshot.dms scriptfile):
 
@@ -12,7 +12,7 @@ parameter&lt;string&gt; Snapshot_Date_Input := '<I>20230101</I>';
 //</pre>
 
 Adapt the **BAG_Date** to the date for the downloaded BAG source, also configured as date in the [[BAG20 Xml2MMD]] script.
-The source FSS files for making the snapshot will now be read from the FSSDir, configured as:  <BR><I>'%SourceDataDir%/BAG20/' + BAG_Date + '/fss'</I>;<BR> If the results of [[BAG20 Xml2MMD]] are saved in another folder, adjust also the FSSDir.
+The source MMD stores for making the snapshot will now be read from the StoreDir, configured as:  <BR><I>'%SourceDataDir%/BAG/' + BAG_Date + '/mmd'</I>;<BR> If the results of [[BAG20 Xml2MMD]] are saved in another folder, adjust also the StoreDir.
 
 The **Snapshot_Date_Input** defines for which date the snapshot is made. Always chose a date before the BAG_Date.
 
@@ -92,28 +92,28 @@ See [requirements for PHN](https://github.com/ObjectVision/BAG-Tools/wiki#requir
 ### format (sixth parameter)
 
 The sixth parameter indicates the format of the resulting snapshot. The current version of this scripts supports two options:
-1. FSS: generates all resulting data as a set of FSS folders. This is advised if the resulting data is used in other GeoDMS projects.
+1. MMD: generates all resulting data as a set of .mmd stores. This is advised if the resulting data is used in other GeoDMS projects.
 2. GPKG: generates one GeoPackage file with tables for all BAG objecttypes, including code tables to limit the data size and make selections easier. The 
 GPKG is advised if the resulting snapshot also is used in other software, like QGIS. 
 
-Configure the format parameter to _FSS_ or _GPKG_.  
+Configure the format parameter to _MMD_ or _GPKG_.  
 
 ## generating a snapshot
 
 As mentioned, the _snapshots_ folder contains a set of examples for generating a snapshot. 
 Select one of these options, adapt it if necessary or make a copy with your requested options and give it a unique name. 
 
-After selection a snapshot example or configuring your own, open this container in the GeoDMS GUI, e.g. the item: _snapshots/nl_status_sel_with_strangevalues_no_height_fss_ 
+After selection a snapshot example or configuring your own, open this container in the GeoDMS GUI, e.g. the item: _snapshots/nl_status_sel_with_strangevalues_no_height_mmd_ 
 
 To generate the snapshot double click one of the following items :
 
-- _MaakVolledigeSnapshot_: generates a full snapshot with all objecttypes from the BAG in the configured format (FSS, GPKG).
-- _MaakAlleenFSSAdressenTabel_: generates only the addresses table (used for [[geocoding|GeoCode]]) (FSS format only).
+- _MaakVolledigeSnapshot_: generates a full snapshot with all objecttypes from the BAG in the configured format (MMD, GPKG).
+- _MaakAlleenAdressenTabel_: generates only the addresses table (used for [[geocoding|GeoCode]]) (MMD format only).
 
 Especially the _MaakVolledigeSnapshot_ option can take some time.
 
 ## result
 The resulting snapshot becomes a folder in your _%SourceDataDir%_/BAG/snapshots.ext/_optional_geo_selection_name_/_date_.new folder.
-This can contain a set of FSS folders (with .dmsdata files) or the GPKG file.
+This can contain a set of .mmd stores or the GPKG file.
 
 We advice to rename the resulting folder to a _%SourceDataDir%_/BAG20/snapshots.ext/_optional_geo_selection_name_/_date_ folder 

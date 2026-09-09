@@ -25,7 +25,7 @@ The data structure used is similar to the BAG, with one major exception. As the 
 parameter&lt;string&gt; date     := '<I>20230113</I>';
 //
 </pre>
-5. Open the BAG20_Xml2MMD.dms in the GeoDMS and update the item: _MaakFSSBestanden_, e.g. by double clicking on this item in the TreeView. This can take some time.
+5. Open the BAG20_Xml2MMD.dms in the GeoDMS and update the item: _MaakMMDBestanden_, e.g. by double clicking on this item in the TreeView. This can take some time.
 6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG20/date/mmd_ folder.
 
 ## polygon engine (GEO_ENGINE)
@@ -43,7 +43,7 @@ Like every overridable setting it is given on the command line through an enviro
 
 ## troubleshooting
 
-If updating item: _MaakFSSBestanden_ results in an error, check:
+If updating item: _MaakMMDBestanden_ results in an error, check:
 
 1. if you have unzipped the earlier mentioned zip files, your NGR subfolder should contain more than 3.000 xml files.
 2. if your _%SourceDataDir%_ placeholder refers to the actual physical path containing the subfolder (BAG20/_date_/NGR) with the xml files. If this is not the case, configure the path for your _%SourceDataDir%_ in the GeoDMS GUI: menu option: Tools > Otions > Advanced Tab > SourceDataDir control.

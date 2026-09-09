@@ -2,7 +2,7 @@ This page describes how to use the Geocode.dms script to [[geocode|GeoCode]] add
 
 ## steps
 
-1. Make sure you generated and adres.fss subfolder with the [[BAG20 MakeSnapshot]] script.
+1. Make sure you generated the .mmd stores with the [[BAG20 MakeSnapshot]] script.
 
 2. Configure the **snapshot date**. Open the _BAG.dms_ script file (in the cfg/Geocode subfolder of the [download](https://github.com/ObjectVision/BAG-Tools) in a text editor. Adjust the configuration of the item: *BAG/impl/SnapshotDir*
 
@@ -116,7 +116,7 @@ and adjust the bold label adres into the name of your composite field.
 
 If updating the item: *Export/bestand* results in an error, check if:
 
-1. your %SourceDataDir%/BAG/snapshots.ext/date folder contains an adres.fss subfolder (result of the [MakeSnapshot](MakeSnapshot "wikilink") process).
+1. your %SourceDataDir%/BAG/snapshots.ext/date folder contains the .mmd stores (result of the [MakeSnapshot](MakeSnapshot "wikilink") process).
 2. the item *TeGeocoderen/bron/TableChopper/BestandsNaam* refers to your source file.
 3. your source file is a valid csv file with a comma or semicolon delimiter. This delimiter need to be specified for the item:
 _TeGeocoderen/bron/TableChopper/VeldScheidingsTeken_

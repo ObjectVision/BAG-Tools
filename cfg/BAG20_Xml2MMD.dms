@@ -7,7 +7,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-// Hoe een nieuwe BAG te verkrijgen en tot FSS Files om te zetten:                    //
+// Hoe een nieuwe BAG te verkrijgen en tot MMD stores om te zetten:                   //
 // 1. Download je  BAG via:                                                           //
 // https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract                       //
 //                                                                                    //
@@ -23,7 +23,7 @@
 //                                                                                    //
 // 3. Configureer de date parameter met als conventie: yyyymmdd                       //
 //                                                                                    //
-// 4. Open deze configuratie en activeer de optie: MaakFSSBestanden                   //
+// 4. Open deze configuratie en activeer de optie: MaakMMDBestanden                   //
 //                                                                                    //
 //  De BAG inclusief historie wordt nu weggeschreven naar een set van MMD stores in   //
 //  de StoreDir.                                                                      //
@@ -56,7 +56,7 @@ container BAG20_Xml2MMD: IntegrityCheck = "GeoDMSVersion() >= 20.20" // GeoDMS 2
 	parameter<string> XmlDir   := date_dir + '/NGR';
 	parameter<string> StoreDir := date_dir + '/mmd';
 
-	parameter<string> MaakFSSBestanden := xml/folderinfo/CanGenerate == 2b
+	parameter<string> MaakMMDBestanden := xml/folderinfo/CanGenerate == 2b
 		? 'Cannot make list of files, ' + expand(., XmlDir) + ' does not consist or contains no .xml files.'
 		:  xml/folderinfo/CanGenerate == 1b
 			? 'Data from ' + expand(., XmlDir) + ' is probably not in requested BAG 2.0 format, make sure you only unzipped: LIG, NUM, OPR, PND, STA, VBO, WPL ZIP files'
