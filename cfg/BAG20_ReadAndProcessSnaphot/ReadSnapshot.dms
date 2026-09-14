@@ -30,29 +30,23 @@ container ReadSnapshot
 	{
 		container pand
 		{
-			// Opruimen van zelfdoorsnijdingen: op de geos-weg door een polygoon met zichzelf te snijden, op de
-			// dms-weg met dms_polygon, dat elke ring onder de even-odd-regel leest en als geldige polygoon terugschrijft.
-			parameter<string> cleaned_expr := GeoEngine == 'dms'
-				? 'dms_polygon(bag/pand/geometry)'
-				: 'bag/pand/geometry * bag/pand/geometry';
-			attribute<geografie/rdc> geometry_cleaned (bag/pand, polygon) := = cleaned_expr;
-			// een meter opblazen: geos met een buffer, dms met de minkowski_sum met een achthoekige kern
+			// De pandgeometrie in de snapshot is bruikbaar zoals hij is: panden met meerdere polygonen of
+			// binnenringen komen in Xml2MMD uit een polygoonoperator, en de ruwe ringen van de overige
+			// panden zijn in orde (nagemeten op de snapshot van 20260101: geen enkele vorm- of
+			// orientatieverandering bij opschonen, zie issue #8). Een opschoonstap hoort hier dus niet.
+			//
+			// Voorbeeld van een meter opblazen: geos met een buffer, dms met de minkowski_sum met een
+			// achthoekige kern. De geos_-operatoren repareren hun invoer zelf voordat ze rekenen.
 			parameter<string> buffer_expr := GeoEngine == 'dms'
-				? 'dms_minkowski_sum(geometry_cleaned, 1.0, ''8D'')'
-				: 'geos_buffer_multi_polygon(geometry_cleaned, 1.0, 8b)';
-			attribute<geografie/rdc> buffer_m1        (bag/pand, polygon) := = buffer_expr;
+				? 'dms_minkowski_sum(bag/pand/geometry, 1.0, ''8D'')'
+				: 'geos_buffer_multi_polygon(bag/pand/geometry, 1.0, 8b)';
+			attribute<geografie/rdc> buffer_m1 (bag/pand, polygon) := = buffer_expr;
 
 			// bouwjaren voor 1000 en na 2100 beschouwen we als missing data
 			attribute<eenheden/jaar> bouwjaar_cleaned (bag/pand) :=
 				bag/pand/bouwjaar < 1000[eenheden/jaar] || bag/pand/bouwjaar > 2100[eenheden/jaar]
 					? (0 / 0)[eenheden/jaar]
 					: bag/pand/bouwjaar;
-
-			unit<uint32> ps_uncleaned := sequence2points(bag/pand/geometry);
-			unit<uint32> ps_cleaned   := sequence2points(geometry_cleaned);
-
-			parameter<uint32> nr_coord_uncleaned := #ps_uncleaned;
-			parameter<uint32> nr_coord_cleaned   := #ps_cleaned;
 		}
 
 		container vbo
