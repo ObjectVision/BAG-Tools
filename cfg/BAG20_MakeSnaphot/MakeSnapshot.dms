@@ -807,6 +807,9 @@ template MakeSnapshot
 
 				parameter<uint32> BrushColor := rgb(153,204,255), DialogType = "BrushColor";
 				parameter<uint32> PenColor   := rgb(  0, 90,160), DialogType = "PenColor";
+				// het label van een ligplaats in kaart en tabel is zijn identificatie; als regel in de
+				// dictionary, de store bewaart er geen bytes voor
+				attribute<string> Label := identificatie, DialogType = "LabelText";
 
 				container meta
 				{
@@ -838,6 +841,7 @@ template MakeSnapshot
 
 				parameter<uint32> BrushColor := rgb(222,184,135), DialogType = "BrushColor";
 				parameter<uint32> PenColor   := rgb(139, 90, 43), DialogType = "PenColor";
+				attribute<string> Label      := identificatie, DialogType = "LabelText"; // zie ligplaats
 
 				container meta
 				{
