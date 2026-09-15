@@ -795,11 +795,18 @@ template MakeSnapshot
 				}
 			}
 
-			unit<uint32> ligplaats := object/ligplaats/result
+			// Ligplaatsen liggen in het water: een lichtblauwe vulling met een donkerblauwe rand.
+			// De stijl en de map-aanwijzing reizen in de dictionary mee (GeoDMS 20.21.0, issue
+			// ObjectVision/GeoDMS#1275), dus een lezer ziet in de Layer Control welke kleur bij
+			// welke laag hoort (issue #5). Een oudere GeoDMS schrijft ze niet in de dictionary.
+			unit<uint32> ligplaats := object/ligplaats/result, DialogType = "Map", DialogData = "geometry"
 			{
 				attribute<geometries/rdc> geometry (polygon) := object/ligplaats/result/geometry;
 				attribute<string>         identificatie      := object/ligplaats/result/identificatie;
 				attribute<nummeraanduiding>   nummeraanduiding_rel   := rlookup(object/ligplaats/result/nummeraanduiding_id, nummeraanduiding/identificatie);
+
+				parameter<uint32> BrushColor := rgb(153,204,255), DialogType = "BrushColor";
+				parameter<uint32> PenColor   := rgb(  0, 90,160), DialogType = "PenColor";
 
 				container meta
 				{
@@ -822,11 +829,15 @@ template MakeSnapshot
 				}
 			}
 
-			unit<uint32> standplaats := object/standplaats/result
+			// Standplaatsen liggen op het land: een zandkleurige vulling met een bruine rand, zie ligplaats.
+			unit<uint32> standplaats := object/standplaats/result, DialogType = "Map", DialogData = "geometry"
 			{
 				attribute<geometries/rdc> geometry (polygon) := object/standplaats/result/geometry;
 				attribute<string>         identificatie      := object/standplaats/result/identificatie;
 				attribute<nummeraanduiding>   nummeraanduiding_rel   := rlookup(object/standplaats/result/nummeraanduiding_id, nummeraanduiding/identificatie);
+
+				parameter<uint32> BrushColor := rgb(222,184,135), DialogType = "BrushColor";
+				parameter<uint32> PenColor   := rgb(139, 90, 43), DialogType = "PenColor";
 
 				container meta
 				{

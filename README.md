@@ -23,7 +23,7 @@ BAG 2.0 XML extract  ─►  BAG20_Xml2MMD  ─►  one store per object type,  
 
 ## requirements
 
-- [GeoDMS 20.20.0](https://github.com/ObjectVision/GeoDMS/releases) or later. Xml2MMD refuses an older version, and the snapshot store needs 20.20.0 to be read back.
+- [GeoDMS 20.20.0](https://github.com/ObjectVision/GeoDMS/releases) or later. Xml2MMD refuses an older version, and the snapshot store needs 20.20.0 to be read back. The visualisation styles of the ligplaats and standplaats tables are written into the snapshot by 20.21.0 or later.
 - 16 GB of RAM or more; the BAG is large. With 16 GB the conversion and the snapshot each take roughly half an hour to an hour. More memory lets `RunXml2MMD.bat` run file sets in parallel.
 - 40 GB of disk space or more.
 - The BAG 2.0 extract, from the [Kadaster download page](https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract).
