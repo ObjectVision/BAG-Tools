@@ -101,6 +101,7 @@ container afleidingen: Using = "eenheden;geometries"
 			parameter<uint32>  nr_x         :=   7;
 			parameter<uint32>  nr_y         :=  13;
 			parameter<m>       inflate_size := 0.2[m]; // was 200[mm]; de geometrie staat nu in meters
+			parameter<bool>    DmsHeeftBuffer := GeoDmsMajorVersionNumber() > 20 || GeoDmsMinorVersionNumber() >= 24; // dms_buffer_multi_polygon, sinds 20.24.0
 
 			unit<uint32> rectangle := range(uint32, 0, nr_x * nr_y)
 			{
@@ -150,13 +151,16 @@ container afleidingen: Using = "eenheden;geometries"
 
 				// attribute<geometries/rdc> i4HV_mm     (domain, polygon) := polygon_I4HV(domain/geometry, float64(inflate_size));
 				// attribute<geometries/rdc> i8D_mm     (domain, polygon) := polygon_I8D(domain/geometry, float64(inflate_size));
-				// De woonpandtypering telt buren via de overlap van iets opgeblazen pandgeometrieen. Op de geos-weg
-				// is dat een buffer plus geos_polygon_connectivity; de dms-familie kent geen buffer maar wel de
-				// minkowski_sum met een achthoekige kern, en dms_polygon_connectivity telt alleen paren met een
-				// overlappend oppervlak, wat na het opblazen van beide panden precies de rakende buren zijn.
-				parameter<string> buffer_expr := GeoEngine == 'dms'
+				// De woonpandtypering telt buren via de overlap van iets opgeblazen pandgeometrieen: een buffer
+				// plus GeoEngine_polygon_connectivity. Sinds GeoDMS 20.24.0 heeft de dms-familie een eigen
+				// buffer, dms_buffer_multi_polygon, met de argumenten en de hoekpunten van
+				// geos_buffer_multi_polygon, zodat beide engines dezelfde opgeblazen panden maken. Een oudere
+				// GeoDMS neemt op de dms-weg de minkowski_sum met een achthoekige kern. dms_polygon_connectivity
+				// telt alleen paren met een overlappend oppervlak, wat na het opblazen van beide panden precies
+				// de rakende buren zijn.
+				parameter<string> buffer_expr := GeoEngine == 'dms' && !DmsHeeftBuffer
 					? 'dms_minkowski_sum(domain/geometry, float64(inflate_size), ''8D'')'
-					: 'geos_buffer_multi_polygon(domain/geometry, float64(inflate_size), 8b)';
+					: GeoEngine + '_buffer_multi_polygon(domain/geometry, float64(inflate_size), 8b)';
 				attribute<geometries/rdc> buffer_8     (domain, polygon) := = buffer_expr;
 
 				unit<uint32> neighbours := = GeoEngine + '_polygon_connectivity(buffer_8)'

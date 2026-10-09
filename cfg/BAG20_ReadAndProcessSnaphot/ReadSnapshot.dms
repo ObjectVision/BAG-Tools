@@ -35,11 +35,14 @@ container ReadSnapshot
 			// panden zijn in orde (nagemeten op de snapshot van 20260101: geen enkele vorm- of
 			// orientatieverandering bij opschonen, zie issue #8). Een opschoonstap hoort hier dus niet.
 			//
-			// Voorbeeld van een meter opblazen: geos met een buffer, dms met de minkowski_sum met een
-			// achthoekige kern. De geos_-operatoren repareren hun invoer zelf voordat ze rekenen.
-			parameter<string> buffer_expr := GeoEngine == 'dms'
+			// Voorbeeld van een meter opblazen: met de buffer van de gekozen engine, geos_ of (sinds
+			// GeoDMS 20.24.0) dms_buffer_multi_polygon, met dezelfde argumenten en hoekpunten. Een oudere
+			// GeoDMS neemt op de dms-weg de minkowski_sum met een achthoekige kern. De geos_-operatoren
+			// repareren hun invoer zelf voordat ze rekenen; de dms_-operatoren lezen ook ongeldige invoer.
+			parameter<bool>   DmsHeeftBuffer := GeoDmsMajorVersionNumber() > 20 || GeoDmsMinorVersionNumber() >= 24;
+			parameter<string> buffer_expr := GeoEngine == 'dms' && !DmsHeeftBuffer
 				? 'dms_minkowski_sum(bag/pand/geometry, 1.0, ''8D'')'
-				: 'geos_buffer_multi_polygon(bag/pand/geometry, 1.0, 8b)';
+				: GeoEngine + '_buffer_multi_polygon(bag/pand/geometry, 1.0, 8b)';
 			attribute<geografie/rdc> buffer_m1 (bag/pand, polygon) := = buffer_expr;
 
 			// bouwjaren voor 1000 en na 2100 beschouwen we als missing data
