@@ -23,9 +23,9 @@ BAG 2.0 XML extract  ─►  BAG20_Xml2MMD  ─►  one store per object type,  
 
 ## requirements
 
-- [GeoDMS 20.20.0](https://github.com/ObjectVision/GeoDMS/releases) or later. Xml2MMD refuses an older version, and the snapshot store needs 20.20.0 to be read back. The visualisation styles of the ligplaats and standplaats tables are written into the snapshot by 20.21.0 or later.
-- 16 GB of RAM or more; the BAG is large. With 16 GB the conversion and the snapshot each take roughly half an hour to an hour. More memory lets `RunXml2MMD.bat` run file sets in parallel.
-- 40 GB of disk space or more.
+- [GeoDMS 20.20.0](https://github.com/ObjectVision/GeoDMS/releases) or later. Xml2MMD refuses an older version, and the snapshot store needs 20.20.0 to be read back. The visualisation styles of the ligplaats and standplaats tables are written into the snapshot by 20.21.0 or later. Since GeoDMS 20.23.0 an XML attribute that an element lacks reads as null instead of as an empty string; a copy of Xml2MMD from before October 2026 then stops on the first pand file set with `FormattedInpStream Error: expected '}' but got '0'`, so update the toolkit along with GeoDMS.
+- 16 GB of RAM or more; the BAG is large. Measured on a laptop with 16 GB and four cores (extract of 2026-10-08, GeoDMS 20.24): the conversion took 56 minutes with `RunXml2MMD.bat PER_FILESET=1`, which keeps one pand or vbo file set in memory at a time (typically 1.2 GB committed, at most 2.5 GB); its last step, the nummeraanduiding store over all NUM file sets, runs in one process under the memory budget and peaked at 30 GB committed with the default `MEM_BUDGET_MB=8000`, finishing by paging after 7 minutes. A snapshot (`dms`, parallel processing off) held 12 GB committed for most of its run, with a peak of 15 GB. More memory lets `RunXml2MMD.bat` run file sets in parallel.
+- About 130 GB of disk space during the conversion: the unpacked XML of the extract alone is about 90 GB (91 GB in 6.474 files for 2026-10-08), the MMD stores 24 GB and a snapshot 10 GB. The XML can be deleted once the stores are written.
 - The BAG 2.0 extract, from the [Kadaster download page](https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract).
 - For heights: the [PHN](https://www.geodms.nl/downloads/PHN/PHN_20230101.fss.zip) (Pand Hoogte Nederland, derived from the AHN).
 
@@ -47,7 +47,9 @@ container bag : StorageName = "%SourceDataDir%/BAG/snapshots.ext/20260101/bag.mm
 attribute<string> pand_id (bag/vbo) := bag/pand/identificatie[bag/vbo/pand_rel];
 ```
 
-The polygon operations can run on either of two engines, `geos` (default) or GeoDMS's own `dms` sweep, chosen with the overridable setting `GEO_ENGINE`; both give the same stores.
+The polygon operations can run on either of two engines, `geos` (default) or GeoDMS's own `dms` sweep, chosen with the overridable setting `GEO_ENGINE`; both give the same stores. The woonpand typing, a buffer and a neighbour count per rectangle of a 13 by 7 grid over the country, takes most of the time of a snapshot. On a server with parallel processing off, the whole snapshot took 9 minutes with `geos` and 44 minutes with `dms`; with parallel processing on, `dms` took 3 minutes.
+
+Keep the parallel processing options 1, 2 and 3 of the GeoDMS Local machine Options on. With them off, the snapshot runs on one core, and GeoDmsRun holds back its progress messages until the item is finished: on the 16 GB laptop, a `dms` snapshot ran for 81 minutes in which GeoDmsRun wrote nothing to its log while one core was busy throughout, and then wrote about 3.000 lines at once with their original times. In the GUI such a run looks hung ([#7](https://github.com/ObjectVision/BAG-Tools/issues/7)).
 
 ## documentation
 
