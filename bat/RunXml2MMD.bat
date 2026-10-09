@@ -36,6 +36,10 @@ rem ---------------------------------------------------------------------------
 
 setlocal enabledelayedexpansion
 
+rem  De map van dit batchbestand, vastgelegd voor de argumentenlus: shift schuift ook
+rem  %%0 op, zodat %%~dp0 daarna de map van een argument geeft en niet die van dit bestand.
+set "BATDIR=%~dp0"
+
 set MEM_BUDGET_MB=8000
 set PER_FILESET=0
 
@@ -71,8 +75,8 @@ if not "%GEODMS_Overridable_GEO_ENGINE%"=="" echo GEO_ENGINE=%GEODMS_Overridable
 echo MEM_BUDGET_MB=%MEM_BUDGET_MB%
 
 if "%GEODMS_DIR%"==""  set GEODMS_DIR=C:\Program Files\ObjectVision\GeoDms20.20.0.m
-if "%XML2MMD_CFG%"=="" set XML2MMD_CFG=%~dp0..\cfg\BAG20_Xml2MMD.dms
-if "%XML2MMD_LOG%"=="" set XML2MMD_LOG=%~dp0..\BAG20_Xml2MMD.log
+if "%XML2MMD_CFG%"=="" set XML2MMD_CFG=%BATDIR%..\cfg\BAG20_Xml2MMD.dms
+if "%XML2MMD_LOG%"=="" set XML2MMD_LOG=%BATDIR%..\BAG20_Xml2MMD.log
 
 set ProgramPath=%GEODMS_DIR%\GeoDmsRun.exe
 set Budget=/SB%MEM_BUDGET_MB%
