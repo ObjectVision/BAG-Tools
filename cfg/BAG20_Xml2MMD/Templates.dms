@@ -73,7 +73,7 @@ container Templates: IsHidden = "True"
 		{
 			attribute<string> values := _ValuesTable/Values[value_rel];
 
-			attribute<uint32> srsDimension_with_nullvalues := strlen(posList/srsDimension) == 0 
+			attribute<uint32> srsDimension_with_nullvalues := MakeDefined(strlen(posList/srsDimension), 0) == 0 // een ontbrekend XML-attribuut is sinds GeoDMS 20.23.0 null, daarvoor een lege string
 				? uint32(gmlPolygon/srsDimension[polygon_rel]) // als de poslist geen srsdimension heeft, nemen we die van het gml:Polygon
 				: uint32(posList/srsDimension);
 			attribute<uint32> srsDimension := MakeDefined(srsDimension_with_nullvalues, srsDimensionDefaultValue)
