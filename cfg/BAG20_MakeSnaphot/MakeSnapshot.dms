@@ -460,9 +460,18 @@ template MakeSnapshot
 				attribute<int32>             oppervlakte         := last(selectie/oppervlakte, selectie/result_rel);
 				attribute<string>            nummeraanduiding_id := last(selectie/nummeraanduiding_id, selectie/result_rel);
 
+				// Het pand van een vbo is zijn eigen pandverwijzing in de BAG (bij meer gerelateerde panden de
+				// laatste; gerelateerdPand bevat ze allemaal), niet het pand waarin zijn punt ligt. Dit item neemt
+				// alle statussen mee, dus een punt ligt vaak in meer panden tegelijk: een gesloopt, niet
+				// gerealiseerd of ten onrechte opgevoerd pand en zijn opvolger. Welke daarvan point_in_polygon
+				// teruggeeft is niet vastgelegd en verschilt tussen GeoDMS-versies (GeoDMS #1289): op de extract
+				// van 20260808 kregen 69.242 vbo's tussen 20.20.0 en 20.24.0 een ander pand, en veranderde de
+				// woonpandtypering van 60.082 panden.
 				attribute<string>            pand_id             := last(gerelateerdPand/pand_id, rlookup(gerelateerdPand/identificatie, identificatie));
-				attribute<pand/result>       pand_rel            := point_in_polygon(geometry, pand/result/geometry), DisableStorage = "True";
-				attribute<string>            pand_id_geom        := pand/result/identificatie[pand_rel];
+				attribute<pand/result>       pand_rel            := rlookup(pand_id, pand/result/identificatie), DisableStorage = "True";
+				// het pand waarin het punt van de vbo ligt, alleen ter controle (overzichten, export)
+				attribute<pand/result>       pand_rel_geom       := point_in_polygon(geometry, pand/result/geometry), DisableStorage = "True";
+				attribute<string>            pand_id_geom        := pand/result/identificatie[pand_rel_geom];
 				attribute<string>            key                 := identificatie + '_' + string(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), DisableStorage = "True";
 
 				container gebruiksdoelen:=
@@ -898,7 +907,7 @@ template MakeSnapshot
 				attribute<string>         identificatie := object/vbo/result/identificatie;
 				attribute<int32>          oppervlakte   := object/vbo/result/oppervlakte;
 				attribute<nummeraanduiding>   nummeraanduiding_rel   := rlookup(object/vbo/result/nummeraanduiding_id, nummeraanduiding/identificatie);
-				attribute<pand>           pand_rel      := object/vbo/result/pand_rel[pand]; // pand waarin de vbo ligt
+				attribute<pand>           pand_rel      := object/vbo/result/pand_rel[pand]; // het pand waarnaar de vbo verwijst
 
 				container meta
 				{
