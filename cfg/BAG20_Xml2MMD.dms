@@ -48,7 +48,7 @@ container BAG20_Xml2MMD: IntegrityCheck = "GeoDMSVersion() >= 20.20" // GeoDMS 2
 	}
 	parameter<string> GeoEngine := expand(., '%GEO_ENGINE%');
 
-	parameter<string> date     := '20260108';
+	parameter<string> date     := '20261008';
 	//
 
 	parameter<string> date_dir := '%SourceDataDir%/BAG/' + date;

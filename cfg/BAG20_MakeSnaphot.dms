@@ -39,8 +39,8 @@ container BAG20_MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 8.08005" // G
 	}
 	parameter<string> GeoEngine := expand(., '%GEO_ENGINE%');
 
-	parameter<string> BAG_Date            := '20260108';
-	parameter<string> Snapshot_Date_Input := '20260101';
+	parameter<string> BAG_Date            := '20261008';
+	parameter<string> Snapshot_Date_Input := '20261001';
 	//
 
 	parameter<string> StoreDir            := '%SourceDataDir%/BAG/' + BAG_Date + '/mmd';
