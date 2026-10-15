@@ -18,19 +18,18 @@ The snapshot process also generates an address table, with [RD-coordinates](http
 
 The BAG Toolkit consists of three tools:
 
-1. [[BAG20 Xml2MMD]] -> To make the BAG available in a format suitable for modelling.
-2. [[BAG20 MakeSnapshot]] -> To make a snapshot of the BAG at a specific date. 
+1. [[BAG20 Xml2MMD]] -> To make the BAG available in a format suitable for modelling: one store per object type with the full history.
+2. [[BAG20 MakeSnapshot]] -> To make a snapshot of the BAG at a specific date from those stores. 
 3. [[GeoCode]] -> To geocode addresses with meta information on how the results are derived. This tool we developed with the [Spinlab department of the VU](https://spinlab.vu.nl/).
 
 ### additional
-- The toolkits also contains a script called: _BAG20_ReadAndProcessSnaphot.dms_, as an example on how to read the results of a snapshot and process it for different applications. This configuration is documented [here](https://github.com/ObjectVision/GeoDMS/wiki/BAG-relate-attributes-and-make-grids-example).
-- In the _/bat_ subfolder the _RunMultipleMakeSnapshots.bat_ shows an example how to make a set of snapshots for different dates with a batch file. 
+- In the _/bat_ subfolder _RunXml2MMD.bat_ runs the conversion from the command line and _RunMultipleMakeSnapshots.bat_ shows an example how to make a set of snapshots for different dates with a batch file. 
 
 ## requirements
 
-- [GeoDMS version 8.8.1](https://github.com/ObjectVision/GeoDMS/releases) or later
+- [GeoDMS version 20.23.1](https://github.com/ObjectVision/GeoDMS/releases) or later
 - Internal ram: 16 GB or more (as the BAG is a large dataset)
-- Hard disk space: 40 GB or more
+- Hard disk space: 120 GB or more during the conversion, of which 90 GB for the unpacked xml; the stores take 8 GB and a snapshot a few GB
 - Access rights to your LocalDataDir (default: C:\LocalData) and SourceDataDir (default: C:\SourceData). If not adjust these [placeholders](https://github.com/ObjectVision/GeoDMS/wiki/Folders-and-Placeholders) with the [GeoDMS GUI](https://github.com/ObjectVision/GeoDMS/wiki/GeoDMS-GUI): menu option > Tools > Options > Advanced tab.
 - For height information in snapshot, download the [**PHN**](https://www.geodms.nl/downloads/PHN/PHN_20230101.fss.zip) and unzip it in your _%SourceDataDir%_/PHN folder. PHN stands for: Pand Hoogte Nederland, based on the [AHN4](https://www.ahn.nl/ahn-4).
 

@@ -1,24 +1,22 @@
-This page describes how to use the BAG20_MakeSnaphot.dms script to make a [[BAG20 MakeSnapshot]].
+This page describes how to use the MakeSnapshot.dms script to make a [[BAG20 MakeSnapshot]].
 
 ## date configuration
 
 Make sure your _%SourceDataDir%_/BAG/_date_/mmd folder contains an .mmd store for each BAG object type, resulting from [[BAG20 Xml2MMD]].
 
-Then configure the code lines (in the top of the BAG20_MakeSnapshot.dms scriptfile):
+Then configure the code lines (in the top of the MakeSnapshot.dms scriptfile):
 
-<pre>// te configureren
-parameter&lt;string&gt; BAG_Date            := '<I>20230113</I>';
-parameter&lt;string&gt; Snapshot_Date_Input := '<I>20230101</I>';
-//</pre>
+<pre>parameter&lt;string&gt; BAG_Date            := '<I>20261008</I>';
+parameter&lt;string&gt; Snapshot_Date_Input := '<I>20261001</I>';</pre>
 
 Adapt the **BAG_Date** to the date for the downloaded BAG source, also configured as date in the [[BAG20 Xml2MMD]] script.
-The source MMD stores for making the snapshot will now be read from the StoreDir, configured as:  <BR><I>'%SourceDataDir%/BAG/' + BAG_Date + '/mmd'</I>;<BR> If the results of [[BAG20 Xml2MMD]] are saved in another folder, adjust also the StoreDir.
+The source MMD stores for making the snapshot will now be read from the StoreDir, configured as:  <BR><I>'%BAG_DIR%/' + BAG_Date + '/mmd'</I>;<BR> `BAG_DIR` is an overridable setting with default `%SourceDataDir%/BAG`; if the results of [[BAG20 Xml2MMD]] are saved in another folder, set it on the command line as the environment variable `GEODMS_Overridable_BAG_DIR` or in the GeoDMS GUI under Tools > Options. The snapshot is written under the same folder, in `snapshots.ext`.
 
 The **Snapshot_Date_Input** defines for which date the snapshot is made. Always chose a date before the BAG_Date.
 
-For both parameters use the _yyyymmdd_ format. In this example the BAG data was downloaded at the 13th of January 2023 from which a snapshot is made for the 1th of January 2023. 
+For both parameters use the _yyyymmdd_ format. In this example the BAG data was downloaded at the 8th of October 2026 from which a snapshot is made for the 1th of October 2026. 
 
-After opening the BAG20_MakeSnaphot.dms script in the GeoDMS GUI, the _snapshots_ folder contains a set of examples for generating a snapshot, with different options. A template _MakeSnapshot_ is configured for each example with as first parameter always the date for which the snapshot is made.  
+After opening the MakeSnapshot.dms script in the GeoDMS GUI, the _snapshots_ folder contains a set of examples for generating a snapshot, with different options. A template _Snapshot_T_ is configured for each example with as first parameter always the date for which the snapshot is made.  
 
 The other parameters define the snapshot options, described in the next paragraphs.
 
@@ -63,7 +61,7 @@ The BAG contains (meta) information on the states of objects. Selections can be 
 If the third parameter is configured as _False_, the snapshot is generated for all states of all objects. To configure a snapshot
  with state selections, set this third parameter to _True_.
 
-The states selections can be viewed and or adapted with the data items: **typeringen/status/_objecttype_/selected**, e.g. _typeringen/status/pand/selected_ to select the states for panden.
+The states selections can be viewed and or adapted with the data items: **Classifications/status/_objecttype_/selected**, e.g. _Classifications/status/pand/selected_ to select the states for panden, in `cfg/Classifications.dms`.
 
 The default selection states are derived from the Vesta project (October 2018).
 
@@ -92,7 +90,7 @@ See [requirements for PHN](https://github.com/ObjectVision/BAG-Tools/wiki#requir
 ### format (sixth parameter)
 
 The sixth parameter indicates the format of the resulting snapshot. The current version of this scripts supports two options:
-1. MMD: generates all resulting data as a set of .mmd stores. This is advised if the resulting data is used in other GeoDMS projects.
+1. MMD: generates all resulting data as one .mmd store, `bag.mmd`. This is advised if the resulting data is used in other GeoDMS projects.
 2. GPKG: generates one GeoPackage file with tables for all BAG objecttypes, including code tables to limit the data size and make selections easier. The 
 GPKG is advised if the resulting snapshot also is used in other software, like QGIS. 
 
@@ -114,6 +112,6 @@ Especially the _MaakVolledigeSnapshot_ option can take some time.
 
 ## result
 The resulting snapshot becomes a folder in your _%SourceDataDir%_/BAG/snapshots.ext/_optional_geo_selection_name_/_date_.new folder.
-This can contain a set of .mmd stores or the GPKG file.
+This contains the store `bag.mmd` (and `pandhoogte.mmd` with height information) or the GPKG file.
 
-We advice to rename the resulting folder to a _%SourceDataDir%_/BAG20/snapshots.ext/_optional_geo_selection_name_/_date_ folder 
+We advice to rename the resulting folder to a _%SourceDataDir%_/BAG/snapshots.ext/_optional_geo_selection_name_/_date_ folder 

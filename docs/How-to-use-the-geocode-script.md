@@ -2,7 +2,7 @@ This page describes how to use the Geocode.dms script to [[geocode|GeoCode]] add
 
 ## steps
 
-1. Make sure you generated the .mmd stores with the [[BAG20 MakeSnapshot]] script.
+1. Make sure you generated the .mmd stores with the [[BAG20 Xml2MMD]] script; Geocode reads those stores directly and selects the voorkomens that are valid on BAG_date itself.
 
 2. Configure the **snapshot date**. Open the _BAG.dms_ script file (in the cfg/Geocode subfolder of the [download](https://github.com/ObjectVision/BAG-Tools) in a text editor. Adjust the configuration of the item: *BAG/impl/SnapshotDir*
 

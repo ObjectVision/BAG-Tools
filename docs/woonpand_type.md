@@ -22,4 +22,4 @@ The calculation of the housing type (woonpand type) is based on:
 - the geometry of the panden and how they border to other panden
 - the number of verblijfsobjecten in the panden.
 
-The calculation method can be found in the [afleidingen.dms](https://github.com/ObjectVision/BAG-Tools/blob/main/cfg/BAG20_MakeSnaphot/MakeSnapshot/afleidingen.dms) script file.
+The calculation method can be found in the [afleidingen.dms](https://github.com/ObjectVision/BAG-Tools/blob/main/cfg/MakeSnapshot/MakeSnapshot/afleidingen.dms) script file.
