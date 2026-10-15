@@ -28,12 +28,12 @@
 // A `using` on the root container itself does not work: GeoDMS resolves using-names in
 // the parent scope, so a root container cannot reference its own children that way.
 container Geocode
-:	IntegrityCheck = "GeoDMSVersion() >= 8.08005" // GeoDMS version should be 8.81 or later
+:	IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20.23.1 of later, zoals Xml2MMD
 {
 	container ModelParameters
 	{
-		parameter<string> BAG_date                 := '20260710';
-		parameter<string> BAG_SnapshotDir          := '%SourceDataDir%/RSopen/Vastgoed/VolledigeTabel_'+BAG_date;
+		parameter<string> BAG_date                 := '20261008', Descr = "De datum van het BAG-extract: de map onder BAG_DIR met de stores van Xml2MMD.";
+		parameter<string> BAG_StoreDir             := '%BAG_DIR%/' + BAG_date + '/mmd';
 		parameter<string> CBS_RegioIndelingenJaar  := '2024';
 		// parameter<string> PathToFileToBeGeocoded   := '%SourceDataDir%/BAG/xy_source';
 		parameter<string> PathToFileToBeGeocoded   := '%OneDrive_Dir%/VU/Projects/NVM Prijsindex/Temp';
@@ -110,11 +110,13 @@ container Geocode
 		#include<ngr_layer.dms> // reference WMS layer
 	}
 
-	// De BAG stores noemen hun coordinateneenheid met een absoluut pad, /geometries/rdc.
-	// Hier heet die Geography/rdc_meter, dus die krijgt de naam waaronder de store hem zoekt.
+	// De BAG stores noemen hun coordinateneenheid met een absoluut pad: /geometries/rdc_mm (de stores
+	// van Xml2MMD, millimeters) en /geometries/rdc (de snapshot van MakeSnapshot, meters). Hier heten die
+	// Geography/rdc_mm en Geography/rdc_meter, dus ze krijgen de naam waaronder de store ze zoekt.
 	container geometries
 	{
-		unit<dpoint> rdc := Geography/rdc_meter;
+		unit<dpoint> rdc    := Geography/rdc_meter;
+		unit<ipoint> rdc_mm := Geography/rdc_mm;
 	}
 
 	container SourceData
@@ -377,6 +379,7 @@ container Geocode
 		container Overridable
 		{
 			parameter<String> RSo_DataDir  := '%sourceDataDir%/RSopen';
+			parameter<String> BAG_DIR      := '%SourceDataDir%/BAG';
 			parameter<String> OneDrive_Dir := 'D:/OneDrive - Objectvision';
 		}
 	}

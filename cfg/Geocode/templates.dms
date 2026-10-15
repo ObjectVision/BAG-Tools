@@ -209,25 +209,27 @@ container Templates
 	// omdat een store-eenheid die als case parameter wordt meegegeven haar dictionary-items
 	// niet meedraagt en select_with_attr_by_org_rel er dan niets van terugvindt.
 	
-	template meta_src_template // De generieke BAG-meta bij een objecttype, met de status als code
+	template meta_src_template // De generieke BAG-meta bij een objecttype: de statuscode van de store naar de code hier, via de labeltekst
 	{
 		// begin case parameters
-		unit<uint32> domain;
-		unit<uint8>  statustype;
-		container    meta_src;    // het meta-blok van de store, of de samengevoegde variant daarvan
+		unit<uint32>            domain;
+		unit<uint8>             statustype;
+		unit<uint8>             store_status;
+		attribute<string>       store_label (store_status);
+		attribute<store_status> store_rel (domain);
+		container               meta_src;    // het meta-blok van de store
 		// end case parameters
 
-		attribute<string>     STATUS                 (domain) := meta_src/STATUS;
-		// de BAG levert de status met hoofdletters, de codelijsten hier niet altijd
-		attribute<statustype> status_rel             (domain) := rlookup(lowercase(STATUS), lowercase(statustype/label));
-		attribute<bool>       status_sel             (domain) := statustype/IsSelected[status_rel];
+		attribute<statustype> code_rel               (store_status) := rlookup(lowercase(store_label), lowercase(statustype/label));
+		attribute<statustype> status_rel             (domain)       := code_rel[store_rel];
+		attribute<bool>       status_sel             (domain)       := statustype/IsSelected[status_rel];
 
 		attribute<int32>      BEGINDATUM             (domain) := meta_src/BEGINDATUM;
 		attribute<int32>      EINDDATUM              (domain) := meta_src/EINDDATUM;
 		attribute<uint32>     VOORKOMENIDENTIFICATIE (domain) := meta_src/VOORKOMENIDENTIFICATIE;
 
-		attribute<string>     TIJDSTIPREGISTRATIE    (domain) := meta_src/TIJDSTIPREGISTRATIE;
-		attribute<string>     EINDREGISTRATIE        (domain) := meta_src/EINDREGISTRATIE;
+		attribute<int32>      TIJDSTIPREGISTRATIE    (domain) := meta_src/TIJDSTIPREGISTRATIE;
+		attribute<int32>      EINDREGISTRATIE        (domain) := meta_src/EINDREGISTRATIE;
 	}
 	
 }

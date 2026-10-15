@@ -11,15 +11,13 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-// De BAG tools schrijven MMD stores. De dictionary in de store beschrijft de inhoud,  //
-// dus een leesholder mag zelf niets declareren: alles wat wij eraan toevoegen staat   //
-// in een src-eenheid ernaast, die het domein van de store overneemt.                  //
+// Xml2MMD schrijft per objecttype een MMD store met alle voorkomens: de volledige     //
+// historie, met identificaties als uint64, de status als code met een labeltabel in   //
+// de store en de geometrie in millimeters. De dictionary in de store beschrijft de    //
+// inhoud, dus een leesholder mag zelf niets declareren: alles wat wij eraan toevoegen //
+// staat in een src-eenheid ernaast, die het domein van de store overneemt.            //
 //                                                                                    //
-// pand en vbo komen per fileset binnen, omdat de BAG ze in meerdere XML-bestanden     //
-// levert. Die worden hier eerst samengevoegd met union_unit en union_data.            //
-//                                                                                    //
-// De stores bevatten de volledige historie: per object meerdere voorkomens. Deze      //
-// configuratie kiest zelf het voorkomen dat op BAG_date geldig is.                    //
+// Deze configuratie kiest zelf het voorkomen dat op BAG_date geldig is.               //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -27,7 +25,7 @@ container BAG : using = "units;classifications"
 {
 	container impl
 	{
-		parameter<string> SnapshotDir := ModelParameters/BAG_SnapshotDir;
+		parameter<string> StoreDir    := ModelParameters/BAG_StoreDir;
 		parameter<int32>  prik_datum  := int32(ModelParameters/BAG_date);
 
 		container straatnaam     := Templates/normalize_streetname(Adres, Adres/straatnaam);
@@ -45,7 +43,7 @@ container BAG : using = "units;classifications"
 		container woonplaats
 		{
 			unit<uint32> import
-			:	StorageName     = "= SnapshotDir + '/woonplaats.mmd'"
+			:	StorageName     = "= StoreDir + '/woonplaats.mmd'"
 			,	StorageReadOnly = "True"
 			{
 			}
@@ -60,7 +58,7 @@ container BAG : using = "units;classifications"
 
 			unit<uint32> result := unique(selectie/identificatie)
 			{
-				attribute<string> identificatie  := values;
+				attribute<uint64> identificatie  := values;
 				attribute<string> woonplaatsNaam := last(selectie/woonplaatsNaam, selectie/result_rel);
 			}
 		}
@@ -68,7 +66,7 @@ container BAG : using = "units;classifications"
 		container openbareruimte
 		{
 			unit<uint32> import
-			:	StorageName     = "= SnapshotDir + '/openbareruimte.mmd'"
+			:	StorageName     = "= StoreDir + '/openbareruimte.mmd'"
 			,	StorageReadOnly = "True"
 			{
 			}
@@ -83,9 +81,9 @@ container BAG : using = "units;classifications"
 
 			unit<uint32> result := unique(selectie/identificatie)
 			{
-				attribute<string> identificatie := values;
+				attribute<uint64> identificatie := values;
 				attribute<string> naam          := last(selectie/naam, selectie/result_rel);
-				attribute<string> woonplaats_id := last(selectie/woonplaats_id, selectie/result_rel);
+				attribute<uint64> woonplaats_id := last(selectie/woonplaats_id, selectie/result_rel);
 			}
 		}
 
@@ -96,14 +94,14 @@ container BAG : using = "units;classifications"
 		container nummeraanduiding
 		{
 			unit<uint32> import
-			:	StorageName     = "= SnapshotDir + '/nummeraanduiding.mmd'"
+			:	StorageName     = "= StoreDir + '/nummeraanduiding.mmd'"
 			,	StorageReadOnly = "True"
 			{
 			}
 
 			unit<uint32> src := import
 			{
-				attribute<string>     identificatie   := import/identificatie;
+				attribute<uint64>     identificatie   := import/identificatie;
 				attribute<int32>      huisnummer      := import/huisnummer;
 				attribute<string>     huisletter      := import/huisletter;
 				attribute<string>     toevoeging      := import/toevoeging;
@@ -116,7 +114,7 @@ container BAG : using = "units;classifications"
 
 				// de BAG legt de woonplaats bij een nummeraanduiding alleen vast als die afwijkt
 				// van de woonplaats van de openbare ruimte; anders geldt die van de openbare ruimte
-				attribute<string>     woonplaats_id   := MakeDefined(import/woonplaats_id, BAG/impl/openbareruimte/result/woonplaats_id[openbareruimte_rel]);
+				attribute<uint64>     woonplaats_id   := MakeDefined(import/woonplaats_id, BAG/impl/openbareruimte/result/woonplaats_id[openbareruimte_rel]);
 				attribute<string>     woonplaats      := rjoin(woonplaats_id, BAG/impl/woonplaats/result/identificatie, BAG/impl/woonplaats/result/woonplaatsNaam);
 
 				attribute<vbos/vbo>   vbo_rel         := rlookup(identificatie, vbos/vbo/nummeraanduiding_id);
@@ -127,7 +125,7 @@ container BAG : using = "units;classifications"
 				attribute<int32>      vbo_oppervlak   := vbos/vbo/oppervlakte[vbo_rel];
 				attribute<bool>       IsInNederland   := IsDefined(point_in_polygon(geometry, CBS/Gemeente/geometry));
 
-				container meta := Templates/meta_src_template(src, nummeraanduiding_status, import/meta);
+				container meta := Templates/meta_src_template(src, nummeraanduiding_status, import/status, import/status/Label, import/meta/status_rel, import/meta);
 			}
 
 			// De selectie staat hier en niet in een template: een store-eenheid die als case
@@ -140,14 +138,13 @@ container BAG : using = "units;classifications"
 			unit<uint32> selection := select_with_attr_by_org_rel(src, conditie)
 			{
 				attribute<result> result_rel := rlookup(identificatie, result/values);
-				attribute<string> key        := identificatie + '_' + string(meta/VOORKOMENIDENTIFICATIE);
 			}
 
 			unit<uint32> result := unique(selection/identificatie)
 			{
 				attribute<uint32> count := pcount(selection/result_rel), DisableStorage = "True";
 
-				attribute<string>    identificatie  := values;
+				attribute<uint64>    identificatie  := values;
 				attribute<int32>     huisnummer     := last(selection/huisnummer     , selection/result_rel);
 				attribute<string>    huisnummer_str := string(huisnummer);
 				attribute<string>    huisletter     := last(selection/huisletter     , selection/result_rel);
@@ -173,81 +170,33 @@ container BAG : using = "units;classifications"
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////
-		//                        verblijfsobjecten (per fileset)                        //
+		//                              verblijfsobjecten                                //
 		//////////////////////////////////////////////////////////////////////////////////
 
 		container vbos
 		{
-			parameter<string> nr_stores : StorageName = "= SnapshotDir + '/vbo/nr_stores.csv'", StorageType = "str";
-			unit<uint32> fileset := range(uint32, 1, uint32(nr_stores) + 1);
-			container Filesets   := for_each_ne(
-				  'nr_' + string(id(fileset))
-				, 'per_fileset(' + string(id(fileset)) + '[fileset])'
-				);
-
-			template per_fileset
+			unit<uint32> import
+			:	StorageName     = "= StoreDir + '/vbo.mmd'"
+			,	StorageReadOnly = "True"
 			{
-				// begin case parameters
-				parameter<fileset> nr_fileset;
-				// end case parameters
-
-				unit<uint32> store
-				:	StorageName     = "= SnapshotDir + '/vbo/fs_' + string(nr_fileset) + '.mmd'"
-				,	StorageReadOnly = "True"
-				{
-				}
-
-				// mutatie_rel is per fileset genummerd, dus houden we bij uit welk fileset een rij komt
-				container afgeleid
-				{
-					attribute<uint32> mutatie_rel (store) := id(store);
-					attribute<uint32> fileset_rel (store) := const(nr_fileset, store);
-
-					container gerelateerdPand
-					{
-						attribute<uint32> fileset_rel (store/gerelateerdPand) := const(nr_fileset, store/gerelateerdPand);
-					}
-				}
 			}
 
-			unit<uint32> src := = 'union_unit(' + asList('Filesets/nr_' + string(id(fileset)) + '/store', ',') + ')'
+			unit<uint32> src := import
 			{
-				attribute<rdc_meter> geometry            := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/geometry', ',') + ')';
-				attribute<string>    identificatie       := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/identificatie', ',') + ')';
-				attribute<string>    nummeraanduiding_id := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/nummeraanduiding_id', ',') + ')';
-				attribute<int32>     oppervlakte         := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/oppervlakte', ',') + ')';
+				attribute<rdc_meter> geometry            := import/geometry[rdc_meter];
+				attribute<uint64>    identificatie       := import/identificatie;
+				attribute<uint64>    nummeraanduiding_id := import/nummeraanduiding_id;
+				attribute<int32>     oppervlakte         := import/oppervlakte;
 
-				attribute<uint32>    mutatie_rel         := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/afgeleid/mutatie_rel', ',') + ')';
-				attribute<uint32>    fileset_rel         := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/afgeleid/fileset_rel', ',') + ')';
-				attribute<string>    mutatie_key         := string(fileset_rel) + '_' + string(mutatie_rel);
-
-				// de administratieve relatie naar het pand; de store legt die per fileset vast
-				unit<uint32> gerelateerdPand := = 'union_unit(' + asList('Filesets/nr_' + string(id(fileset)) + '/store/gerelateerdPand', ',') + ')'
-				{
-					attribute<uint32> fileset_rel := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/afgeleid/gerelateerdPand/fileset_rel', ',') + ')';
-					attribute<uint32> mutatie_rel := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/gerelateerdPand/mutatie_rel', ',') + ')';
-					attribute<string> pand_id     := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/gerelateerdPand/pand_id', ',') + ')';
-					attribute<string> mutatie_key := string(fileset_rel) + '_' + string(mutatie_rel);
-				}
-
-				attribute<uint64>    vbo_bag_nr          := uint64(identificatie);
-				attribute<uint64>    pand_bag_nr         := uint64(rjoin(mutatie_key, gerelateerdPand/mutatie_key, gerelateerdPand/pand_id));
+				// de administratieve relatie naar het pand; bij meer panden de laatste, zoals in MakeSnapshot
+				attribute<uint64>    vbo_bag_nr          := identificatie;
+				attribute<uint64>    pand_bag_nr         := last(import/gerelateerdPand/pand_id, import/gerelateerdPand/vbo_rel);
 
 				attribute<uint16>    pand_bouwjaar       := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/bouwjaar_trunc);
 				attribute<uint16>    pand_hoogte         := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/pand_hoogte);
 				attribute<meter2>    pand_footprint      := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/footprint);
 
-				container store_meta : IsHidden = "True"
-				{
-					attribute<string> STATUS                 (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/STATUS', ',') + ')';
-					attribute<int32>  BEGINDATUM             (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/BEGINDATUM', ',') + ')';
-					attribute<int32>  EINDDATUM              (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/EINDDATUM', ',') + ')';
-					attribute<uint32> VOORKOMENIDENTIFICATIE (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/VOORKOMENIDENTIFICATIE', ',') + ')';
-					attribute<string> TIJDSTIPREGISTRATIE    (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/TIJDSTIPREGISTRATIE', ',') + ')';
-					attribute<string> EINDREGISTRATIE        (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/EINDREGISTRATIE', ',') + ')';
-				}
-
-				container meta := Templates/meta_src_template(src, vbo_status, store_meta);
+				container meta := Templates/meta_src_template(src, vbo_status, import/status, import/status/Label, import/meta/status_rel, import/meta);
 
 				attribute<vbo_status> status_rel := meta/status_rel;
 				attribute<bool>       IsVoorraad := vbo_status/IsVoorraad[status_rel];
@@ -266,50 +215,26 @@ container BAG : using = "units;classifications"
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////
-		//                              panden (per fileset)                             //
+		//                                    panden                                     //
 		//////////////////////////////////////////////////////////////////////////////////
 
 		container panden
 		{
-			parameter<string> nr_stores : StorageName = "= SnapshotDir + '/pand/nr_stores.csv'", StorageType = "str";
-			unit<uint32> fileset := range(uint32, 1, uint32(nr_stores) + 1);
-			container Filesets   := for_each_ne(
-				  'nr_' + string(id(fileset))
-				, 'per_fileset(' + string(id(fileset)) + '[fileset])'
-				);
-
-			template per_fileset
+			unit<uint32> import
+			:	StorageName     = "= StoreDir + '/pand.mmd'"
+			,	StorageReadOnly = "True"
 			{
-				// begin case parameters
-				parameter<fileset> nr_fileset;
-				// end case parameters
-
-				unit<uint32> store
-				:	StorageName     = "= SnapshotDir + '/pand/fs_' + string(nr_fileset) + '.mmd'"
-				,	StorageReadOnly = "True"
-				{
-				}
 			}
 
-			unit<uint32> src := = 'union_unit(' + asList('Filesets/nr_' + string(id(fileset)) + '/store', ',') + ')'
+			unit<uint32> src := import
 			{
-				attribute<rdc_meter> geometry_org (poly)   := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/geometry', ',') + ')';
-				attribute<string>    identificatie         := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/identificatie', ',') + ')';
-				attribute<int16>     oorspronkelijkBouwjaar := = 'union_data(., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/oorspronkelijkBouwjaar', ',') + ')';
+				attribute<rdc_meter> geometry_org (poly)    := import/geometry[rdc_meter];
+				attribute<uint64>    identificatie          := import/identificatie;
+				attribute<int16>     oorspronkelijkBouwjaar := import/oorspronkelijkBouwjaar;
 
-				container store_meta : IsHidden = "True"
-				{
-					attribute<string> STATUS                 (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/STATUS', ',') + ')';
-					attribute<int32>  BEGINDATUM             (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/BEGINDATUM', ',') + ')';
-					attribute<int32>  EINDDATUM              (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/EINDDATUM', ',') + ')';
-					attribute<uint32> VOORKOMENIDENTIFICATIE (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/VOORKOMENIDENTIFICATIE', ',') + ')';
-					attribute<string> TIJDSTIPREGISTRATIE    (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/TIJDSTIPREGISTRATIE', ',') + ')';
-					attribute<string> EINDREGISTRATIE        (..) := = 'union_data(.., ' + asList('Filesets/nr_' + string(id(fileset)) + '/store/meta/EINDREGISTRATIE', ',') + ')';
-				}
+				container meta := Templates/meta_src_template(src, pand_status, import/status, import/status/Label, import/meta/status_rel, import/meta);
 
-				container meta := Templates/meta_src_template(src, pand_status, store_meta);
-
-				attribute<uint64>      pand_bag_nr    := uint64(identificatie);
+				attribute<uint64>      pand_bag_nr    := identificatie;
 				attribute<pand_status> status_rel     := meta/status_rel;
 				attribute<int32>       begindatum     := impl/begindatum0 < 19600101i ? impl/TIJDSTIPREGISTRATIE : impl/begindatum0;
 				attribute<int32>       einddatum      := impl/einddatum0  < 19600101i ? impl/EINDREGISTRATIE     : impl/einddatum0;
@@ -348,8 +273,8 @@ container BAG : using = "units;classifications"
 						attribute<rdc_meter> geometry_reversed (poly) := points2polygon(seq_points/points_reversed, seq_points/Sequence_rel_Reversed);
 					}
 
-					attribute<int32>     TIJDSTIPREGISTRATIE := int32(replace(substr(meta/TIJDSTIPREGISTRATIE,0,10),'-',''));
-					attribute<int32>     EINDREGISTRATIE     := int32(replace(substr(meta/EINDREGISTRATIE,0,10),'-',''));
+					attribute<int32>     TIJDSTIPREGISTRATIE := meta/TIJDSTIPREGISTRATIE;
+					attribute<int32>     EINDREGISTRATIE     := meta/EINDREGISTRATIE;
 					attribute<int32>     begindatum0         := meta/BEGINDATUM == 0i ? ModelParameters/MaxDatum : meta/BEGINDATUM;
 					attribute<int32>     einddatum0          := meta/EINDDATUM  == 0i ? ModelParameters/MaxDatum : meta/EINDDATUM;
 					attribute<rdc_meter> NW                  := lower_bound(geometry);
@@ -423,7 +348,7 @@ container BAG : using = "units;classifications"
 		attribute<Float64> X                  := PointCol(impl/Adres/geometry);
 		attribute<Float64> Y                  := PointRow(impl/Adres/geometry);
 
-		attribute<string> nummeraanduiding_id := impl/Adres/identificatie;
+		attribute<string> nummeraanduiding_id := right('0000000000000000' + string(impl/Adres/identificatie), 16);
 
 		attribute<rdc_meter> geometry          := point_xy(X,Y,rdc_meter);
 
