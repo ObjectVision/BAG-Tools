@@ -9,17 +9,16 @@ This toolkit converts the extract into [MMD](https://github.com/ObjectVision/Geo
 ## the tools
 
 ```
-BAG 2.0 XML extract  ─►  BAG20_Xml2MMD  ─►  one store per object type,     ─►  BAG20_MakeSnaphot  ─►  bag.mmd: the BAG at one date,
+BAG 2.0 XML extract  ─►  Xml2MMD        ─►  one store per object type,     ─►  MakeSnaphot        ─►  bag.mmd: the BAG at one date,
                                              full history                                            relations, classifications,
                                                                                                      woonpand type, addresses, heights
                                                         │
                                                         └─────►  Geocode  ─►  your address file with RD coordinates and BAG attributes
 ```
 
-- **BAG20_Xml2MMD** (`cfg/BAG20_Xml2MMD.dms`) parses the extract into an MMD store per object type, geometry in RD metres, with all voorkomens. Pand and verblijfsobject are delivered in many files and are stored per file set. `bat/RunXml2MMD.bat` runs it from the command line in one process under a memory budget, so file sets are processed side by side as far as memory allows. Until 2026 this tool was called Xml2FSS.
-- **BAG20_MakeSnaphot** (`cfg/BAG20_MakeSnaphot.dms`) selects the voorkomen of every object that is valid on a given date, optionally within a geographic extent, with a status selection and without probable data errors, and writes one store, `bag.mmd`. In it the references between object types are real relations (`vbo/pand_rel`, `vbo/nummeraanduiding_rel`, ...), statuses are codes into classification tables that carry the labels, every nummeraanduiding has a point geometry with its street and place name, and every pand has a [woonpand type](https://github.com/ObjectVision/BAG-Tools/wiki/Woonpand-typering) (vrijstaand, twee onder 1 kap, hoekwoning, tussenwoning, meergezinspand). Building heights from the PHN are optional. A GeoPackage export is available for use outside GeoDMS.
+- **Xml2MMD** (`cfg/Xml2MMD.dms`) parses the extract into an MMD store per object type, geometry in RD metres, with all voorkomens. Pand and verblijfsobject are delivered in many files and are stored per file set. `bat/RunXml2MMD.bat` runs it from the command line in one process under a memory budget, so file sets are processed side by side as far as memory allows. Until 2026 this tool was called Xml2FSS.
+- **MakeSnaphot** (`cfg/MakeSnaphot.dms`) selects the voorkomen of every object that is valid on a given date, optionally within a geographic extent, with a status selection and without probable data errors, and writes one store, `bag.mmd`. In it the references between object types are real relations (`vbo/pand_rel`, `vbo/nummeraanduiding_rel`, ...), statuses are codes into classification tables that carry the labels, every nummeraanduiding has a point geometry with its street and place name, and every pand has a [woonpand type](https://github.com/ObjectVision/BAG-Tools/wiki/Woonpand-typering) (vrijstaand, twee onder 1 kap, hoekwoning, tussenwoning, meergezinspand). Building heights from the PHN are optional. A GeoPackage export is available for use outside GeoDMS.
 - **Geocode** (`cfg/Geocode.dms`) matches the addresses in a csv file against the BAG in a decision tree of sixteen levels, from a full match on postcode, street, number, addition and place down to the place alone, and reports for every record the level reached, the number and spread of the BAG addresses behind the coordinate, the CBS buurt, wijk and gemeente, and the BAG attributes of the matched object. Developed with the [Spinlab of the VU Amsterdam](https://spinlab.vu.nl/).
-- **BAG20_ReadAndProcessSnaphot** (`cfg/BAG20_ReadAndProcessSnaphot.dms`) is an example project that opens `bag.mmd` and relates verblijfsobjecten, panden and addresses, as a starting point for your own.
 
 ## requirements
 
@@ -32,8 +31,8 @@ BAG 2.0 XML extract  ─►  BAG20_Xml2MMD  ─►  one store per object type,  
 ## quick start
 
 1. Unzip the LIG, NUM, OPR, PND, STA, VBO and WPL zip files of the extract into `%SourceDataDir%/BAG/<yyyymmdd>/NGR`. `%SourceDataDir%` is a GeoDMS placeholder, `C:/SourceData` by default.
-2. Set `date` in `cfg/BAG20_Xml2MMD.dms` to that date and run `bat\RunXml2MMD.bat`, or open the configuration in the GeoDMS GUI and double click `MaakMMDBestanden`. The stores appear in `%SourceDataDir%/BAG/<yyyymmdd>/mmd`.
-3. Set `BAG_Date` and `Snapshot_Date_Input` in `cfg/BAG20_MakeSnaphot.dms`, open it in the GUI, pick one of the examples under `snapshots` and double click its `MaakVolledigeSnapshot`. The snapshot appears in `%SourceDataDir%/BAG/snapshots.ext/<yyyymmdd>.new/bag.mmd`.
+2. Set `date` in `cfg/Xml2MMD.dms` to that date and run `bat\RunXml2MMD.bat`, or open the configuration in the GeoDMS GUI and double click `MaakMMDBestanden`. The stores appear in `%SourceDataDir%/BAG/<yyyymmdd>/mmd`.
+3. Set `BAG_Date` and `Snapshot_Date_Input` in `cfg/MakeSnaphot.dms`, open it in the GUI, pick one of the examples under `snapshots` and double click its `MaakVolledigeSnapshot`. The snapshot appears in `%SourceDataDir%/BAG/snapshots.ext/<yyyymmdd>.new/bag.mmd`.
 4. Read it from your own project with an empty storage holder; the store describes itself. Only the coordinate unit and the two date units are yours to declare, under exactly these names:
 
 ```

@@ -30,7 +30,7 @@ rem    PER_FILESET=1  de oude werkwijze: een apart GeoDmsRun-proces per fileset,
 rem                   voor wie het geheugen hard wil begrenzen op een fileset
 rem  Instelbaar via omgevingsvariabelen (met de defaults hieronder):
 rem    GEODMS_DIR   map met GeoDmsRun.exe (20.20.0 of later)
-rem    XML2MMD_CFG  pad naar BAG20_Xml2MMD.dms
+rem    XML2MMD_CFG  pad naar Xml2MMD.dms
 rem    XML2MMD_LOG  pad naar het logbestand
 rem ---------------------------------------------------------------------------
 
@@ -75,8 +75,8 @@ if not "%GEODMS_Overridable_GEO_ENGINE%"=="" echo GEO_ENGINE=%GEODMS_Overridable
 echo MEM_BUDGET_MB=%MEM_BUDGET_MB%
 
 if "%GEODMS_DIR%"==""  set GEODMS_DIR=C:\Program Files\ObjectVision\GeoDms20.20.0.m
-if "%XML2MMD_CFG%"=="" set XML2MMD_CFG=%BATDIR%..\cfg\BAG20_Xml2MMD.dms
-if "%XML2MMD_LOG%"=="" set XML2MMD_LOG=%BATDIR%..\BAG20_Xml2MMD.log
+if "%XML2MMD_CFG%"=="" set XML2MMD_CFG=%BATDIR%..\cfg\Xml2MMD.dms
+if "%XML2MMD_LOG%"=="" set XML2MMD_LOG=%BATDIR%..\Xml2MMD.log
 
 set ProgramPath=%GEODMS_DIR%\GeoDmsRun.exe
 set Budget=/SB%MEM_BUDGET_MB%
