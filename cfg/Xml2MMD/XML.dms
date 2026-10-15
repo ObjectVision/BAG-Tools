@@ -11,7 +11,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container XML
+container XML: Using = "Parameters"
 {
 	container folderinfo
 	{
@@ -266,7 +266,7 @@ container XML
 	{
 		unit<uint32> FilesAll := folderinfo/bestand_selectie/xml_bestanden/pand
 		{
-			attribute<uint32> fileset_rel   := uint32(roundUp(float32(id(.) + 1) / 50f));
+			attribute<uint32> fileset_rel   := uint32(roundUp(float32(id(.) + 1) / float32(bestanden_per_fileset)));
 
 			attribute<string> FileNumberStr := string(id(.) + 1);
 			attribute<string> FileName      := FilesAll/naam;
@@ -296,22 +296,32 @@ container XML
 			container ParsedXML  := parse_xml(XmlData, schema);
 			container geoBuilder := Templates/ProcessGmlPolygon(ParsedXML/Objecten_pand, false);
 
-			container pand_meta := Templates/meta(pand, pand/Objecten_Status), IsHidden = "True";
+			container pand_meta := Templates/meta(ParsedXML/Objecten_Pand, ParsedXML/Objecten_Pand/Objecten_Status, ParsedXML/Objecten_Pand/Objecten_identificatie, Classifications/status/pand);
 
-			unit<uint32> pand := ParsedXML/Objecten_Pand, StorageName= "= StoreDir + '/pand/fs_' + string(fileset_rel) + '.mmd'"
+			// de tussenstore van deze fileset, al in de compacte vorm van de eindstore; Store/pand voegt de filesets samen.
+			// Een vlak dat kleiner is dan de tolerantie verdwijnt in de simplify (op het extract van 2026-10-08 2.003 van de
+			// 24,7 miljoen voorkomens, vlakjes tot 0,14 m2); zo'n vlak houdt zijn oorspronkelijke vorm.
+			attribute<geometries/rdc> geometry_simpel_raw (ParsedXML/Objecten_Pand, polygon) := bg_simplify_multi_polygon(geoBuilder/result, pand_simplify_tolerantie);
+			unit<uint32>              simpel_punten := sequence2points(geometry_simpel_raw);
+			attribute<bool>           simpel_ontaard  (ParsedXML/Objecten_Pand) := pcount(simpel_punten/sequence_rel) < 4;
+			attribute<geometries/rdc> geometry_simpel (ParsedXML/Objecten_Pand, polygon) := simpel_ontaard ? geoBuilder/result : geometry_simpel_raw;
+			container pand_mm := Templates/polygon_mm(ParsedXML/Objecten_Pand, geometry_simpel);
+
+			unit<uint32> pand := ParsedXML/Objecten_Pand, StorageName = "= TempDir + '/pand/fs_' + string(fileset_rel) + '.mmd'"
+			, IntegrityCheck = "pand_meta/ok"
 			{
-				attribute<geometries/rdc> geometry (polygon)  := geoBuilder/result;
-				attribute<string> identificatie          := Objecten_identificatie;
+				attribute<geometries/rdc_mm> geometry (polygon) := pand_mm/result;
+				attribute<uint64> identificatie          := uint64(Objecten_identificatie);
 				attribute<int16>  oorspronkelijkBouwjaar := Objecten_oorspronkelijkBouwjaar[int16];
 
 				container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 				{
-					attribute<string> STATUS                 (pand) := pand_meta/STATUS;
+					attribute<Classifications/status/pand> status_rel (pand) := pand_meta/status_rel;
 					attribute<uint32> VOORKOMENIDENTIFICATIE (pand) := pand_meta/VOORKOMENIDENTIFICATIE;
 					attribute<int32>  BEGINDATUM             (pand) := pand_meta/BEGINDATUM;
 					attribute<int32>  EINDDATUM              (pand) := pand_meta/EINDDATUM;
-					attribute<string> TIJDSTIPREGISTRATIE    (pand) := pand_meta/TIJDSTIPREGISTRATIE;
-					attribute<string> EINDREGISTRATIE        (pand) := pand_meta/EINDREGISTRATIE;
+					attribute<int32>  TIJDSTIPREGISTRATIE    (pand) := pand_meta/TIJDSTIPREGISTRATIE;
+					attribute<int32>  EINDREGISTRATIE        (pand) := pand_meta/EINDREGISTRATIE;
 					attribute<int32>  DOCUMENTDATUM          (pand) := pand_meta/DOCUMENTDATUM;
 					attribute<string> DOCUMENTNUMMER         (pand) := pand_meta/DOCUMENTNUMMER;
 					attribute<bool>   IS_GECONSTATEERD       (pand) := pand_meta/IS_GECONSTATEERD;
@@ -512,11 +522,18 @@ container XML
 				}
 				attribute<geometries/rdc> geometry := point_yx(y, x, geometries/rdc);
 
-				unit<uint32> polygon := vbo/gml_Polygon
+				unit<uint32> polygon := vbo/gml_Polygon // 1->0..1 relatie: het vlak van een vbo zonder punt
 				{
-					attribute<string> identificatie      := vbo/Objecten_identificatie[value(vbo_impl/gml_Polygon/Parent_rel, vbo_impl)];
+					attribute<vbo_impl>       mutatie_rel     := value(vbo_impl/gml_Polygon/Parent_rel, vbo_impl);
 					attribute<geometries/rdc> geometry (poly) := geoBuilder/polygon/result;
+					attribute<geometries/rdc> punt            := centroid_or_mid(geometry);
 				}
+				container polygon_mm := Templates/polygon_mm(polygon, polygon/geometry);
+
+				// het BAG-punt, of bij een vbo met een vlak een punt binnen dat vlak; afgerond op millimeters
+				attribute<geometries/rdc>         punt      := MakeDefined(geometry, polygon/punt[invert(polygon/mutatie_rel)]);
+				attribute<geometries/rdc_mm_rond> punt_rond := punt[geometries/rdc_mm_rond];
+				attribute<geometries/rdc_mm>      punt_mm   := point_yx(PointRow(punt_rond), PointCol(punt_rond), geometries/rdc_mm);
 
 				attribute<int32> oppervlakte := vbo/Objecten_oppervlakte[int32];
 
@@ -538,62 +555,64 @@ container XML
 				parameter<uint32> type_factor := 10000000;
 				unit<uint32> vbo_doel_domain  := vbo/Objecten_gebruiksdoel
 				{
-					attribute<uint32> key := parent_rel + type_factor * uint32(rlookup(_ValuesTable/values[value_rel], typeringen/gebruiksdoel_vbo/label));
+					attribute<uint32> key := parent_rel + type_factor * uint32(rlookup(_ValuesTable/values[value_rel], Classifications/gebruiksdoel_vbo/label));
 				}
 
 				container gebruiksdoelen :=
 					for_each_nedv(
-						typeringen/gebruiksdoel_vbo/name
-						,'isDefined(rlookup(type_factor * ' + string(id(typeringen/gebruiksdoel_vbo)) + '+ id(vbo),vbo_doel_domain/key))' 
+						Classifications/gebruiksdoel_vbo/name
+						,'isDefined(rlookup(type_factor * ' + string(id(Classifications/gebruiksdoel_vbo)) + '+ id(vbo),vbo_doel_domain/key))'
 						,vbo
 						,bool
 					);
 			}
 
-			container vbo_meta := Templates/meta(vbo, vbo/Objecten_Status), IsHidden = "True";
+			container vbo_meta := Templates/meta(ParsedXML/Objecten_Verblijfsobject, ParsedXML/Objecten_Verblijfsobject/Objecten_Status, ParsedXML/Objecten_Verblijfsobject/Objecten_identificatie, Classifications/status/vbo);
 
-			unit<uint32> vbo := ParsedXML/Objecten_Verblijfsobject, StorageName = "= StoreDir + '/vbo/fs_' + string(fileset_rel) + '.mmd'"
+			// de tussenstore van deze fileset, al in de compacte vorm van de eindstore; Store/vbo voegt de filesets samen.
+			// mutatie_rel in de subtabellen is de rij binnen deze fileset; Store/vbo maakt er een rij in de eindstore van.
+			unit<uint32> vbo := ParsedXML/Objecten_Verblijfsobject, StorageName = "= TempDir + '/vbo/fs_' + string(fileset_rel) + '.mmd'"
+			, IntegrityCheck = "vbo_meta/ok"
 			{
-				attribute<string> identificatie       := vbo/Objecten_identificatie;
-				attribute<string> nummeraanduiding_id := vbo_impl/nummeraanduiding_id;
-				attribute<geometries/rdc> geometry         := vbo_impl/geometry;
-				attribute<int32>  oppervlakte         := vbo_impl/Objecten_oppervlakte[int32];
+				attribute<uint64>            identificatie       := uint64(vbo/Objecten_identificatie);
+				attribute<uint64>            nummeraanduiding_id := uint64(vbo_impl/nummeraanduiding_id);
+				attribute<geometries/rdc_mm> geometry            := vbo_impl/punt_mm;
+				attribute<int32>             oppervlakte         := vbo_impl/Objecten_oppervlakte[int32];
 
 				unit<uint32> nevenadres := vbo_impl/nevenadres // 1->0..n relatie
 				{
-					attribute<string> nummeraanduiding_id := vbo_impl/nevenadres/nummeraanduiding_id;
 					attribute<uint32> mutatie_rel         := vbo_impl/nevenadres/mutatie_rel;
+					attribute<uint64> nummeraanduiding_id := uint64(vbo_impl/nevenadres/nummeraanduiding_id);
 				}
 
-				unit<uint32> polygon := vbo_impl/gml_Polygon
+				unit<uint32> polygon := vbo_impl/polygon // 1->0..1 relatie: het vlak van een vbo zonder punt
 				{
-					attribute<string> identificatie      := vbo_impl/polygon/identificatie;
-					attribute<geometries/rdc> geometry (poly) := vbo_impl/polygon/geometry;
+					attribute<uint32>            mutatie_rel     := uint32(vbo_impl/polygon/mutatie_rel);
+					attribute<geometries/rdc_mm> geometry (poly) := vbo_impl/polygon_mm/result;
 				}
 
-				unit<uint32> gerelateerdPand := vbo_impl/gerelateerdPand
+				unit<uint32> gerelateerdPand := vbo_impl/gerelateerdPand // 1->0..n relatie
 				{
-					attribute<string> pand_id     := vbo_impl/gerelateerdPand/pand_id;
 					attribute<uint32> mutatie_rel := vbo_impl/gerelateerdPand/mutatie_rel;
+					attribute<uint64> pand_id     := uint64(vbo_impl/gerelateerdPand/pand_id);
 				}
 
-				// sectie gebruiksdoel
 				container gebruiksdoelen :=
 					for_each_nedv(
-						typeringen/gebruiksdoel_vbo/name_kort
-						,'vbo_impl/gebruiksdoelen/' + typeringen/gebruiksdoel_vbo/name
+						Classifications/gebruiksdoel_vbo/name
+						,'vbo_impl/gebruiksdoelen/' + Classifications/gebruiksdoel_vbo/name
 						,vbo
 						,bool
 					);
 
 				container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 				{
-					attribute<string> STATUS                 (vbo) := vbo_meta/STATUS;
+					attribute<Classifications/status/vbo> status_rel (vbo) := vbo_meta/status_rel;
 					attribute<uint32> VOORKOMENIDENTIFICATIE (vbo) := vbo_meta/VOORKOMENIDENTIFICATIE;
 					attribute<int32>  BEGINDATUM             (vbo) := vbo_meta/BEGINDATUM;
 					attribute<int32>  EINDDATUM              (vbo) := vbo_meta/EINDDATUM;
-					attribute<string> TIJDSTIPREGISTRATIE    (vbo) := vbo_meta/TIJDSTIPREGISTRATIE;
-					attribute<string> EINDREGISTRATIE        (vbo) := vbo_meta/EINDREGISTRATIE;
+					attribute<int32>  TIJDSTIPREGISTRATIE    (vbo) := vbo_meta/TIJDSTIPREGISTRATIE;
+					attribute<int32>  EINDREGISTRATIE        (vbo) := vbo_meta/EINDREGISTRATIE;
 					attribute<int32>  DOCUMENTDATUM          (vbo) := vbo_meta/DOCUMENTDATUM;
 					attribute<string> DOCUMENTNUMMER         (vbo) := vbo_meta/DOCUMENTNUMMER;
 					attribute<bool>   IS_GECONSTATEERD       (vbo) := vbo_meta/IS_GECONSTATEERD;
@@ -730,23 +749,37 @@ container XML
 
 			container ParsedXML := parse_xml(XmlData, schema);
 
-			container nummeraanduiding_meta := Templates/meta(nummeraanduiding, nummeraanduiding/Objecten_Status), IsHidden = "True";
-
-			unit<uint32> nummeraanduiding := ParsedXML/Objecten_Nummeraanduiding
+			container nummeraanduiding_meta := Templates/meta(ParsedXML/Objecten_Nummeraanduiding, ParsedXML/Objecten_Nummeraanduiding/Objecten_Status, ParsedXML/Objecten_Nummeraanduiding/Objecten_identificatie, Classifications/status/nummeraanduiding);
+			container nummeraanduiding_impl
 			{
-				attribute<string> OpenbareRuimte_id := nummeraanduiding/Objecten_ligtAan/Objectenref_OpenbareRuimteRef
-					[invert(value(nummeraanduiding/Objecten_ligtAan/Parent_rel, nummeraanduiding))];
-				attribute<string> Woonplaats_id     := nummeraanduiding/Objecten_ligtIn/Objectenref_WoonplaatsRef
-					[invert(value(nummeraanduiding/Objecten_ligtIn/Parent_rel, nummeraanduiding))];
+				attribute<Classifications/typeAdresseerbaarObject> typeAdresseerbaarObject_rel (ParsedXML/Objecten_Nummeraanduiding) := rlookup(ParsedXML/Objecten_Nummeraanduiding/Objecten_typeAdresseerbaarObject, Classifications/typeAdresseerbaarObject/label);
+				parameter<bool> ok := all(IsDefined(typeAdresseerbaarObject_rel)), Descr = "Elk type adresseerbaar object staat in de lijst.";
+			}
+
+			// de tussenstore van deze fileset, al in de compacte vorm van de eindstore; Store/nummeraanduiding voegt de filesets samen.
+			// Een ontbrekende huisletter, toevoeging of postcode wordt een lege tekst, zodat een lezer ze kan aaneenrijgen.
+			unit<uint32> nummeraanduiding := ParsedXML/Objecten_Nummeraanduiding, StorageName = "= TempDir + '/nummeraanduiding/fs_' + string(fileset_rel) + '.mmd'"
+			, IntegrityCheck = "nummeraanduiding_meta/ok && nummeraanduiding_impl/ok"
+			{
+				attribute<uint64> identificatie := uint64(nummeraanduiding/Objecten_identificatie);
+				attribute<int32>  huisnummer    := nummeraanduiding/Objecten_huisnummer[int32];
+				attribute<string> huisletter    := MakeDefined(nummeraanduiding/Objecten_huisletter, '');
+				attribute<string> toevoeging    := MakeDefined(nummeraanduiding/Objecten_huisnummertoevoeging, '');
+				attribute<string> postcode      := MakeDefined(nummeraanduiding/Objecten_postcode, '');
+
+				attribute<Classifications/typeAdresseerbaarObject> typeAdresseerbaarObject_rel := nummeraanduiding_impl/typeAdresseerbaarObject_rel;
+
+				attribute<uint64> openbareruimte_id := uint64(nummeraanduiding/Objecten_ligtAan/Objectenref_OpenbareRuimteRef[invert(value(nummeraanduiding/Objecten_ligtAan/Parent_rel, nummeraanduiding))]);
+				attribute<uint64> woonplaats_id     := uint64(nummeraanduiding/Objecten_ligtIn/Objectenref_WoonplaatsRef[invert(value(nummeraanduiding/Objecten_ligtIn/Parent_rel, nummeraanduiding))]);
 
 				container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 				{
-					attribute<string> STATUS                 (nummeraanduiding) := nummeraanduiding_meta/STATUS;
+					attribute<Classifications/status/nummeraanduiding> status_rel (nummeraanduiding) := nummeraanduiding_meta/status_rel;
 					attribute<uint32> VOORKOMENIDENTIFICATIE (nummeraanduiding) := nummeraanduiding_meta/VOORKOMENIDENTIFICATIE;
 					attribute<int32>  BEGINDATUM             (nummeraanduiding) := nummeraanduiding_meta/BEGINDATUM;
 					attribute<int32>  EINDDATUM              (nummeraanduiding) := nummeraanduiding_meta/EINDDATUM;
-					attribute<string> TIJDSTIPREGISTRATIE    (nummeraanduiding) := nummeraanduiding_meta/TIJDSTIPREGISTRATIE;
-					attribute<string> EINDREGISTRATIE        (nummeraanduiding) := nummeraanduiding_meta/EINDREGISTRATIE;
+					attribute<int32>  TIJDSTIPREGISTRATIE    (nummeraanduiding) := nummeraanduiding_meta/TIJDSTIPREGISTRATIE;
+					attribute<int32>  EINDREGISTRATIE        (nummeraanduiding) := nummeraanduiding_meta/EINDREGISTRATIE;
 					attribute<int32>  DOCUMENTDATUM          (nummeraanduiding) := nummeraanduiding_meta/DOCUMENTDATUM;
 					attribute<string> DOCUMENTNUMMER         (nummeraanduiding) := nummeraanduiding_meta/DOCUMENTNUMMER;
 					attribute<bool>   IS_GECONSTATEERD       (nummeraanduiding) := nummeraanduiding_meta/IS_GECONSTATEERD;

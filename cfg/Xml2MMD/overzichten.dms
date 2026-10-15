@@ -12,7 +12,7 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container overzichten: IsHidden = "True"
+container overzichten: Using = "Parameters"
 {
 	container impl
 	{
@@ -27,7 +27,7 @@ container overzichten: IsHidden = "True"
 		unit<uint32> rapport_items_expr := SubTree_PropValues(rapport,'expr');
 		unit<uint32> rapport_items_name := SubTree_PropValues(rapport,'name');
 
-		unit<uint32> rapport_items_sel := select_with_attr_by_cond(rapport_items, strcount(rapport_items/FullName,'impl') == 0)
+		unit<uint32> rapport_items_sel := select_with_attr_by_cond(rapport_items, strcount(lowercase(rapport_items/FullName), 'impl') == 0) // lowercase: GeoDMS toont een naam in de schrijfwijze van de eerste declaratie, hier Store/Impl
 		{
 			attribute<uint32> level    := strcount(fullname, '/') - 3;
 
@@ -65,11 +65,26 @@ container overzichten: IsHidden = "True"
 		}
 		container bag_objecten
 		{
-			parameter<uint32> nr_ligplaats_mutaties        := #Store/ligplaats;
-			parameter<uint32> nr_standplaats_mutaties      := #Store/standplaats;
-			parameter<uint32> nr_nummeraanduiding_mutaties := #Store/nummeraanduiding;
-			parameter<uint32> nr_openbareruimte_mutaties   := #Store/openbareruimte;
-			parameter<uint32> nr_woonplaats_mutaties       := #Store/woonplaats;
+			parameter<uint32> nr_ligplaats_voorkomens        := #Store/ligplaats;
+			parameter<uint32> nr_standplaats_voorkomens      := #Store/standplaats;
+			parameter<uint32> nr_pand_voorkomens             := #Store/pand;
+			parameter<uint32> nr_vbo_voorkomens              := #Store/vbo;
+			parameter<uint32> nr_vbo_met_vlak                := #Store/vbo/polygon;
+			parameter<uint32> nr_vbo_pand_relaties           := #Store/vbo/gerelateerdPand;
+			parameter<uint32> nr_nummeraanduiding_voorkomens := #Store/nummeraanduiding;
+			parameter<uint32> nr_openbareruimte_voorkomens   := #Store/openbareruimte;
+			parameter<uint32> nr_woonplaats_voorkomens       := #Store/woonplaats;
+		}
+		container buiten_bereik
+		{
+			// een coordinaat verder dan 2.147 km van de oorsprong past niet in millimeters; zo'n pand heeft een leeg vlak, zo'n vbo geen punt
+			parameter<uint32> nr_pand_zonder_vlak := sum_uint32(impl/n_punten == 0);
+			parameter<uint32> nr_vbo_zonder_punt  := sum_uint32(!IsDefined(Store/vbo/geometry));
+			container impl
+			{
+				unit<uint32>      p        := sequence2points(Store/pand/geometry);
+				attribute<uint32> n_punten (Store/pand) := pcount(p/sequence_rel);
+			}
 		}
 	}
 }

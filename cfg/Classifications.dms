@@ -1,0 +1,160 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   BAG Toolkit                                      //
+//                                                                                    //
+//                              Object Vision 2026                                    //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// De vaste codelijsten van de BAG 2.0: de statussen per objecttype, de               //
+// gebruiksdoelen van een verblijfsobject, de typen adresseerbaar object en de typen  //
+// openbare ruimte. Xml2MMD schrijft elke lijst als labeltabel in de store en zet de  //
+// tekst uit de XML om in een code; MakeSnapshot kiest met 'selected' welke statussen //
+// een snapshot meeneemt. Code 0 is 'onbekend', voor een voorkomen zonder status.     //
+// Een waarde die niet in de lijst staat stopt Xml2MMD; vul de lijst dan aan.         //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+container Classifications
+{
+	container status
+	{
+		unit<uint8> ligplaats : nrofrows = 3
+		{
+			unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
+			{
+				attribute<string> values:
+				[
+					//label               , selected
+					 'onbekend'           ,'False'
+					,'Plaats aangewezen'  ,'True'
+					,'Plaats ingetrokken' ,'False'
+				];
+			}
+
+			attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
+			attribute<string> name     := replace(lowercase(label), ' ', '_', '(','',')','');
+			attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+		unit<uint8> standplaats := ligplaats;
+
+		unit<uint8> pand: nrofrows = 11, URL = "https://www.cbs.nl/-/media/_pdf/2023/41/afleiden_woonvoorraad.pdf", Descr = "selected: de voorraad volgens CBS"
+		{
+			unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
+			{
+				attribute<string> values:
+				[
+					//label                             , selected
+					 'onbekend'                         ,'False'
+					,'Bouwvergunning verleend'          ,'False'
+					,'Niet gerealiseerd pand'           ,'False'
+					,'Bouw gestart'                     ,'False'
+					,'Pand in gebruik (niet ingemeten)' ,'True'
+					,'Pand in gebruik'                  ,'True'
+					,'Sloopvergunning verleend'         ,'False'
+					,'Pand gesloopt'                    ,'False'
+					,'Pand buiten gebruik'              ,'False'
+					,'Verbouwing pand'                  ,'True'
+					,'Pand ten onrechte opgevoerd'      ,'False'
+				];
+			}
+
+			attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
+			attribute<string> name     := replace(lowercase(label), ' ', '_', '(','',')','');
+			attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+
+		unit<uint8> vbo : nrofrows = 9, URL = "https://www.cbs.nl/-/media/_pdf/2023/41/afleiden_woonvoorraad.pdf", Descr = "selected: de voorraad volgens CBS"
+		{
+			unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
+			{
+				attribute<string> values:
+				[
+					//label                                        , selected
+					 'onbekend'                                    ,'False'
+					,'Verblijfsobject gevormd'                     ,'False'
+					,'Niet gerealiseerd verblijfsobject'           ,'False'
+					,'Verblijfsobject in gebruik (niet ingemeten)' ,'True'
+					,'Verblijfsobject in gebruik'                  ,'True'
+					,'Verblijfsobject ingetrokken'                 ,'False'
+					,'Verblijfsobject buiten gebruik'              ,'False'
+					,'Verbouwing verblijfsobject'                  ,'True'
+					,'Verblijfsobject ten onrechte opgevoerd'      ,'False'
+				];
+			}
+
+			attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
+			attribute<string> name     := replace(lowercase(label), ' ', '_', '(','',')','');
+			attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+
+		unit<uint8> nummeraanduiding : nrofrows = 3
+		{
+			unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
+			{
+				attribute<string> values:
+				[
+					//label                   , selected
+					 'onbekend'               ,'False'
+					,'Naamgeving ingetrokken' ,'False'
+					,'Naamgeving uitgegeven'  ,'True'
+				];
+			}
+
+			attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
+			attribute<string> name     := replace(lowercase(label), ' ', '_', '(','',')','');
+			attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+		unit<uint8> openbareruimte := nummeraanduiding;
+
+		unit<uint8> woonplaats : nrofrows = 3
+		{
+			unit<uint8> elements := range(uint8, 0b, uint8(2*#.))
+			{
+				attribute<string> values:
+				[
+					//label                   , selected
+					 'onbekend'               ,'False'
+					,'Woonplaats aangewezen'  ,'True'
+					,'Woonplaats ingetrokken' ,'False'
+				];
+			}
+
+			attribute<string> label    := elements/values[value(id(.) * 2b, elements)];
+			attribute<string> name     := replace(lowercase(label), ' ', '_', '(','',')','');
+			attribute<bool>   selected := bool(elements/values[value(id(.) * 2b + 1b, elements)]);
+
+			container V := for_each_nedv(name, 'value('+string(id(.))+', ..)', void, .);
+		}
+	}
+
+	unit<uint8> gebruiksdoel_vbo : nrofrows = 11
+	{
+		attribute<string> label:
+		[
+		  'bijeenkomstfunctie','celfunctie','gezondheidszorgfunctie','industriefunctie','kantoorfunctie','logiesfunctie'
+		 ,'onderwijsfunctie','overige gebruiksfunctie','sportfunctie','winkelfunctie','woonfunctie'
+		];
+		attribute<string> name := replace(replace(label, ' ', '_'), 'functie', '');
+	}
+
+	unit<uint8> typeAdresseerbaarObject : nrofrows = 3
+	{
+		attribute<string> label: ['Verblijfsobject', 'Ligplaats', 'Standplaats'];
+		attribute<string> name := lowercase(label);
+	}
+
+	unit<uint8> openbareruimte_type : nrofrows = 7, URL = "https://imbag.github.io/catalogus/hoofdstukken/domeinwaarden"
+	{
+		attribute<string> label: ['Weg', 'Water', 'Spoorbaan', 'Terrein', 'Kunstwerk', 'Landschappelijk gebied', 'Administratief gebied'];
+		attribute<string> name := replace(lowercase(label), ' ', '_');
+	}
+}

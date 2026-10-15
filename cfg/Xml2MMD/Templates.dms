@@ -1,9 +1,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
+//                                   BAG Toolkit                                      //
 //                                                                                    //
-//              Configuratie voor project: BAG 2.0 XML bronfiles > MMD                //
+//                   Xml2MMD: het BAG 2.0 extract naar MMD-stores                     //
 //                                                                                    //
-//                              Object Vision 2023                                    //
+//                              Object Vision 2026                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
@@ -11,57 +12,73 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-container Templates: IsHidden = "True"
+container Templates: Using = "Parameters"
 {
-	Template meta // Voor het verwerken van de generieke BAG meta attributen
+	Template meta // De generieke velden van een voorkomen, compact: de status als code, de datums als jjjjmmdd
 	{
 		// begin case parameters
-		unit<uint32> domain: DisableStorage = "True";
+		unit<uint32>      domain: DisableStorage = "True";
 		attribute<string> STATUS (domain);
+		attribute<string> identificatie (domain);
+		unit<uint8>       statustype;
 		// end case parameters
 
 		unit<uint32> Objecten_voorkomen := domain/Objecten_voorkomen, DisableStorage = "True";
 
 		attribute<Objecten_voorkomen> Objecten_rel (domain) := invert(value(Objecten_voorkomen/Parent_rel, domain)), DisableStorage = "True";
 
+		// een voorkomen zonder status krijgt code 0, 'onbekend'; een status die niet in de lijst staat blijft
+		// null en status_bekend stopt dan de run, zodat een nieuwe waarde van het Kadaster niet stil wegvalt
+		attribute<string>     status_tekst (domain) := MakeDefined(STATUS, '') == '' ? 'onbekend' : lowercase(STATUS), DisableStorage = "True";
+		attribute<statustype> status_rel   (domain) := rlookup(status_tekst, lowercase(statustype/label));
+		parameter<bool>       status_bekend        := all(IsDefined(status_rel));
+		parameter<bool>       ids_ok               := all(IsDefined(uint64(identificatie))), Descr = "Elke identificatie is een getal; de BAG levert zestien cijfers (woonplaats vier).";
+		parameter<bool>       ok                   := status_bekend && ids_ok, Descr = "De IntegrityCheck van de store: een onbekende status of een identificatie die geen getal is stopt de run.";
+
 		attribute<uint32> VOORKOMENIDENTIFICATIE   (domain) := domain/Objecten_voorkomen/Historie_voorkomenidentificatie[Objecten_rel][uint32];
-		attribute<int32>  BEGINDATUM               (domain) := MakeDefined(replace(domain/Objecten_voorkomen/Historie_beginGeldigheid[Objecten_rel],'-','')[int32], 0[int32]);
-		attribute<int32>  EINDDATUM                (domain) := MakeDefined(replace(domain/Objecten_voorkomen/Historie_eindGeldigheid[Objecten_rel],'-','')[int32], 0[int32]);
+		attribute<int32>  BEGINDATUM               (domain) := MakeDefined(replace(substr(domain/Objecten_voorkomen/Historie_beginGeldigheid[Objecten_rel], 0, 10), '-', '')[int32], 0i);
+		attribute<int32>  EINDDATUM                (domain) := MakeDefined(replace(substr(domain/Objecten_voorkomen/Historie_eindGeldigheid [Objecten_rel], 0, 10), '-', '')[int32], 0i);
 
-		attribute<string> TIJDSTIPREGISTRATIE      (domain) := domain/Objecten_voorkomen/Historie_tijdstipRegistratie[Objecten_rel];
-		attribute<string> EINDREGISTRATIE          (domain) := domain/Objecten_voorkomen/Historie_eindRegistratie    [Objecten_rel];
+		// de BAG levert een tijdstip ('2010-09-28T14:47:00.000'); de store bewaart de datum, 0 als het ontbreekt
+		attribute<int32>  TIJDSTIPREGISTRATIE      (domain) := MakeDefined(replace(substr(domain/Objecten_voorkomen/Historie_tijdstipRegistratie[Objecten_rel], 0, 10), '-', '')[int32], 0i);
+		attribute<int32>  EINDREGISTRATIE          (domain) := MakeDefined(replace(substr(domain/Objecten_voorkomen/Historie_eindRegistratie    [Objecten_rel], 0, 10), '-', '')[int32], 0i);
 
-		attribute<int32>  DOCUMENTDATUM            (domain) := MakeDefined(replace(domain/Objecten_documentdatum,'-','')[int32],0[int32]);
-		attribute<string> DOCUMENTNUMMER           (domain) := domain/Objecten_documentnummer;
+		attribute<int32>  DOCUMENTDATUM            (domain) := MakeDefined(replace(substr(domain/Objecten_documentdatum, 0, 10), '-', '')[int32], 0i);
+		attribute<string> DOCUMENTNUMMER           (domain) := MakeDefined(domain/Objecten_documentnummer, '');
 
-		attribute<bool>   IS_GECONSTATEERD         (domain) := UpperCase(domain/Objecten_geconstateerd) == 'J';
+		attribute<bool>   IS_GECONSTATEERD         (domain) := UpperCase(MakeDefined(domain/Objecten_geconstateerd, 'N')) == 'J';
 	}
 
-	Template meta_union // Voor het combineren van de generieke BAG attributen uit meerdere bronbestanden
+	Template polygon_mm // Een vlak van meters (dpoint) naar millimeters (ipoint), per punt afgerond
 	{
 		// begin case parameters
-		parameter<string> src:     DisableStorage = "True";
-		unit<uint32>      domain:  DisableStorage = "True";
-		unit<uint32>      fileset: DisableStorage = "True";
+		unit<uint32>              domain;
+		attribute<geometries/rdc> geometry (domain, poly);
 		// end case parameters
 
-		parameter<string> perFileset_ref := 'XML/' + src  +'/perFileSet/fs_', DisableStorage = "True";
+		unit<uint32> punten := sequence2points(geometry)
+		{
+			attribute<geometries/rdc_mm_rond> rond          := point[geometries/rdc_mm_rond];
+			attribute<geometries/rdc_mm>      mm            := point_yx(PointRow(rond), PointCol(rond), geometries/rdc_mm);
+			attribute<bool>                   buiten_bereik := !IsDefined(rond) || !IsDefined(point);
+			attribute<bool>                   weglaten      := vlak_buiten_bereik[sequence_rel];
+		}
 
-		attribute<string> STATUS                 (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/STATUS') + ')';
-		attribute<int32>  BEGINDATUM             (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/BEGINDATUM') + ')';
-		attribute<int32>  EINDDATUM              (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/EINDDATUM') + ')';
+		// Een coordinaat verder dan 2.147 km van de oorsprong past niet in ipoint (int32) in millimeters; zulke vlakken
+		// zijn datafouten (op het extract van 2026-10-08 108 pandvoorkomens). Zo'n vlak wordt leeg, want een vlak met
+		// een null-punt laat centroid_or_mid omvallen (GeoDMS 20.23.1, ObjectVision/GeoDMS#1314).
+		attribute<bool> vlak_buiten_bereik (domain) := any(punten/buiten_bereik, punten/sequence_rel);
 
-		attribute<uint32> VOORKOMENIDENTIFICATIE (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/VOORKOMENIDENTIFICATIE[uint32]') + ')';
-		attribute<string> TIJDSTIPREGISTRATIE    (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/TIJDSTIPREGISTRATIE[string]') + ')';
-		attribute<string> EINDREGISTRATIE        (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/EINDREGISTRATIE[string]') + ')';
-
-		attribute<int32>  DOCUMENTDATUM          (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/DOCUMENTDATUM') + ')';
-		attribute<string> DOCUMENTNUMMER         (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/DOCUMENTNUMMER') + ')';
-
-		attribute<bool>   IS_GECONSTATEERD       (domain) := ='union_data(domain,' + AsItemList(perFileset_ref + string(fileset/values) + '/' + src + '/meta/IS_GECONSTATEERD') + ')';
+		unit<uint32> punten_ok := select_with_org_rel(!punten/weglaten)
+		{
+			attribute<geometries/rdc_mm> mm      := punten/mm[org_rel];
+			attribute<domain>            seq     := punten/sequence_rel[org_rel];
+			attribute<uint32>            ordinal := punten/ordinal[org_rel];
+		}
+		attribute<geometries/rdc_mm> result (domain, poly) := points2polygon(punten_ok/mm, punten_ok/seq, punten_ok/ordinal);
 	}
 
-	Template posListProcessor 
+	Template posListProcessor
 	{
 		// begin case parameters
 		unit<uint32> posList;
@@ -104,14 +121,14 @@ container Templates: IsHidden = "True"
 		attribute<geometries/rdc> result (posList, poly) := impl/geometry;
 	}
 
-	// Alles rekent in geometries/rdc (dpoint), van het parsen van de posList tot de MMD-store. De geos_*-
-	// polygoonoperatoren accepteren sinds GeoDMS 20.16.0 alleen nog dpoint, en ook '-' en '+' worden op
-	// dpoint door GEOS uitgevoerd in plaats van door boost::polygon, dat integer-coordinaten vereist.
-	// Zie GitHub issue #1.
+	// Alles rekent in geometries/rdc (dpoint), van het parsen van de posList tot het afronden op millimeters
+	// voor de store. De geos_*-polygoonoperatoren accepteren sinds GeoDMS 20.16.0 alleen nog dpoint, en ook
+	// '-' en '+' worden op dpoint door GEOS uitgevoerd in plaats van door boost::polygon, dat integer-
+	// coordinaten vereist. Zie GitHub issue #1.
 	// De familie (geos_ of dms_) volgt uit GeoEngine (ConfigSettings/Overridable/GEO_ENGINE): dms_union_polygon
 	// (GeoDMS 20.20.0) leest ringen onder de even-odd-regel, zodat een tegen de klok in opgeslagen pand
 	// (GeoDMS #1230) geen reparatie nodig heeft; de geos-weg blijft zoals hij was.
-	Template union 
+	Template union
 	{
 		// begin case parameters
 		unit<uint32>         child;
@@ -144,7 +161,6 @@ container Templates: IsHidden = "True"
 			}
 		}
 		attribute<geometries/rdc> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
-		attribute<float64> area  (parent)      := area(result, float64); // DEBUG; float64 want geometries/rdc-coordinaten hebben een metriek
 	}
 
 	Template one2one_union
@@ -156,7 +172,7 @@ container Templates: IsHidden = "True"
 		attribute<parent>    parent_rel (child);
 		// end case parameters
 
-		container impl 
+		container impl
 		{
 			parameter<bool> Check := (#child == #parent) && all(parent_rel == ID(child)[parent]);
 		}
@@ -171,7 +187,7 @@ container Templates: IsHidden = "True"
 		attribute<gmlPolygon> polygon_rel (parsedXMLsrc/gml_posList);
 		// end case parameters
 
-		container impl 
+		container impl
 		{
 			container posList := posListProcessor(parsedXMLsrc/gml_posList, isExterior, polygon_rel);
 			container union   := one2one_union(parsedXMLsrc/gml_posList, parsedXMLsrc, posList/result, parsedXMLsrc/gml_posList/Parent_rel);
@@ -209,9 +225,8 @@ container Templates: IsHidden = "True"
 		}
 		attribute<geometries/rdc> result (poly,Exterior) :=
 			impl/count == 0
-				? ExtGeometry 
+				? ExtGeometry
 				: impl/result;
-		attribute<float64> area  (Exterior)    := area(result, float64); // DEBUG; float64 want geometries/rdc-coordinaten hebben een metriek
 	}
 
 	Template ProcessGmlPolygonImpl
