@@ -1,0 +1,264 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   BAG Toolkit                                      //
+//                                                                                    //
+//              MakeSnapshot: de BAG op een peildatum uit de MMD-stores               //
+//                                                                                    //
+//                              Object Vision 2026                                    //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// Uit de stores van Xml2MMD (per objecttype alle voorkomens, de volledige historie)  //
+// kiest deze configuratie per object het voorkomen dat op een peildatum geldig is,   //
+// optioneel binnen een gebied, met een statusselectie en zonder waarschijnlijke      //
+// datafouten, en schrijft de uitkomst als een store, bag.mmd. De identificaties van  //
+// de objecttypen zijn uniek in de snapshot (kandidaat primaire sleutel), en de       //
+// verwijzingen tussen de objecttypen zijn relaties.                                  //
+//                                                                                    //
+// Afgeleide attributen op de peildatum:                                              //
+// 1) de woonpandtypering                                                             //
+// 2) de pandhoogte uit de PHN (afgeleid van de AHN), optioneel                       //
+//                                                                                    //
+// Voor meer informatie, zie:                                                         //
+// https://github.com/ObjectVision/BAG-Tools/wiki/BAG20-MakeSnapshot                  //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20.23.1 of later, zoals Xml2MMD
+{
+	// GEO_ENGINE kiest de familie polygoonoperatoren: 'geos' (default) of 'dms'. BAG_DIR is de map met per
+	// extract een submap <BAG_Date> en de submap snapshots.ext. Beide zijn ConfigSettings/Overridable-instellingen,
+	// dus op de commandoregel te zetten met een omgevingsvariabele: GEODMS_Overridable_GEO_ENGINE=dms,
+	// GEODMS_Overridable_BAG_DIR=C:/LocalData/BAG (de batchbestanden vertalen hun argumenten daarheen).
+	container ConfigSettings
+	{
+		container Overridable
+		{
+			parameter<string> GEO_ENGINE := 'geos';
+			parameter<string> BAG_DIR    := '%SourceDataDir%/BAG';
+		}
+	}
+	parameter<string> GeoEngine := expand(., '%GEO_ENGINE%');
+
+	parameter<string> BAG_Date            := '20261008', Descr = "De datum van het extract: de map onder BAG_DIR met de stores van Xml2MMD.";
+	parameter<string> Snapshot_Date_Input := '20261001', Descr = "De peildatum, jjjjmmdd; de omgevingsvariabele snapshot_date_env gaat voor.";
+
+	parameter<string> StoreDir            := '%BAG_DIR%/' + BAG_Date + '/mmd';
+	parameter<string> SnapshotBaseDir     := '%BAG_DIR%/snapshots.ext';
+
+	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
+	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
+
+	parameter<string> FileNeeded          := expand(., StoreDir) + '/pand.mmd/0Dictionary.dms';
+	parameter<bool>   isValidStoreDir     := ExistingFile('missing', FileNeeded) == FileNeeded;
+
+	parameter<uint64> voorkomen_factor    := 1000000u64, Descr = "Per object kiest de snapshot het voorkomen met de hoogste voorkomenidentificatie onder de voorkomens die op de peildatum geldig zijn; de sleutel daarvoor is objectrij maal deze factor plus voorkomenidentificatie, dus een object heeft minder dan een miljoen voorkomens.";
+
+	container snapshots
+	{
+		//                                                                                    snapshot date                     ,geo sel,status sel,strange values sel,with pandhoogte,format)
+		container nl_status_sel_with_strangevalues_no_height_mmd         := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,False             ,False          ,''MMD'')';
+		container nl_status_sel_without_strangevalues_no_height_mmd      := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum] ,False  ,True      ,True              ,False          ,''MMD'')', Descr = "oa gebruikt voor Vesta";
+		container geo_sel_status_sel_with_strangevalues_with_heigth_mmd  := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,False             ,True           ,''MMD'')';
+		container geo_sel_status_sel_without_strangevalues_no_heigth_mmd := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum] ,True   ,True      ,True              ,False          ,''MMD'')';
+		container nl_status_all_with_strangevalues_no_heigth_mmd         := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum] ,False  ,False     ,True              ,False          ,''MMD'')';
+
+		container nl_geoparaat_gpkg                                      := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum], False  ,False     ,False             ,False          ,''GPKG'')';
+		container geosel_geoparaat_gpkg                                  := ='Snapshot_T(' + Snapshot_Date + '[eenheden/datum], True   ,False     ,False             ,False,          ''GPKG'')';
+	}
+
+	container eenheden
+	{
+		unit<int32>   datum;
+		unit<int16>   jaar;
+		unit<int32>   mm        := int32(0.001 * m);
+		unit<uint16>  cm_uint16 := uint16(0.01 * m);
+		unit<float64> m         := baseunit('m', float64);
+	}
+
+	// De stores van Xml2MMD noemen hun coordinateneenheid bij haar absolute pad: /geometries/rdc_mm (ipoint, millimeters).
+	// De snapshot bag.mmd staat in /geometries/rdc (dpoint, meters), zodat een lezer er direct mee kan rekenen.
+	container geometries
+	{
+		#include <wmts_layer.dms>
+
+		unit<dpoint> rdc_base : SpatialReference = "EPSG:28992", DialogData = "wmts_layer";
+		unit<dpoint> rdc      := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d));
+		unit<ipoint> rdc_mm   := gridset(rdc_base, point_yx(0.001d, 0.001d), point_yx(0d, 0d), ipoint);
+	}
+
+	unit<uint32> geo_selectie
+	:	nrofrows = 1
+	{
+		// Voorbeeld voor het configureren van een geo_selectie met een rechthoek, pas de pointset/X en pointset/Y attributen aan voor een nieuwe rechthoek
+		parameter<string>         Label           := 'NieuwegeinRechthoek';
+		attribute<geometries/rdc> geometry (poly) := points2sequence(pointset/point, pointset/sequence, pointset/ordinal);
+
+		unit<uint32> pointset: nrofrows = 5
+		{
+			parameter<eenheden/m>     X_min    := 111250[eenheden/m];
+			parameter<eenheden/m>     X_max    := 127163[eenheden/m];
+			parameter<eenheden/m>     Y_min    := 480608[eenheden/m];
+			parameter<eenheden/m>     Y_max    := 490285[eenheden/m];
+
+			attribute<eenheden/m>     X        := union_data(., X_min, X_max, X_max, X_min, X_min);
+			attribute<eenheden/m>     Y        := union_data(., Y_min, Y_min, Y_max, Y_max, Y_min);
+			attribute<geometries/rdc> point    := point_yx(Y, X, geometries/rdc);
+			attribute<geo_selectie>   sequence := const(0[geo_selectie],.);
+			attribute<.>              ordinal  := id(.);
+		}
+	}
+
+	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
+	// : StorageName     = "%ProjDir%/data/geo_sel.shp"
+	// , StorageType     = "gdal.vect"
+	// , StorageReadOnly = "True"
+	// {
+		// parameter<string>         Label := 'BredaEO';
+		// attribute<geometries/rdc> geometry (poly);
+	// }
+
+	unit<uint8> objecttypes: nrofrows = 7
+	{
+		attribute<string> name:
+		[
+			'ligplaats','standplaats','pand','vbo','nummeraanduiding','openbareruimte','woonplaats'
+		];
+	}
+
+	#include<../Classifications.dms>
+	#include<MakeSnapshot.dms>
+
+	template status_selectie // Zet de statuscode van de store om in de code van Classifications en leidt af of het voorkomen geselecteerd is
+	{
+		// begin case parameters
+		unit<uint32>            domain;
+		unit<uint8>             statustype;
+		unit<uint8>             store_status;
+		attribute<string>       store_label (store_status);
+		attribute<store_status> store_rel (domain);
+		// end case parameters
+
+		// de koppeling loopt over de labeltekst en niet over de volgorde van de codes
+		attribute<statustype> code_rel   (store_status) := rlookup(lowercase(store_label), lowercase(statustype/label));
+		attribute<statustype> status_rel (domain)       := code_rel[store_rel];
+		attribute<bool>       status_sel (domain)       := statustype/Selected[status_rel];
+	}
+
+	// De generieke velden van het gekozen voorkomen: src_domain is de selectie, target_domain de uitkomst
+	// met daarin keuze, de rij in de selectie van het voorkomen met de hoogste voorkomenidentificatie.
+	template meta_template
+	{
+		// begin case parameters
+		unit<uint32> src_domain;
+		unit<uint32> target_domain;
+		unit<uint8>  statustype;
+		// end case parameters
+
+		attribute<statustype>     status_rel             (target_domain) := src_domain/status_rel[target_domain/keuze];
+		attribute<eenheden/datum> BEGINDATUM             (target_domain) := src_domain/meta/BEGINDATUM[target_domain/keuze];
+		attribute<eenheden/datum> EINDDATUM              (target_domain) := src_domain/meta/EINDDATUM[target_domain/keuze];
+		attribute<uint32>         VOORKOMENIDENTIFICATIE (target_domain) := src_domain/meta/VOORKOMENIDENTIFICATIE[target_domain/keuze];
+		attribute<eenheden/datum> TIJDSTIPREGISTRATIE    (target_domain) := src_domain/meta/TIJDSTIPREGISTRATIE[target_domain/keuze];
+		attribute<eenheden/datum> EINDREGISTRATIE        (target_domain) := src_domain/meta/EINDREGISTRATIE[target_domain/keuze];
+		attribute<eenheden/datum> DOCUMENTDATUM          (target_domain) := src_domain/meta/DOCUMENTDATUM[target_domain/keuze];
+		attribute<string>         DOCUMENTNUMMER         (target_domain) := src_domain/meta/DOCUMENTNUMMER[target_domain/keuze];
+		attribute<bool>           IS_GECONSTATEERD       (target_domain) := src_domain/meta/IS_GECONSTATEERD[target_domain/keuze];
+	}
+
+	template meta_write_template // De generieke velden voor de GeoPackage-export, met de status als code
+	{
+		// begin case parameters
+		unit<uint32> domain: DisableStorage = "True";
+		container    meta_src;
+		unit<uint8>  statustype;
+		// end case parameters
+
+		attribute<statustype>     StatusCode             (domain) := value(meta_src/status_rel, statustype);
+		attribute<eenheden/datum> BEGINDATUM             (domain) := meta_src/BEGINDATUM;
+		attribute<eenheden/datum> EINDDATUM              (domain) := meta_src/EINDDATUM;
+		attribute<uint32>         VOORKOMENIDENTIFICATIE (domain) := meta_src/VOORKOMENIDENTIFICATIE;
+		attribute<eenheden/datum> TIJDSTIPREGISTRATIE    (domain) := meta_src/TIJDSTIPREGISTRATIE;
+		attribute<eenheden/datum> EINDREGISTRATIE        (domain) := meta_src/EINDREGISTRATIE;
+		attribute<eenheden/datum> DOCUMENTDATUM          (domain) := meta_src/DOCUMENTDATUM;
+		attribute<string>         DOCUMENTNUMMER         (domain) := meta_src/DOCUMENTNUMMER;
+		attribute<bool>           IS_GECONSTATEERD       (domain) := meta_src/IS_GECONSTATEERD, DisableStorage = "True";
+	}
+
+	// Levert alleen de conditie. De selectie zelf gebeurt per objecttype, want een unit die als
+	// case parameter aan een template wordt meegegeven draagt de sub-items van een MMD store niet mee.
+	template datum_conditie
+	{
+		// begin case parameters
+		unit<uint32>              domain;
+		parameter<eenheden/datum> prik_datum;
+		attribute<int32>          BEGINDATUM (domain);
+		attribute<int32>          EINDDATUM  (domain);
+		attribute<bool>           status_sel (domain);
+		parameter<bool>           overig_filter_actief;
+		attribute<bool>           overig_filter (domain) := const(true, domain);
+		// einde case parameters
+
+		attribute<bool> WasGestart   (domain) := BEGINDATUM <= prik_datum;
+		attribute<bool> WasBeeindigd (domain) := EINDDATUM  <= prik_datum && EINDDATUM > 0i;
+
+		attribute<bool> conditie     (domain) := = 'WasGestart && not(WasBeeindigd) ' +
+				(met_status_sel
+					? '&& status_sel '
+					: '') +
+				(overig_filter_actief
+					? '&& overig_filter'
+					: '');
+
+	}
+
+	Template polygon_selectie
+	{
+		// begin case parameters
+		unit<uint32> domain;
+		attribute<geometries/rdc> geometry (polygon, domain);
+		// end case parameters
+
+		container bbox := bbox_min_max(domain,geometry);
+
+		attribute<geometries/rdc> x_min_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_min_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_max_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> x_max_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
+		attribute<geometries/rdc> centroid    (domain) := centroid(geometry);
+
+		attribute<bool> result (domain) :=
+			   isDefined(point_in_polygon(x_min_y_min, /geo_selectie/geometry))
+			|| isDefined(point_in_polygon(x_min_y_max, /geo_selectie/geometry))
+			|| isDefined(point_in_polygon(x_max_y_max, /geo_selectie/geometry))
+			|| isDefined(point_in_polygon(x_max_y_min, /geo_selectie/geometry))
+			|| isDefined(point_in_polygon(   centroid, /geo_selectie/geometry));
+	}
+
+	Template nl_selectie
+	{
+		// begin case parameters
+		unit<uint32> domain;
+		// end case parameters
+
+		attribute<bool> result (domain) := const(true, domain);
+	}
+
+	Template bbox_min_max
+	{
+		// begin case parameters
+		unit<uint32> domain;
+		attribute<geometries/rdc> geometry (polygon, domain);
+		// end case parameters
+
+		attribute<geometries/rdc> lowerbound (domain) := lower_bound(geometry);
+		attribute<geometries/rdc> upperbound (domain) := upper_bound(geometry);
+
+		attribute<eenheden/m>     x_min      (domain) := PointCol(lowerbound)[eenheden/m];
+		attribute<eenheden/m>     x_max      (domain) := PointCol(upperbound)[eenheden/m];
+		attribute<eenheden/m>     y_min      (domain) := PointRow(lowerbound)[eenheden/m];
+		attribute<eenheden/m>     y_max      (domain) := PointRow(upperbound)[eenheden/m];
+	}
+
+	#include<ExportSettings.dms>
+}

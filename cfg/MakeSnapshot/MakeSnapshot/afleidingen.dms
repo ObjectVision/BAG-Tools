@@ -28,8 +28,9 @@ container afleidingen: Using = "eenheden;geometries"
 				attribute<bool>      isAHN4;
 			}
 
-			attribute<eenheden/cm_uint16> AHN_hoogte    (pand/result) := rjoin(pand/result/identificatie, PHN/identificatie, PHN/hoogte);
-			attribute<uint16>             AHN_inwinjaar (pand/result) := rjoin(pand/result/identificatie, PHN/identificatie, PHN/AHN_inwinjaar);
+			attribute<uint64>             pand_id       (PHN)         := uint64(PHN/identificatie);
+			attribute<eenheden/cm_uint16> AHN_hoogte    (pand/result) := rjoin(pand/result/identificatie, pand_id, PHN/hoogte);
+			attribute<uint16>             AHN_inwinjaar (pand/result) := rjoin(pand/result/identificatie, pand_id, PHN/AHN_inwinjaar);
 		}
 
 		container geometrie
@@ -236,7 +237,7 @@ container afleidingen: Using = "eenheden;geometries"
 
 	unit<uint32> adres := impl/nummeraanduiding_met_geom
 	{
-		attribute<string>         nummeraanduiding_id := impl/nummeraanduiding_met_geom/nummeraanduiding_id;
+		attribute<uint64>         nummeraanduiding_id := impl/nummeraanduiding_met_geom/nummeraanduiding_id;
 		attribute<string>         straatnaam          := rjoin(nummeraanduiding/result/openbareruimte_id, openbareruimte/result/identificatie, openbareruimte/result/naam);
 		attribute<string>         postcode            := impl/nummeraanduiding_met_geom/postcode;
 		attribute<int32>          huisnummer          := impl/nummeraanduiding_met_geom/huisnummer;
@@ -255,7 +256,7 @@ container afleidingen: Using = "eenheden;geometries"
 	{
 		unit<uint32> nummeraanduiding_met_geom := nummeraanduiding/result, DialogType = "Map", DialogData = "geometry"
 		{
-			attribute<string> nummeraanduiding_id := nummeraanduiding/result/identificatie;
+			attribute<uint64> nummeraanduiding_id := nummeraanduiding/result/identificatie;
 			attribute<string> postcode            := nummeraanduiding/result/postcode;
 			attribute<int32>  huisnummer          := nummeraanduiding/result/huisnummer;
 			attribute<string> huisletter          := nummeraanduiding/result/huisletter;
@@ -263,7 +264,7 @@ container afleidingen: Using = "eenheden;geometries"
 	
 			// Ook locaties van alleen nevenadressen meenemen
 			attribute<geometries/rdc> vbo_point_hoofadres  := rjoin(nummeraanduiding_id, vbo/result/nummeraanduiding_id, vbo/result/geometry);
-			attribute<string>            vbo_id_nevenadres    := rjoin(nummeraanduiding_id, vbo/result/nevenadres/nummeraanduiding_id, vbo/result/nevenadres/identificatie);
+			attribute<uint64>            vbo_id_nevenadres    := rjoin(nummeraanduiding_id, vbo/result/nevenadres/nummeraanduiding_id, vbo/result/nevenadres/identificatie);
 			attribute<geometries/rdc> vbo_point_nevenadres := rjoin(vbo_id_nevenadres,   vbo/result/identificatie, vbo/result/geometry);
 			attribute<geometries/rdc> vbo_point            := MakeDefined(vbo_point_hoofadres,vbo_point_nevenadres);
 	
@@ -301,7 +302,7 @@ container afleidingen: Using = "eenheden;geometries"
 	
 		unit<uint32> vbo_met_adres := vbo/result
 		{
-			attribute<string>            openbareruimte_id := rjoin(vbo/result/nummeraanduiding_id, nummeraanduiding/result/identificatie, nummeraanduiding/result/openbareruimte_id);
+			attribute<uint64>            openbareruimte_id := rjoin(vbo/result/nummeraanduiding_id, nummeraanduiding/result/identificatie, nummeraanduiding/result/openbareruimte_id);
 
 			attribute<string>            straatnaam        := rjoin(openbareruimte_id, openbareruimte/result/identificatie, openbareruimte/result/naam);
 			attribute<int32>             huisnummer        := rjoin(vbo/result/nummeraanduiding_id, nummeraanduiding/result/identificatie, nummeraanduiding/result/huisnummer);

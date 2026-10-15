@@ -1,181 +1,37 @@
-set geodmsversion=GeoDMS7314
-set exe_dir=C:\Program Files\ObjectVision\%geodmsversion%
-set ProgramPath=%exe_dir%\GeoDMSRun.exe
-set LOCALDATA_PROJDIR=C:\GeoDMS\LocalData\BAG\MakeSnapshot\CalcCachex64.v7.314
+@echo off
+rem ---------------------------------------------------------------------------
+rem  Een reeks snapshots uit dezelfde stores van Xml2MMD, een per peildatum.
+rem  MakeSnapshot leest de peildatum uit de omgevingsvariabele snapshot_date_env,
+rem  die voor Snapshot_Date_Input in de configuratie gaat. Pas de lijst van
+rem  peildata onderaan aan, en BAG_Date in cfg\MakeSnapshot.dms.
+rem
+rem  Instelbaar via omgevingsvariabelen (met de defaults hieronder):
+rem    GEODMS_DIR        map met GeoDmsRun.exe (20.23.1 of later)
+rem    MAKESNAPSHOT_CFG  pad naar MakeSnapshot.dms
+rem    MAKESNAPSHOT_LOG  pad naar het logbestand
+rem    SNAPSHOT_ITEM     het snapshot-item; zie de container snapshots in de configuratie
+rem ---------------------------------------------------------------------------
 
-cd ..\cfg
+setlocal
+set "BATDIR=%~dp0"
+if "%GEODMS_DIR%"==""       set GEODMS_DIR=C:\Program Files\ObjectVision\GeoDms20.23.1.m
+if "%MAKESNAPSHOT_CFG%"=="" set MAKESNAPSHOT_CFG=%BATDIR%..\cfg\MakeSnapshot.dms
+if "%MAKESNAPSHOT_LOG%"=="" set MAKESNAPSHOT_LOG=%BATDIR%..\MakeSnapshot.log
+if "%SNAPSHOT_ITEM%"==""    set SNAPSHOT_ITEM=/snapshots/nl_status_sel_without_strangevalues_no_height_mmd/MaakVolledigeSnapshot
 
-echo %DATE% %TIME%
+set ProgramPath=%GEODMS_DIR%\GeoDmsRun.exe
+if not exist "%ProgramPath%" (
+	echo GeoDmsRun.exe niet gevonden in %GEODMS_DIR%; zet GEODMS_DIR.
+	exit /b 2
+)
 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20120101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20120401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20120701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20121001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20130101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20130401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20130701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20131001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20140101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20140401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20140701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20141001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20150101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20150401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20150701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20151001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20160101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20160401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20160701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20161001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20170101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20170401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20170701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20171001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20180101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20180401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20180701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20181001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20190101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20190401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20190701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20191001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20200101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20200401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20200701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20201001
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20210101
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20210401
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-set snapshot_date_env=20210701
-"%ProgramPath%" MakeSnaphot.dms /snapshot_date_nl_vreemdeeruit/MaakVolledigeSnapshot 
-del "%LOCALDATA_PROJDIR%" /S /Q
-echo %DATE% %TIME%
-
-
-
-
-pause
+for %%d in (20120101 20130101 20140101 20150101 20160101 20170101 20180101 20190101 20200101 20210101 20220101 20230101 20240101 20250101 20260101) do (
+	echo %DATE% %TIME%  peildatum %%d
+	set snapshot_date_env=%%d
+	"%ProgramPath%" /L"%MAKESNAPSHOT_LOG%" "%MAKESNAPSHOT_CFG%" %SNAPSHOT_ITEM%
+	if errorlevel 1 (
+		echo %DATE% %TIME%  FOUT bij peildatum %%d; zie %MAKESNAPSHOT_LOG%
+		exit /b 1
+	)
+)
+echo %DATE% %TIME%  klaar

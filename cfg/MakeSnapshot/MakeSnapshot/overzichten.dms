@@ -61,14 +61,14 @@ container overzichten
 
 	container rapport
 	{
-		parameter<string> BAG_historie      := StoreDir;
+		parameter<string> BAG_historie      := expand(., StoreDir);
 		parameter<int32>  BAG_snapshotdatum := prik_datum;
 
 		container per_objecttype := for_each_ne(
-			 'aantal_' + typeringen/objecttypes/name
+			 'aantal_' + objecttypes/name
 			,'overzichten/per_objecttype(
-				'+ typeringen/objecttypes/name + '/result 
-				, /typeringen/status/' + typeringen/objecttypes/name +
+				'+ objecttypes/name + '/result 
+				, /Classifications/status/' + objecttypes/name +
 			')'
 		);
 
@@ -130,7 +130,7 @@ container overzichten
 
 				container impl
 				{
-					attribute<string>     pand_id_geom            (vbo/result/gerelateerdPand) := rjoin(vbo/result/gerelateerdPand/identificatie, vbo/result/identificatie, vbo/result/pand_id_geom);
+					attribute<uint64>     pand_id_geom            (vbo/result/gerelateerdPand) := rjoin(vbo/result/gerelateerdPand/identificatie, vbo/result/identificatie, vbo/result/pand_id_geom);
 					attribute<bool>       pand_id_is_pand_id_geom (vbo/result/gerelateerdPand) := vbo/result/gerelateerdPand/pand_id == pand_id_geom;
 					attribute<vbo/result> result_rel              (vbo/result/gerelateerdPand) := rlookup(vbo/result/gerelateerdPand/identificatie, vbo/result/identificatie);
 				}
@@ -172,7 +172,7 @@ container overzichten
 
 		container impl
 		{
-			attribute<uint32> pcount (impl_statustype) := pcount(rlookup(lowercase(impl_src/meta/STATUS), impl_statustype/label));
+			attribute<uint32> pcount (impl_statustype) := pcount(impl_src/meta/status_rel);
 		}
 
 		parameter<string> status_lijst :=

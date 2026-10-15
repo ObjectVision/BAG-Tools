@@ -22,7 +22,7 @@ container pc6
 
 	unit<uint32> verblijfsobjecten := vbo/result
 	{
-		attribute<string> nummeraanduiding := vbo/result/nummeraanduiding_id;
+		attribute<uint64> nummeraanduiding := vbo/result/nummeraanduiding_id;
 		attribute<string> postcode         := rjoin(nummeraanduiding_id, afleidingen/adres/nummeraanduiding_id, afleidingen/adres/postcode);
 		attribute<bool>   isWoon           := vbo/result/gebruiksdoelen/woon;
 		attribute<pc6>    pc6_rel          := rlookup(postcode, pc6/postcode);
