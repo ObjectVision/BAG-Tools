@@ -53,13 +53,13 @@ container Templates: Using = "Parameters"
 	{
 		// begin case parameters
 		unit<uint32>              domain;
-		attribute<geometries/rdc> geometry (domain, poly);
+		attribute<Geography/rdc> geometry (domain, poly);
 		// end case parameters
 
 		unit<uint32> punten := sequence2points(geometry)
 		{
-			attribute<geometries/rdc_mm_rond> rond          := point[geometries/rdc_mm_rond];
-			attribute<geometries/rdc_mm>      mm            := point_yx(PointRow(rond), PointCol(rond), geometries/rdc_mm);
+			attribute<Geography/rdc_mm_rond> rond          := point[Geography/rdc_mm_rond];
+			attribute<Geography/rdc_mm>      mm            := point_yx(PointRow(rond), PointCol(rond), Geography/rdc_mm);
 			attribute<bool>                   buiten_bereik := !IsDefined(rond) || !IsDefined(point);
 			attribute<bool>                   weglaten      := vlak_buiten_bereik[sequence_rel];
 		}
@@ -71,11 +71,11 @@ container Templates: Using = "Parameters"
 
 		unit<uint32> punten_ok := select_with_org_rel(!punten/weglaten)
 		{
-			attribute<geometries/rdc_mm> mm      := punten/mm[org_rel];
+			attribute<Geography/rdc_mm> mm      := punten/mm[org_rel];
 			attribute<domain>            seq     := punten/sequence_rel[org_rel];
 			attribute<uint32>            ordinal := punten/ordinal[org_rel];
 		}
-		attribute<geometries/rdc_mm> result (domain, poly) := points2polygon(punten_ok/mm, punten_ok/seq, punten_ok/ordinal);
+		attribute<Geography/rdc_mm> result (domain, poly) := points2polygon(punten_ok/mm, punten_ok/seq, punten_ok/ordinal);
 	}
 
 	Template posListProcessor
@@ -110,42 +110,30 @@ container Templates: Using = "Parameters"
 			{
 				attribute<float64>     x    := point;
 				attribute<float64>     y    := coordinates/point[org_rel + 1];
-				attribute<geometries/rdc>   p_m  := point_yx(y, x, geometries/rdc);
+				attribute<Geography/rdc>   p_m  := point_yx(y, x, Geography/rdc);
 				attribute<posListUnit> s    := Sequence_rel;
 				attribute<uint32>      fo   := ordinal / posListUnit/nrCoordPerPoint[s]; // forward winding
 				attribute<uint32>      ro   := pcount(s)[s] - fo - 1; // reverse winding*/
 			}
 
-			attribute<geometries/rdc> geometry (poly) := union_data(posList, points2polygon_pso(p/p_m, p/s, isExterior ? p/ro : p/fo));
+			attribute<Geography/rdc> geometry (poly) := union_data(posList, points2polygon_pso(p/p_m, p/s, isExterior ? p/ro : p/fo));
 		}
-		attribute<geometries/rdc> result (posList, poly) := impl/geometry;
+		attribute<Geography/rdc> result (posList, poly) := impl/geometry;
 	}
 
-	// Alles rekent in geometries/rdc (dpoint), van het parsen van de posList tot het afronden op millimeters
+	// Alles rekent in Geography/rdc (dpoint), van het parsen van de posList tot het afronden op millimeters
 	// voor de store. De geos_*-polygoonoperatoren accepteren sinds GeoDMS 20.16.0 alleen nog dpoint, en ook
 	// '-' en '+' worden op dpoint door GEOS uitgevoerd in plaats van door boost::polygon, dat integer-
 	// coordinaten vereist. Zie GitHub issue #1.
 	// De familie (geos_ of dms_) volgt uit GeoEngine (ConfigSettings/Overridable/GEO_ENGINE): dms_union_polygon
 	// (GeoDMS 20.20.0) leest ringen onder de even-odd-regel, zodat een tegen de klok in opgeslagen pand
 	// (GeoDMS #1230) geen reparatie nodig heeft; de geos-weg blijft zoals hij was.
-	Template union
-	{
-		// begin case parameters
-		unit<uint32>         child;
-		unit<uint32>         parent;
-		attribute<geometries/rdc> geometry   (child, poly);
-		attribute<parent>    parent_rel (child);
-		// end case parameters
-
-		attribute<geometries/rdc> result (poly, parent) := = GeoEngine + '_union_polygon(geometry, parent_rel)';
-	}
-
 	Template optimized_union
 	{
 		// begin case parameters
 		unit<uint32>         child;
 		unit<uint32>         parent;
-		attribute<geometries/rdc> geometry   (child, poly);
+		attribute<Geography/rdc> geometry   (child, poly);
 		attribute<parent>    parent_rel (child);
 		// end case parameters
 
@@ -157,10 +145,10 @@ container Templates: Using = "Parameters"
 			unit<uint32> nonTrivialChild := select_with_org_rel((count != 1)[union_data(childCopy, parent_rel)])
 			{
 				attribute<child>  child_rel            := value(org_rel, child);
-				attribute<geometries/rdc> union (poly, parent) := = GeoEngine + '_union_polygon(geometry[child_rel], parent_rel[child_rel])';
+				attribute<Geography/rdc> union (poly, parent) := = GeoEngine + '_union_polygon(geometry[child_rel], parent_rel[child_rel])';
 			}
 		}
-		attribute<geometries/rdc> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
+		attribute<Geography/rdc> result (poly,parent) := impl/count <= 1 ? geometry[invert(parent_rel)] : impl/nonTrivialChild/union;
 	}
 
 	Template one2one_union
@@ -168,7 +156,7 @@ container Templates: Using = "Parameters"
 		// begin case parameters
 		unit<uint32>         child;
 		unit<uint32>         parent;
-		attribute<geometries/rdc> geometry   (child, poly);
+		attribute<Geography/rdc> geometry   (child, poly);
 		attribute<parent>    parent_rel (child);
 		// end case parameters
 
@@ -176,7 +164,7 @@ container Templates: Using = "Parameters"
 		{
 			parameter<bool> Check := (#child == #parent) && all(parent_rel == ID(child)[parent]);
 		}
-		attribute<geometries/rdc> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
+		attribute<Geography/rdc> result (poly, parent) := union_data(parent, geometry), IntegrityCheck = "impl/Check";
 	}
 
 	Template LinearRing
@@ -192,16 +180,16 @@ container Templates: Using = "Parameters"
 			container posList := posListProcessor(parsedXMLsrc/gml_posList, isExterior, polygon_rel);
 			container union   := one2one_union(parsedXMLsrc/gml_posList, parsedXMLsrc, posList/result, parsedXMLsrc/gml_posList/Parent_rel);
 		}
-		attribute<geometries/rdc> geometry (poly,parsedXMLsrc) := impl/union/result;
+		attribute<Geography/rdc> geometry (poly,parsedXMLsrc) := impl/union/result;
 	}
 
 	Template Polygon
 	{
 		// begin case parameters
 		unit<uint32>         Exterior;
-		attribute<geometries/rdc> ExtGeometry (Exterior, poly);
+		attribute<Geography/rdc> ExtGeometry (Exterior, poly);
 		unit<uint32>         Interior;
-		attribute<geometries/rdc> IntGeometry (Interior, poly);
+		attribute<Geography/rdc> IntGeometry (Interior, poly);
 		attribute<Exterior>  Parent_rel  (Interior);
 		// end case parameters
 
@@ -218,12 +206,12 @@ container Templates: Using = "Parameters"
 			unit<uint32> nonTrivialExterior := select_with_org_rel(ExtCopy/count2 > 0)
 			{
 				attribute<Exterior> Exterior_rel := value(org_rel, Exterior);
-				attribute<geometries/rdc> diff (poly) := ExtGeometry[Exterior_rel] - IntUnion/result[Exterior_rel];
+				attribute<Geography/rdc> diff (poly) := ExtGeometry[Exterior_rel] - IntUnion/result[Exterior_rel];
 			}
 
-			attribute<geometries/rdc> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
+			attribute<Geography/rdc> result (poly,Exterior) := impl/nonTrivialExterior/diff[invert(impl/nonTrivialExterior/Exterior_rel)];
 		}
-		attribute<geometries/rdc> result (poly,Exterior) :=
+		attribute<Geography/rdc> result (poly,Exterior) :=
 			impl/count == 0
 				? ExtGeometry
 				: impl/result;
@@ -261,6 +249,6 @@ container Templates: Using = "Parameters"
 			: 'Templates/one2one_union(impl/gmlPolygon, gmlContext, impl/Polygon/result, impl/gmlPolygon/Parent_rel)';
 
 		container geometry := = geometry_expr;
-		attribute<geometries/rdc> result (gmlContext, polygon) := geometry/result;
+		attribute<Geography/rdc> result (gmlContext, polygon) := geometry/result;
 	}
 }

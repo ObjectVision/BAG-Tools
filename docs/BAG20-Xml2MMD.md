@@ -13,12 +13,16 @@ The stores are compact:
 - identificaties are stored as `uint64`, not as text. A BAG identificatie is a fixed number of digits (16 for the object types, 4 for a woonplaats), so the text form is recovered by padding the number with zeros on the left: `right('0000000000000000' + string(identificatie), 16)`;
 - the status of a voorkomen is a code, `meta/status_rel`, into a label table `status` that travels in the store. The same holds for the `typeAdresseerbaarObject` of a nummeraanduiding and the `type` of an openbare ruimte. The code lists are in `cfg/Classifications.dms`; a value in the extract that is not in the list stops the conversion, so that a new value from Kadaster is noticed and added;
 - the registration timestamps of a voorkomen, `TIJDSTIPREGISTRATIE` and `EINDREGISTRATIE`, are stored as the date, `yyyymmdd` as `int32`, like `BEGINDATUM` and `EINDDATUM`; 0 means absent;
-- the geometry is in millimetres, as `ipoint` in the unit `/geometries/rdc_mm`. The BAG delivers three decimals, so this is lossless, and it takes half the space of `dpoint`. A reader converts it back to metres with `geometry[/geometries/rdc]`. A coordinate further than 2.147 km from the origin does not fit; such a pand gets an empty polygon and such a vbo no point (data errors far outside the country, 108 of each in the extract of 2026-10-08), and `overzicht.txt` counts them;
+- the geometry is in millimetres, as `ipoint` in the unit `/Geography/rdc_mm`. The BAG delivers three decimals, so this is lossless, and it takes half the space of `dpoint`. A reader converts it back to metres with `geometry[/geometries/rdc]`. A coordinate further than 2.147 km from the origin does not fit; such a pand gets an empty polygon and such a vbo no point (data errors far outside the country, 108 of each in the extract of 2026-10-08), and `overzicht.txt` counts them;
 - the pand polygons are simplified with a tolerance of 0.1 m (Douglas-Peucker, the parameter `pand_simplify_tolerantie`): points that lie within 0.1 m of the line between their neighbours are dropped. A rectangular pand is unchanged; a pand with a curved facade of hundreds of points loses most of them; a polygon smaller than the tolerance, which the simplification would reduce to nothing, keeps its original shape. On the extract of 2026-10-08 this removed 14% of the points and changed the area of 116.660 of the 24.7 million voorkomens by more than 1 m², mostly in very large or erroneous geometries;
 - a verblijfsobject always has a point geometry: its own point from the BAG, or, for the few thousand vbo's that the BAG delivers with a polygon instead, a point inside that polygon (`centroid_or_mid`). The polygons themselves are kept in the sub-table `vbo/polygon`;
 - the relations of a vbo to its panden (`vbo/gerelateerdPand`) and its nevenadressen (`vbo/nevenadres`) carry `vbo_rel`, the row of the vbo voorkomen they belong to, next to the `pand_id` or `nummeraanduiding_id`.
 
 As the number of gebruiksdoelen of a VBO in the BAG is limited, the relation between VBO and gebruiksdoel is implemented as a set of boolean attributes for each VBO indicating if this VBO has this gebruiksdoel or not. This makes it easier to work with the gebruiksdoelen. The same data structure is also used in the [[BAG20 MakeSnapshot]].
+
+## layout of the configuration
+
+The root of `cfg/Xml2MMD.dms` shows the two steps, `Step1_Make_Temp_Files` and `Step2_Make_MMD_Files`, and next to them `ConfigSettings` (the overridable settings `GEO_ENGINE` and `BAG_DIR`), `Parameters` (the date of the extract, the folders, the file set size and the simplification tolerance), `Classifications` (the code lists, shared with MakeSnapshot and Geocode), `Geography` (the coordinate units; the stores name `/Geography/rdc_mm`), `SourceData` (the list of xml files and, per object type, the schema, the parse and the conversion to the compact form), `Templates`, `Store` (the result: the seven stores and the overzicht) and `Impl` (under the hood: the drivers of step 1, the readers and the merge per file set of step 2, and the overzicht report).
 
 ## how to use this script
 
@@ -32,7 +36,7 @@ As the number of gebruiksdoelen of a VBO in the BAG is limited, the relation bet
 <pre>
 parameter&lt;string&gt; date     := '<I>20261008</I>';
 </pre>
-5. Run `bat\RunXml2MMD.bat`, or open the Xml2MMD.dms in the GeoDMS GUI and update, one after the other, the items _MaakTussenstores_ and _MaakMMDBestanden_. The first step parses the pand, vbo and nummeraanduiding files per file set of 50 files into intermediate stores in _%LocalDataProjDir%/Temp/date_; the second step reads those back, merges them into one store per object type and converts the other object types. Reopen the configuration between the two steps: the second step reads the intermediate stores when the configuration is loaded. The two steps are separate because a process that does both keeps every file set in memory until the merged store is written (75 GB measured against 35 GB).
+5. Run `bat\RunXml2MMD.bat`, or open the Xml2MMD.dms in the GeoDMS GUI and update, one after the other, the items _Step1_Make_Temp_Files_ and _Step2_Make_MMD_Files_. The first step parses the pand, vbo and nummeraanduiding files per file set of 50 files into intermediate stores in _%LocalDataProjDir%/Temp/date_; the second step reads those back, merges them into one store per object type and converts the other object types. Reopen the configuration between the two steps: the second step reads the intermediate stores when the configuration is loaded. The two steps are separate because a process that does both keeps every file set in memory until the merged store is written (75 GB measured against 35 GB).
 6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG/date/mmd_ folder. The intermediate stores in _%LocalDataProjDir%/Temp/date_ can be deleted afterwards; if they are kept, a later run of the first step for the same date does nothing.
 
 ## polygon engine (GEO_ENGINE)
@@ -50,11 +54,11 @@ Like every overridable setting it is given on the command line through an enviro
 
 ## troubleshooting
 
-If updating item: _MaakTussenstores_ or _MaakMMDBestanden_ results in an error, check:
+If updating item _Step1_Make_Temp_Files_ or _Step2_Make_MMD_Files_ results in an error, check:
 
 1. if you have unzipped the earlier mentioned zip files, your NGR subfolder should contain more than 6.000 xml files.
 2. if your _%SourceDataDir%_ placeholder refers to the actual physical path containing the subfolder (BAG/_date_/NGR) with the xml files. If this is not the case, configure the path for your _%SourceDataDir%_ in the GeoDMS GUI: menu option: Tools > Options > Advanced Tab > SourceDataDir control.
-3. if _MaakMMDBestanden_ cannot find the intermediate stores: run _MaakTussenstores_ first, and reopen the configuration afterwards.
+3. if _Step2_Make_MMD_Files_ cannot find the intermediate stores: run _Step1_Make_Temp_Files_ first, and reopen the configuration afterwards.
 4. if the conversion stops on an IntegrityCheck of a store: the extract contains a status or type that is not in `cfg/Classifications.dms`; add it to the list.
 
 Ignore the error(s) and reload the configuration file.

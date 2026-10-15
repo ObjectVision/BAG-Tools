@@ -4,8 +4,8 @@ rem  BAG 2.0 XML > MMD-stores, in een GeoDmsRun-proces met een geheugenbudget.
 rem
 rem  Xml2MMD parseert pand, vbo en nummeraanduiding per fileset van 50
 rem  XML-bestanden naar een tussenstore in %LocalDataProjDir%/Temp/<date>
-rem  (stap 1, MaakTussenstores) en voegt die in een tweede aanroep samen tot
-rem  een store per objecttype in StoreDir (stap 2, MaakMMDBestanden). Een
+rem  (stap 1, Step1_Make_Temp_Files) en voegt die in een tweede aanroep samen
+rem  tot een store per objecttype in StoreDir (stap 2, Step2_Make_MMD_Files). Een
 rem  driver per fileset laat het geheugen van een fileset los zodra de
 rem  tussenstore ervan geschreven is (ObjectVision/GeoDMS#1259). Het budget
 rem  /SB<MB> begrenst hoeveel filesets tegelijk in bewerking zijn: de update-
@@ -96,10 +96,16 @@ echo %DATE% %TIME%  start
 
 if "%PER_FILESET%"=="1" goto :PerFileSetMode
 
-rem --- een proces voor alles, met budget -----------------------------------
-"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /MaakMMDBestanden
+rem --- stap 1 en stap 2, elk in een eigen proces, met budget ---------------
+"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /Step1_Make_Temp_Files
 if errorlevel 1 (
-	echo %DATE% %TIME%  FOUT; zie %XML2MMD_LOG%
+	echo %DATE% %TIME%  FOUT in stap 1; zie %XML2MMD_LOG%
+	exit /b 1
+)
+echo %DATE% %TIME%  stap 1 klaar, de tussenstores staan in %%LocalDataProjDir%%/Temp
+"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /Step2_Make_MMD_Files
+if errorlevel 1 (
+	echo %DATE% %TIME%  FOUT in stap 2; zie %XML2MMD_LOG%
 	exit /b 1
 )
 echo %DATE% %TIME%  klaar
@@ -117,7 +123,7 @@ call :PerFileSet nummeraanduiding
 if errorlevel 1 exit /b 1
 
 echo %DATE% %TIME%  samenvoegen en de overige stores
-"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /MaakMMDBestanden
+"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /Step2_Make_MMD_Files
 if errorlevel 1 (
 	echo %DATE% %TIME%  FOUT bij het samenvoegen; zie %XML2MMD_LOG%
 	exit /b 1
@@ -136,7 +142,7 @@ set _type=%~1
 set _i=0
 :PerFileSetLoop
 set /a _i+=1
-"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /xml/%_type%/PerFileSet/fs_%_i%/%_type%
+"%ProgramPath%" /L"%XML2MMD_LOG%" %Budget% "%XML2MMD_CFG%" /SourceData/%_type%/PerFileSet/fs_%_i%/%_type%
 if errorlevel 1 goto :PerFileSetDone
 echo %DATE% %TIME%  %_type% fileset %_i% geschreven
 goto :PerFileSetLoop

@@ -1,0 +1,124 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+//                                   BAG Toolkit                                      //
+//                                                                                    //
+//                   Xml2MMD: het BAG 2.0 extract naar MMD-stores                     //
+//                                                                                    //
+//                              Object Vision 2026                                    //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                    //
+// Onder de motorkap: de drivers van stap 1, de lezers van de tussenstores en de      //
+// samenvoeging per fileset van stap 2, en het overzicht met tellingen.               //
+//                                                                                    //
+////////////////////////////////////////////////////////////////////////////////////////
+
+container Impl: Using = "Parameters"
+{
+	// Leeg als de XML-map bruikbaar is, anders de melding die de stappen tonen.
+	parameter<string> bron_status := SourceData/folderinfo/CanGenerate == 2b
+		? 'Cannot make a list of files: ' + expand(., XmlDir) + ' does not exist or contains no .xml files.'
+		: SourceData/folderinfo/CanGenerate == 1b
+			? 'The data in ' + expand(., XmlDir) + ' is probably not in the BAG 2.0 format; unzip only the LIG, NUM, OPR, PND, STA, VBO and WPL zip files.'
+			: '';
+
+	// Stap 1: een driver per fileset in plaats van alle filesets als ExplicitSuppliers van een enkel item.
+	// ExplicitSuppliers-belang wordt losgelaten zodra het houdende item Committed is, dus met een driver
+	// per fileset laat elke fileset zijn XML en parse-resultaat los zodra zijn tussenstore geschreven is
+	// (ObjectVision/GeoDMS#1259).
+	container step1
+	{
+		parameter<string> status    := bron_status == '' ? 'Ready' : bron_status;
+		parameter<string> suppliers := bron_status == '' ? 'Impl/step1/pand;Impl/step1/vbo;Impl/step1/nummeraanduiding' : '';
+
+		Template driver
+		{
+			parameter<string> item;
+			parameter<string> result := 'OK', ExplicitSuppliers = "= item";
+		}
+
+		container pand_drivers             := for_each_ne('d_' + string(SourceData/pand/fileset/values),             'driver(' + quote('SourceData/pand/PerFileSet/fs_'             + string(SourceData/pand/fileset/values)             + '/pand') + ')');
+		container vbo_drivers              := for_each_ne('d_' + string(SourceData/vbo/fileset/values),              'driver(' + quote('SourceData/vbo/PerFileSet/fs_'              + string(SourceData/vbo/fileset/values)              + '/vbo') + ')');
+		container nummeraanduiding_drivers := for_each_ne('d_' + string(SourceData/nummeraanduiding/fileset/values), 'driver(' + quote('SourceData/nummeraanduiding/PerFileSet/fs_' + string(SourceData/nummeraanduiding/fileset/values) + '/nummeraanduiding') + ')');
+
+		parameter<string> pand             := 'OK', ExplicitSuppliers = "= AsList('pand_drivers/d_'             + string(SourceData/pand/fileset/values)             + '/result', ';')";
+		parameter<string> vbo              := 'OK', ExplicitSuppliers = "= AsList('vbo_drivers/d_'              + string(SourceData/vbo/fileset/values)              + '/result', ';')";
+		parameter<string> nummeraanduiding := 'OK', ExplicitSuppliers = "= AsList('nummeraanduiding_drivers/d_' + string(SourceData/nummeraanduiding/fileset/values) + '/result', ';')";
+	}
+
+	// Stap 2 leest de tussenstores terug als alleen-lezen holders; die bestaan pas na stap 1, dus tot dan
+	// zijn de lezers en de stores van pand, vbo en nummeraanduiding niet te berekenen. GeoDMS bindt een
+	// store bij het laden van de configuratie, vandaar het opnieuw openen na stap 1.
+	container step2
+	{
+		parameter<string> eerste_tussenstore    := expand(., TempDir) + '/pand/fs_1.mmd/0Dictionary.dms';
+		parameter<bool>   tussenstores_aanwezig := ExistingFile('missing', eerste_tussenstore) == eerste_tussenstore, Descr = "Stap 1 is gedraaid: de eerste tussenstore van pand bestaat.";
+
+		parameter<string> status := bron_status != ''
+			? bron_status
+			: !tussenstores_aanwezig
+				? 'Run Step1_Make_Temp_Files first and reopen the configuration; the temp stores of step 1 are read when the configuration is loaded.'
+				: 'Ready';
+		parameter<string> suppliers := bron_status == '' && tussenstores_aanwezig
+			? 'Store/ligplaats;Store/standplaats;Store/pand;Store/vbo;Store/nummeraanduiding;Store/openbareruimte;Store/woonplaats;Store/overzicht'
+			: '';
+
+		Template lezer
+		{
+			parameter<string> pad;
+			unit<uint32> store : StorageName = "= pad", StorageReadOnly = "True" {}
+		}
+
+		container pand
+		{
+			container lezers := for_each_ne('fs_' + string(SourceData/pand/fileset/values), 'lezer(' + quote(TempDir + '/pand/fs_' + string(SourceData/pand/fileset/values) + '.mmd') + ')');
+
+			attribute<string> fs (SourceData/pand/fileset) := 'Impl/step2/pand/lezers/fs_' + string(SourceData/pand/fileset/values) + '/store', Descr = "De tussenstore van elke fileset, als item.";
+		}
+
+		container vbo
+		{
+			container lezers := for_each_ne('fs_' + string(SourceData/vbo/fileset/values), 'lezer(' + quote(TempDir + '/vbo/fs_' + string(SourceData/vbo/fileset/values) + '.mmd') + ')');
+
+			unit<uint32> fileset := SourceData/vbo/fileset
+			{
+				attribute<string> fs     := 'Impl/step2/vbo/lezers/fs_' + string(SourceData/vbo/fileset/values) + '/store', Descr = "De tussenstore van elke fileset, als item.";
+				attribute<uint32> nr     := ='union_data(., ' + AsItemList('#' + fs) + ')';
+				attribute<uint32> offset := cumulate(nr) - nr, Descr = "De rij in Store/vbo van het eerste voorkomen van deze fileset; mutatie_rel in de tussenstores telt binnen de fileset.";
+			}
+
+			// Store/vbo/gebruiksdoelen vult per gebruiksdoel de naam in op de plek van gebruiksdoelen_tobereplaced
+			parameter<string> gebruiksdoelen_expr         := 'union_data(vbo, ' + AsItemList(fileset/fs + '/gebruiksdoelen/@@@') + ')';
+			parameter<string> gebruiksdoelen_tobereplaced := '@@@';
+
+			// de subtabellen samengevoegd, met voor elke rij de rij van het vbo-voorkomen in Store/vbo
+			unit<uint32> polygon := ='union_unit(' + AsItemList(fileset/fs + '/polygon') + ')'
+			{
+				attribute<fileset> fileset_rel := ='union_data(., ' + AsItemList('const(' + string(id(fileset)) + '[fileset], ' + fileset/fs + '/polygon)') + ')';
+				attribute<uint32>  mutatie_rel := ='union_data(., ' + AsItemList(fileset/fs + '/polygon/mutatie_rel') + ')';
+				attribute<uint32>  rij         := fileset/offset[fileset_rel] + mutatie_rel;
+			}
+			unit<uint32> gerelateerdPand := ='union_unit(' + AsItemList(fileset/fs + '/gerelateerdPand') + ')'
+			{
+				attribute<fileset> fileset_rel := ='union_data(., ' + AsItemList('const(' + string(id(fileset)) + '[fileset], ' + fileset/fs + '/gerelateerdPand)') + ')';
+				attribute<uint32>  mutatie_rel := ='union_data(., ' + AsItemList(fileset/fs + '/gerelateerdPand/mutatie_rel') + ')';
+				attribute<uint32>  rij         := fileset/offset[fileset_rel] + mutatie_rel;
+			}
+			unit<uint32> nevenadres := ='union_unit(' + AsItemList(fileset/fs + '/nevenadres') + ')'
+			{
+				attribute<fileset> fileset_rel := ='union_data(., ' + AsItemList('const(' + string(id(fileset)) + '[fileset], ' + fileset/fs + '/nevenadres)') + ')';
+				attribute<uint32>  mutatie_rel := ='union_data(., ' + AsItemList(fileset/fs + '/nevenadres/mutatie_rel') + ')';
+				attribute<uint32>  rij         := fileset/offset[fileset_rel] + mutatie_rel;
+			}
+		}
+
+		container nummeraanduiding
+		{
+			container lezers := for_each_ne('fs_' + string(SourceData/nummeraanduiding/fileset/values), 'lezer(' + quote(TempDir + '/nummeraanduiding/fs_' + string(SourceData/nummeraanduiding/fileset/values) + '.mmd') + ')');
+
+			attribute<string> fs (SourceData/nummeraanduiding/fileset) := 'Impl/step2/nummeraanduiding/lezers/fs_' + string(SourceData/nummeraanduiding/fileset/values) + '/store', Descr = "De tussenstore van elke fileset, als item.";
+		}
+	}
+
+	#include<../overzichten.dms>
+}

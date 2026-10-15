@@ -69,7 +69,7 @@ template Snapshot_T
 			// Alles wat niet uit de store komt, staat daarom hier.
 			container afgeleid
 			{
-				attribute<geometries/rdc> geometry (src, polygon) := src/geometry[geometries/rdc];
+				attribute<Geography/rdc> geometry (src, polygon) := src/geometry[Geography/rdc];
 				container status := status_selectie(src, Classifications/status/ligplaats, src/status, src/status/Label, src/meta/status_rel);
 				container geo_selectie := = met_geo_sel
 					? 'polygon_selectie(src, afgeleid/geometry)'
@@ -91,7 +91,7 @@ template Snapshot_T
 			{
 				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
 				attribute<Classifications/status/ligplaats> status_rel := afgeleid/status/status_rel[org_rel];
-				attribute<geometries/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
+				attribute<Geography/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
 				attribute<result> result_rel := rlookup(identificatie, result/values);
 				attribute<uint64> sleutel    := uint64(result_rel) * voorkomen_factor + uint64(meta/VOORKOMENIDENTIFICATIE);
 			}
@@ -102,7 +102,7 @@ template Snapshot_T
 
 				attribute<uint64>         values                : DisableStorage = "True";
 				attribute<uint64>         identificatie         := values;
-				attribute<geometries/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
+				attribute<Geography/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
 				attribute<uint64>         nummeraanduiding_id   := selectie/nummeraanduiding_id[keuze];
 
 				container meta := meta_template(selectie, ., Classifications/status/ligplaats);
@@ -124,7 +124,7 @@ template Snapshot_T
 
 			container afgeleid
 			{
-				attribute<geometries/rdc> geometry (src, polygon) := src/geometry[geometries/rdc];
+				attribute<Geography/rdc> geometry (src, polygon) := src/geometry[Geography/rdc];
 				container status := status_selectie(src, Classifications/status/standplaats, src/status, src/status/Label, src/meta/status_rel);
 				container geo_selectie := = met_geo_sel
 					? 'polygon_selectie(src, afgeleid/geometry)'
@@ -144,7 +144,7 @@ template Snapshot_T
 			{
 				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
 				attribute<Classifications/status/standplaats> status_rel := afgeleid/status/status_rel[org_rel];
-				attribute<geometries/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
+				attribute<Geography/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
 				attribute<result> result_rel := rlookup(identificatie, result/values);
 				attribute<uint64> sleutel    := uint64(result_rel) * voorkomen_factor + uint64(meta/VOORKOMENIDENTIFICATIE);
 			}
@@ -156,7 +156,7 @@ template Snapshot_T
 
 				attribute<uint64>         values                : DisableStorage = "True";
 				attribute<uint64>         identificatie         := values;
-				attribute<geometries/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
+				attribute<Geography/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
 				attribute<uint64>         nummeraanduiding_id   := selectie/nummeraanduiding_id[keuze];
 
 				container meta := meta_template(selectie, ., Classifications/status/standplaats);
@@ -178,7 +178,7 @@ template Snapshot_T
 
 			container afgeleid
 			{
-				attribute<geometries/rdc> geometry (src, polygon) := src/geometry[geometries/rdc];
+				attribute<Geography/rdc> geometry (src, polygon) := src/geometry[Geography/rdc];
 				container status       := status_selectie(src, Classifications/status/pand, src/status, src/status/Label, src/meta/status_rel);
 				container geo_selectie := = met_geo_sel
 					? 'polygon_selectie(src, afgeleid/geometry)'
@@ -190,8 +190,8 @@ template Snapshot_T
 				unit<float64>             m2                           := eenheden/m * eenheden/m;
 				attribute<m2>             oppervlakte            (src) := area(afgeleid/geometry, m2);
 
-				attribute<geometries/rdc> lower_bound            (src) := lower_bound(afgeleid/geometry);
-				attribute<geometries/rdc> upper_bound            (src) := upper_bound(afgeleid/geometry);
+				attribute<Geography/rdc> lower_bound            (src) := lower_bound(afgeleid/geometry);
+				attribute<Geography/rdc> upper_bound            (src) := upper_bound(afgeleid/geometry);
 				attribute<eenheden/m>     X_lower_bound          (src) := pointCol(lower_bound)[eenheden/m];
 				attribute<eenheden/m>     X_upper_bound          (src) := pointCol(upper_bound)[eenheden/m];
 				attribute<eenheden/m>     Y_lower_bound          (src) := pointRow(lower_bound)[eenheden/m];
@@ -199,7 +199,7 @@ template Snapshot_T
 				attribute<eenheden/m>     lengte                 (src) := X_upper_bound - X_lower_bound;
 				attribute<eenheden/m>     breedte                (src) := Y_upper_bound - Y_lower_bound;
 
-				attribute<geometries/rdc> centroid_or_mid        (src) := centroid_or_mid(afgeleid/geometry);
+				attribute<Geography/rdc> centroid_or_mid        (src) := centroid_or_mid(afgeleid/geometry);
 				attribute<eenheden/m>     X_centroid_or_mid      (src) := pointCol(centroid_or_mid)[eenheden/m];
 				attribute<eenheden/m>     Y_centroid_or_mid      (src) := pointRow(centroid_or_mid)[eenheden/m];
 				attribute<bool>           in_NL                  (src) :=
@@ -233,7 +233,7 @@ template Snapshot_T
 			{
 				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
 				attribute<Classifications/status/pand> status_rel := afgeleid/status/status_rel[org_rel];
-				attribute<geometries/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
+				attribute<Geography/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
 				attribute<result> result_rel := rlookup(identificatie, result/identificatie);
 				attribute<uint64> sleutel    := uint64(result_rel) * voorkomen_factor + uint64(meta/VOORKOMENIDENTIFICATIE);
 			}
@@ -250,12 +250,11 @@ template Snapshot_T
 			, DialogType  = "Map"
 			, DialogData  = "geometry"
 			{
-				attribute<uint32>         sel_count             := pcount(selectie/result_rel) , DisableStorage = "True";
 				attribute<uint32>         vbo_count             := pcount(vbo/result/pand_rel)      , DisableStorage = "True";
 				attribute<selectie>       keuze                 := rlookup(uint64(id(.)) * voorkomen_factor + uint64(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), selectie/sleutel), DisableStorage = "True";
 
 				attribute<uint64>         identificatie         := result_base/values[mapping(result, result_base)];
-				attribute<geometries/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
+				attribute<Geography/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
 				attribute<eenheden/jaar>  bouwjaar              := selectie/oorspronkelijkBouwjaar[keuze][eenheden/jaar];
 
 				container woningtype
@@ -286,7 +285,7 @@ template Snapshot_T
 
 			container afgeleid
 			{
-				attribute<geometries/rdc> geometry (src) := src/geometry[geometries/rdc], Descr = "Het BAG-punt, of bij een vbo met een vlak een punt binnen dat vlak; Xml2MMD legt dat al zo vast.";
+				attribute<Geography/rdc> geometry (src) := src/geometry[Geography/rdc], Descr = "Het BAG-punt, of bij een vbo met een vlak een punt binnen dat vlak; Xml2MMD legt dat al zo vast.";
 				container status := status_selectie(src, Classifications/status/vbo, src/status, src/status/Label, src/meta/status_rel);
 				attribute<bool> geo_selectie (src) := isDefined(point_in_polygon(geometry, /geo_selectie/Geometry));
 			}
@@ -305,15 +304,15 @@ template Snapshot_T
 			{
 				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
 				attribute<Classifications/status/vbo> status_rel := afgeleid/status/status_rel[org_rel];
-				attribute<geometries/rdc> geometry_m := afgeleid/geometry[org_rel];
+				attribute<Geography/rdc> geometry_m := afgeleid/geometry[org_rel];
 				attribute<float64> X := PointCol(geometry_m);
 				attribute<float64> Y := PointRow(geometry_m);
 				// Op snapshot moment willen we alleen geometrien in NL (https://nl.wikipedia.org/wiki/Rijksdriehoeksco%C3%B6rdinaten), dit ten behoeve van gemiddelde bepalingen (denk aan coordinaten voor geocode)
-				attribute<geometries/rdc> geometry_in_nl :=
+				attribute<Geography/rdc> geometry_in_nl :=
 					   X >=  -8000d &&  X <= 300000d
 					&& Y >= 289000d &&  Y <= 629000d
 						? geometry_m
-						: point_xy(0d/0d, 0d/0d, geometries/rdc);
+						: point_xy(0d/0d, 0d/0d, Geography/rdc);
 
 				attribute<result> result_rel := rlookup(identificatie, result/identificatie);
 				attribute<uint64> sleutel    := uint64(result_rel) * voorkomen_factor + uint64(meta/VOORKOMENIDENTIFICATIE);
@@ -331,7 +330,7 @@ template Snapshot_T
 				attribute<selectie>       keuze               := rlookup(uint64(id(.)) * voorkomen_factor + uint64(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), selectie/sleutel), DisableStorage = "True";
 
 				attribute<uint64>         identificatie       := result_base/values[mapping(result, result_base)];
-				attribute<geometries/rdc> geometry            := selectie/geometry_in_nl[keuze];
+				attribute<Geography/rdc> geometry            := selectie/geometry_in_nl[keuze];
 				attribute<int32>          oppervlakte         := selectie/oppervlakte[keuze];
 				attribute<uint64>         nummeraanduiding_id := selectie/nummeraanduiding_id[keuze];
 
@@ -477,7 +476,7 @@ template Snapshot_T
 
 			container afgeleid
 			{
-				attribute<geometries/rdc> geometry (src, polygon) := src/geometry[geometries/rdc];
+				attribute<Geography/rdc> geometry (src, polygon) := src/geometry[Geography/rdc];
 				container status       := status_selectie(src, Classifications/status/woonplaats, src/status, src/status/Label, src/meta/status_rel);
 				container geo_selectie := = met_geo_sel
 					? 'polygon_selectie(src, afgeleid/geometry)'
@@ -498,7 +497,7 @@ template Snapshot_T
 			{
 				container meta := collect_attr_by_org_rel(src/meta, selectie, org_rel);
 				attribute<Classifications/status/woonplaats> status_rel := afgeleid/status/status_rel[org_rel];
-				attribute<geometries/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
+				attribute<Geography/rdc> geometry_m (polygon) := afgeleid/geometry[org_rel];
 				attribute<result> result_rel := rlookup(identificatie, result/values);
 				attribute<uint64> sleutel    := uint64(result_rel) * voorkomen_factor + uint64(meta/VOORKOMENIDENTIFICATIE);
 			}
@@ -508,7 +507,7 @@ template Snapshot_T
 				attribute<selectie> keuze  := rlookup(uint64(id(.)) * voorkomen_factor + uint64(max(selectie/meta/VOORKOMENIDENTIFICATIE, selectie/result_rel)), selectie/sleutel), DisableStorage = "True";
 				attribute<uint64>   values : DisableStorage = "True";
 
-				attribute<geometries/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
+				attribute<Geography/rdc> geometry    (polygon) := selectie/geometry_m[keuze];
 				attribute<uint64>         identificatie         := values;
 				attribute<string>         woonplaatsNaam        := selectie/woonplaatsNaam[keuze];
 
@@ -517,7 +516,6 @@ template Snapshot_T
 		}
 		#include<afleidingen.dms>
 		#include<overzichten.dms>
-		#include<pc6.dms>
 	}
 
 	// De hele snapshot in een MMD store. Verwijzingen tussen de objecttypes zijn relaties in plaats van
@@ -578,7 +576,7 @@ template Snapshot_T
 			// ---- objecttypes, in volgorde van verwijzing
 			unit<uint32> woonplaats := object/woonplaats/result
 			{
-				attribute<geometries/rdc> geometry (polygon) := object/woonplaats/result/geometry;
+				attribute<Geography/rdc> geometry (polygon) := object/woonplaats/result/geometry;
 				attribute<uint64>         identificatie      := object/woonplaats/result/identificatie;
 				attribute<string>         woonplaatsNaam     := object/woonplaats/result/woonplaatsNaam;
 
@@ -629,7 +627,7 @@ template Snapshot_T
 				attribute<woonplaats>              woonplaats_rel              := rlookup(object/nummeraanduiding/result/woonplaats_id, woonplaats/identificatie);
 
 				// het adres zelf: de geometrie van het bijbehorende object en de namen die daarbij horen
-				attribute<geometries/rdc>     geometry               := object/afleidingen/adres/geometry;
+				attribute<Geography/rdc>     geometry               := object/afleidingen/adres/geometry;
 				attribute<float64>            X                      := object/afleidingen/adres/X;
 				attribute<float64>            Y                      := object/afleidingen/adres/Y;
 				attribute<string>             straatnaam             := object/afleidingen/adres/straatnaam;
@@ -655,7 +653,7 @@ template Snapshot_T
 			// welke laag hoort (issue #5).
 			unit<uint32> ligplaats := object/ligplaats/result, DialogType = "Map", DialogData = "geometry"
 			{
-				attribute<geometries/rdc>   geometry (polygon)   := object/ligplaats/result/geometry;
+				attribute<Geography/rdc>   geometry (polygon)   := object/ligplaats/result/geometry;
 				attribute<uint64>           identificatie        := object/ligplaats/result/identificatie;
 				attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/ligplaats/result/nummeraanduiding_id, nummeraanduiding/identificatie);
 
@@ -688,7 +686,7 @@ template Snapshot_T
 			// Standplaatsen liggen op het land: een zandkleurige vulling met een bruine rand, zie ligplaats.
 			unit<uint32> standplaats := object/standplaats/result, DialogType = "Map", DialogData = "geometry"
 			{
-				attribute<geometries/rdc>   geometry (polygon)   := object/standplaats/result/geometry;
+				attribute<Geography/rdc>   geometry (polygon)   := object/standplaats/result/geometry;
 				attribute<uint64>           identificatie        := object/standplaats/result/identificatie;
 				attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/standplaats/result/nummeraanduiding_id, nummeraanduiding/identificatie);
 
@@ -718,7 +716,7 @@ template Snapshot_T
 
 			unit<uint32> pand := object/pand/result
 			{
-				attribute<geometries/rdc> geometry (polygon) := object/pand/result/geometry;
+				attribute<Geography/rdc> geometry (polygon) := object/pand/result/geometry;
 				attribute<uint64>         identificatie      := object/pand/result/identificatie;
 				attribute<eenheden/jaar>  bouwjaar           := object/pand/result/bouwjaar;
 				attribute<type_woonpand>  woonpand_type_rel  := object/pand/result/woningtype/WOONPAND_TYPE[type_woonpand];
@@ -745,7 +743,7 @@ template Snapshot_T
 
 			unit<uint32> vbo := object/vbo/result
 			{
-				attribute<geometries/rdc>   geometry             := object/vbo/result/geometry;
+				attribute<Geography/rdc>   geometry             := object/vbo/result/geometry;
 				attribute<uint64>           identificatie        := object/vbo/result/identificatie;
 				attribute<int32>            oppervlakte          := object/vbo/result/oppervlakte;
 				attribute<nummeraanduiding> nummeraanduiding_rel := rlookup(object/vbo/result/nummeraanduiding_id, nummeraanduiding/identificatie);

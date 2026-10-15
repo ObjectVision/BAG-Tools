@@ -189,7 +189,6 @@ container BAG : using = "units;classifications"
 				attribute<int32>     oppervlakte         := import/oppervlakte;
 
 				// de administratieve relatie naar het pand; bij meer panden de laatste, zoals in MakeSnapshot
-				attribute<uint64>    vbo_bag_nr          := identificatie;
 				attribute<uint64>    pand_bag_nr         := last(import/gerelateerdPand/pand_id, import/gerelateerdPand/vbo_rel);
 
 				attribute<uint16>    pand_bouwjaar       := rjoin(pand_bag_nr, panden/src/pand_bag_nr, panden/src/bouwjaar_trunc);
@@ -249,7 +248,6 @@ container BAG : using = "units;classifications"
 				// AHN5-tegel ontbreken geheel in de tabel -> aanvullen met PHN-2023
 				attribute<BAG/impl/pand_hoogte_fallback> PHN_fallback_rel     := rlookup(pand_bag_nr, BAG/impl/pand_hoogte_fallback/pand_bag_nr);
 				attribute<cm>                            pand_hoogte          := MakeDefined(pand_hoogte_phn, BAG/impl/pand_hoogte_fallback/hoogte[PHN_fallback_rel][cm]);
-				attribute<cm>                            pand_hoogte_maaiveld := BAG/impl/pand_hoogte/hoogte_maaiveld_offset[PHN_rel][cm];
 
 				attribute<rdc_meter>   geometry (poly) := recollect_by_cond(impl/HasNegativeArea, impl/select_reversed_winding_order/geometry_reversed, geometry_org);
 
@@ -269,7 +267,6 @@ container BAG : using = "units;classifications"
 							attribute<uint32>    Sequence_rel_Reversed := reverse(Sequence_rel);
 						}
 
-						attribute<meter2>    area_reversed            := area(geometry_reversed, meter2);
 						attribute<rdc_meter> geometry_reversed (poly) := points2polygon(seq_points/points_reversed, seq_points/Sequence_rel_Reversed);
 					}
 
@@ -295,29 +292,19 @@ container BAG : using = "units;classifications"
 				}
 			}
 
-			unit<uint32> pand := select_with_attr_by_org_rel(src, src/Impl/pand_selection_condition)
-			{
-				unit<uint32> wo_hoogte := select_with_attr_by_cond(., IsNull(pand_hoogte));
-			}
+			unit<uint32> pand := select_with_attr_by_org_rel(src, src/Impl/pand_selection_condition);
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////
 		//                       pandhoogte, eigen brondata (PHN)                        //
 		//////////////////////////////////////////////////////////////////////////////////
 
-		// parameter<String> pand_hoogte_jaar := uint32(ModelParameters/BAG_year) >= 2020 ? string(ModelParameters/BAG_year) : string(2020);
 		parameter<String> pand_hoogte_jaar := '2026';
 
 		unit<UInt32> pand_hoogte
 		:	StorageName     = "='%RSo_DataDir%/Vastgoed/PHN_'+pand_hoogte_jaar+'0101.mmd'"
 		,	StorageReadOnly = "True"
 		{
-		}
-
-		// ook deze leesholder draagt niets; de geometrie komt van het pand zelf
-		container pand_hoogte_afgeleid
-		{
-			attribute<rdc_meter> geometry (pand_hoogte, poly) := rjoin(pand_hoogte/pand_bag_nr, panden/src/pand_bag_nr, panden/src/geometry);
 		}
 
 		// fallback-bron voor panden die (nog) niet in PHN-<pand_hoogte_jaar> zitten
@@ -355,8 +342,6 @@ container BAG : using = "units;classifications"
 		attribute<CBS/buurt>    buurt_rel     := point_in_polygon(geometry, CBS/buurt/Geometry[rdc_meter]);
 		attribute<CBS/wijk>     wijk_rel      := point_in_polygon(geometry, CBS/wijk/Geometry[rdc_meter]);
 		attribute<CBS/gemeente> gemeente_rel  := point_in_polygon(geometry, CBS/gemeente/Geometry[rdc_meter]);
-		//attribute<NVM/regio>    nvmreg_rel    := point_in_polygon(geometry, NVM/regio/Geometry[rdc_meter]);
-		//attribute<NVM/afdeling> nvmafd_rel    := point_in_polygon(geometry, NVM/afdeling/Geometry[rdc_meter]);
 
 		container keys:=
 			for_each_nedv(

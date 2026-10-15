@@ -41,15 +41,20 @@ To configure a geographic selection, set this second to _True_.
 
 <details><summary> A geographic selection can be configured in two ways:</summary>
 
-1. Use an ESRI polygon shapefile: <BR>The easiest way is to replace the file _./data/geo_sel.shp_ in your project folder with the ESRI polygon shapefile you want to use for the selection. If you want to keep this file at another location, you can also adjust the StorageName configured for the _geo_selectie_ item to refer to this location.      
+1. Define a rectangle (the default; all vbo's and related objects within the rectangle are selected): set the parameters _X_min_, _X_max_, _Y_min_ and _Y_max_ in the container `geo_selectie/pointset` of `cfg/MakeSnapshot.dms` to the requested extent, in RD metres.
 
-2. Define a rectangle (all vbo's and related objects within the rectangle will be selected): <BR>
-By default this ways of selecting is in comments and not active. First uncomment the codeblock starting with _nrofrows = 1_ till the comment: 
-_// Voorbeeld voor het lezen van een geo_selectie uit een shape file_ <BR>  
-And comment the codeblock starting with <I>:	StorageName     = "%ProjDir%/data/geo_sel.shp"</I> till <I>container typeringen</I>.   
+2. Use an ESRI polygon shapefile: replace the declaration of `geo_selectie` in `cfg/MakeSnapshot.dms` by a unit that reads the shapefile, for example:
 
-Next set the The _x_min_, _x_max_, _y_min _and _y_max_ parameters for the requested extent in the container: geo_selectie/pointset.
-These parameters now describe the selection rectangle to be used.
+```
+unit<uint32> geo_selectie
+:	StorageName     = "%ProjDir%/data/geo_sel.shp"
+,	StorageType     = "gdal.vect"
+,	StorageReadOnly = "True"
+{
+	parameter<string>        Label := 'BredaEO';
+	attribute<Geography/rdc> geometry (poly);
+}
+```
 
 In both cases we advice to configure the _Label_ parameter to a clear name of your selected area. This label will become a subfolder in the resulting snapshot folder 
 </details>

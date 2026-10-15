@@ -1,14 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
+//                                   BAG Toolkit                                      //
 //                                                                                    //
-//              Configuratie voor project: BAG 2.0 XML bronfiles > MMD                //
+//                   Xml2MMD: het BAG 2.0 extract naar MMD-stores                     //
 //                                                                                    //
-//                              Object Vision 2023                                    //
+//                              Object Vision 2026                                    //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-// In deze configuratie worden een overzicht met aantallen gemaakt behorend bij een   //
-// BAG XML set verwerking                                                             //
+// Het overzicht met tellingen van een run: elk item onder rapport wordt een regel    //
+// in overzicht.txt, met de naam als label; een container impl blijft erbuiten.       //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -19,27 +20,29 @@ container overzichten: Using = "Parameters"
 		parameter<string> tab     := '\t';
 		parameter<string> newline := '\n';
 
+		parameter<string> rapport_fullname := PropValue(rapport, 'FullName');
+
 		unit<uint32> rapport_items := SubTree_PropValues(rapport,'fullname')
 		{
-			attribute<string> expr := union_data(.,rapport_items_expr/expr);
-			attribute<string> name := union_data(.,rapport_items_name/name);
+			attribute<string> expr    := union_data(.,rapport_items_expr/expr);
+			attribute<string> name    := union_data(.,rapport_items_name/name);
+			attribute<uint32> relpos  := strpos(fullname, 'rapport');
+			attribute<string> relname := substr(fullname, relpos, strlen(fullname) - relpos), Descr = "De naam vanaf rapport, ook als pad naar het item.";
 		}
 		unit<uint32> rapport_items_expr := SubTree_PropValues(rapport,'expr');
 		unit<uint32> rapport_items_name := SubTree_PropValues(rapport,'name');
 
-		unit<uint32> rapport_items_sel := select_with_attr_by_cond(rapport_items, strcount(lowercase(rapport_items/FullName), 'impl') == 0) // lowercase: GeoDMS toont een naam in de schrijfwijze van de eerste declaratie, hier Store/Impl
+		unit<uint32> rapport_items_sel := select_with_attr_by_cond(rapport_items, strcount(lowercase(rapport_items/relname), '/impl') == 0)
 		{
-			attribute<uint32> level    := strcount(fullname, '/') - 3;
-
-			attribute<uint32> relpos   := strpos(fullname, 'rapport');
-			attribute<string> relname  := strlen(expr) >= 1 ? substr(fullname, relpos, strlen(fullname) - relpos) : quote(name);
-			attribute<string> label    := repeat(tab,level) + name + ': ';
+			attribute<uint32> level := strcount(fullname, '/') - strcount(rapport_fullname, '/') - 1;
+			attribute<string> item  := strlen(expr) >= 1 ? relname : quote(name), Descr = "Een item met expressie wordt zijn waarde, een container zijn naam.";
+			attribute<string> label := repeat(tab,level) + name + ': ';
 		}
 
 		parameter<string> seperator := ' + ' + quote(newline) + ' + ';
 		parameter<string> genereer_rapport_expr :=
 			AsList(
-				quote(rapport_items_sel/label) + ' + ' + 'string(' + rapport_items_sel/relname + ')'
+				quote(rapport_items_sel/label) + ' + ' + 'string(' + rapport_items_sel/item + ')'
 				, seperator
 			);
 		parameter<string> genereer_rapport := = genereer_rapport_expr
@@ -49,19 +52,19 @@ container overzichten: Using = "Parameters"
 
 	container rapport
 	{
-		parameter<string> datum      := date;
-		parameter<string> XML_folder := expand(.,XmlDir);
+		parameter<string> datum        := date;
+		parameter<string> XML_folder   := expand(.,XmlDir);
 		parameter<string> Store_folder := expand(.,StoreDir);
 
 		container xml_bestanden
 		{
-			parameter<uint32> nr_bestanden_ligplaats        := #XML/folderinfo/bestand_selectie/xml_bestanden/ligplaats;
-			parameter<uint32> nr_bestanden_standplaats      := #XML/folderinfo/bestand_selectie/xml_bestanden/standplaats;
-			parameter<uint32> nr_bestanden_pand             := #XML/folderinfo/bestand_selectie/xml_bestanden/pand;
-			parameter<uint32> nr_bestanden_vbo              := #XML/folderinfo/bestand_selectie/xml_bestanden/vbo;
-			parameter<uint32> nr_bestanden_nummeraanduiding := #XML/folderinfo/bestand_selectie/xml_bestanden/nummeraanduiding;
-			parameter<uint32> nr_bestanden_openbareruimte   := #XML/folderinfo/bestand_selectie/xml_bestanden/openbareruimte;
-			parameter<uint32> nr_bestanden_woonplaats       := #XML/folderinfo/bestand_selectie/xml_bestanden/woonplaats;
+			parameter<uint32> nr_bestanden_ligplaats        := #SourceData/folderinfo/bestand_selectie/xml_bestanden/ligplaats;
+			parameter<uint32> nr_bestanden_standplaats      := #SourceData/folderinfo/bestand_selectie/xml_bestanden/standplaats;
+			parameter<uint32> nr_bestanden_pand             := #SourceData/folderinfo/bestand_selectie/xml_bestanden/pand;
+			parameter<uint32> nr_bestanden_vbo              := #SourceData/folderinfo/bestand_selectie/xml_bestanden/vbo;
+			parameter<uint32> nr_bestanden_nummeraanduiding := #SourceData/folderinfo/bestand_selectie/xml_bestanden/nummeraanduiding;
+			parameter<uint32> nr_bestanden_openbareruimte   := #SourceData/folderinfo/bestand_selectie/xml_bestanden/openbareruimte;
+			parameter<uint32> nr_bestanden_woonplaats       := #SourceData/folderinfo/bestand_selectie/xml_bestanden/woonplaats;
 		}
 		container bag_objecten
 		{

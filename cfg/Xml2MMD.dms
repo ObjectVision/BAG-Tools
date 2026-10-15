@@ -17,16 +17,23 @@
 //                                                                                    //
 // 3. Zet de parameter date op de datum van het extract, jjjjmmdd.                    //
 //                                                                                    //
-// 4. Open deze configuratie en activeer MaakMMDBestanden, of draai                   //
-//    bat\RunXml2MMD.bat.                                                             //
+// 4. Draai bat\RunXml2MMD.bat, of in de GUI: activeer Step1_Make_Temp_Files, open    //
+//    de configuratie opnieuw en activeer Step2_Make_MMD_Files.                       //
 //                                                                                    //
 // Het resultaat is een store per objecttype in StoreDir, met alle voorkomens:        //
 // de volledige historie van de BAG. De stores zijn compact: identificaties als       //
 // uint64, de status als code met een labeltabel in de store, de registratietijd-    //
-// stippen als datum jjjjmmdd, en de geometrie in millimeters (ipoint). Pand, vbo en  //
-// nummeraanduiding worden per fileset van 50 XML-bestanden geparseerd naar een       //
-// tussenstore in TempDir en daarna samengevoegd; zo past de verwerking in het        //
-// geheugen zonder dat een lezer van de stores de filesets nog ziet.                  //
+// stippen als datum jjjjmmdd, en de geometrie in millimeters (ipoint).               //
+//                                                                                    //
+// De indeling van deze configuratie:                                                 //
+//   Step1_Make_Temp_Files, Step2_Make_MMD_Files  de twee stappen                     //
+//   ConfigSettings, Parameters                    de knoppen                         //
+//   Classifications, Geography, Templates         de bouwstenen                      //
+//   SourceData                                    de XML: lijst, schema, parse       //
+//   Store                                         het resultaat                      //
+//   Impl                                          onder de motorkap: de drivers van  //
+//                                                 stap 1, de lezers en samenvoeging  //
+//                                                 van stap 2, het overzicht          //
 //                                                                                    //
 // Voor meer informatie, zie:                                                         //
 //  https://github.com/ObjectVision/BAG-Tools/wiki/BAG20-Xml2MMD                      //
@@ -35,81 +42,61 @@
 
 container Xml2MMD: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20.23.1 of later: een ontbrekend XML-attribuut leest als null, en de dms_-polygoonoperatoren
 {
-	// GEO_ENGINE kiest de familie polygoonoperatoren: 'geos' (default) of 'dms'. BAG_DIR is de map met per
-	// extract een submap <date>. Beide zijn ConfigSettings/Overridable-instellingen, dus op de commandoregel
-	// te zetten met een omgevingsvariabele: GEODMS_Overridable_GEO_ENGINE=dms,
-	// GEODMS_Overridable_BAG_DIR=C:/LocalData/BAG (de batchbestanden vertalen hun argumenten daarheen).
+	// Twee stappen, elk in een eigen GeoDmsRun-aanroep (of in de GUI: na stap 1 de configuratie opnieuw
+	// openen). Stap 1 parseert pand, vbo en nummeraanduiding per fileset naar een tussenstore in TempDir,
+	// met een driver per fileset zodat elke fileset zijn geheugen loslaat zodra zijn tussenstore geschreven
+	// is. Stap 2 leest die tussenstores terug en voegt ze samen tot een store per objecttype; in een proces
+	// met stap 1 zou de samenvoeging alle filesets tegelijk in het geheugen houden (gemeten op het extract
+	// van 2026-10-08: 75 GB in een proces, tegen 2,2 GB voor stap 1 en 1,6 GB voor stap 2 apart).
+	parameter<string> Step1_Make_Temp_Files := Impl/step1/status
+	,	ExplicitSuppliers = "= Impl/step1/suppliers"
+	,	Descr             = "Stap 1: de tussenstores per fileset van pand, vbo en nummeraanduiding, in TempDir.";
+
+	parameter<string> Step2_Make_MMD_Files := Impl/step2/status
+	,	ExplicitSuppliers = "= Impl/step2/suppliers"
+	,	Descr             = "Stap 2: de stores in StoreDir, uit de tussenstores van stap 1 en de XML van de overige objecttypen. Open na stap 1 de configuratie opnieuw: de tussenstores worden bij het laden gelezen.";
+
+	// Beide zijn ConfigSettings/Overridable-instellingen, dus op de commandoregel te zetten met een
+	// omgevingsvariabele: GEODMS_Overridable_GEO_ENGINE=dms, GEODMS_Overridable_BAG_DIR=C:/LocalData/BAG
+	// (de batchbestanden vertalen hun argumenten daarheen).
 	container ConfigSettings
 	{
 		container Overridable
 		{
-			parameter<string> GEO_ENGINE := 'geos';
-			parameter<string> BAG_DIR    := '%SourceDataDir%/BAG';
+			parameter<string> GEO_ENGINE := 'geos',               Descr = "De familie polygoonoperatoren voor het samenvoegen per pand: 'geos' (default) of 'dms'.";
+			parameter<string> BAG_DIR    := '%SourceDataDir%/BAG', Descr = "De map met per extract een submap <date>: de XML in <date>/NGR, de stores in <date>/mmd.";
 		}
 	}
+
 	container Parameters
 	{
-		parameter<string> GeoEngine := expand(., '%GEO_ENGINE%'), Descr = "De familie polygoonoperatoren, geos of dms, uit ConfigSettings/Overridable/GEO_ENGINE.";
-
 		parameter<string> date     := '20261008', Descr = "De datum van het extract, jjjjmmdd: de naam van de map onder BAG_DIR.";
 		parameter<string> date_dir := '%BAG_DIR%/' + date;
 		parameter<string> XmlDir   := date_dir + '/NGR', Descr = "De uitgepakte XML-bestanden van het extract, alle in een map.";
 		parameter<string> StoreDir := date_dir + '/mmd', Descr = "De stores die deze configuratie schrijft: een per objecttype, met alle voorkomens.";
 		parameter<string> TempDir  := '%LocalDataProjDir%/Temp/' + date, Descr = "De tussenstores per fileset van pand, vbo en nummeraanduiding. Ze mogen weg zodra StoreDir geschreven is; staan ze er bij een volgende run nog, dan worden de filesets niet opnieuw geparseerd.";
 
+		parameter<string>  GeoEngine                := expand(., '%GEO_ENGINE%');
 		parameter<uint32>  bestanden_per_fileset    := 50, Descr = "Het aantal XML-bestanden dat parse_xml in een keer verwerkt. Een fileset van 50 pandbestanden vraagt ongeveer 1,2 GB; meer bestanden per fileset betekent minder filesets en meer geheugen per fileset.";
 		parameter<float64> pand_simplify_tolerantie := 0.1, Descr = "Meters. Punten van een pandvlak die minder dan dit van de lijn tussen hun buren liggen vervallen (Douglas-Peucker). Sommige panden hebben een boog met honderden punten; op een rechthoek verandert er niets.";
 		parameter<uint32>  srsDimensionDefaultValue := 2, Descr = "Het aantal coordinaten per punt als een gml:posList en zijn gml:Polygon geen srsDimension dragen.";
 	}
 
-	// Twee stappen, elk in een eigen GeoDmsRun-aanroep (of in de GUI: na stap 1 de configuratie opnieuw
-	// openen). Stap 1 parseert pand, vbo en nummeraanduiding per fileset naar een tussenstore in TempDir,
-	// met een driver per fileset zodat elke fileset zijn geheugen loslaat zodra zijn tussenstore geschreven
-	// is. Stap 2 leest die tussenstores terug en voegt ze samen tot een store per objecttype; in een proces
-	// met stap 1 zou de samenvoeging alle filesets tegelijk in het geheugen houden (gemeten op het extract van 2026-10-08:
-	// 75 GB in een proces, tegen 2,2 GB voor stap 1 en 1,6 GB voor stap 2 apart).
-	parameter<string> MaakTussenstores := xml/folderinfo/CanGenerate == 2b
-		? 'Cannot make list of files, ' + expand(., Parameters/XmlDir) + ' does not consist or contains no .xml files.'
-		:  xml/folderinfo/CanGenerate == 1b
-			? 'Data from ' + expand(., Parameters/XmlDir) + ' is probably not in requested BAG 2.0 format, make sure you only unzipped: LIG, NUM, OPR, PND, STA, VBO, WPL ZIP files'
-			: 'Ready'
-	, ExplicitSuppliers = "= TussenstoreList"
-	, Descr = "Stap 1: de tussenstores per fileset van pand, vbo en nummeraanduiding.";
-
-	parameter<string> TussenstoreList := xml/folderinfo/CanGenerate == 0b
-		? 'Store/Impl/tussenstores/pand;Store/Impl/tussenstores/vbo;Store/Impl/tussenstores/nummeraanduiding'
-		: '';
-
-	parameter<string> MaakMMDBestanden := xml/folderinfo/CanGenerate == 2b
-		? 'Cannot make list of files, ' + expand(., Parameters/XmlDir) + ' does not consist or contains no .xml files.'
-		:  xml/folderinfo/CanGenerate == 1b
-			? 'Data from ' + expand(., Parameters/XmlDir) + ' is probably not in requested BAG 2.0 format, make sure you only unzipped: LIG, NUM, OPR, PND, STA, VBO, WPL ZIP files'
-			: !TussenstoresAanwezig
-				? 'Run MaakTussenstores first and reopen the configuration; ' + expand(., Parameters/TempDir) + ' holds no intermediate stores yet'
-				: 'Ready'
-	, ExplicitSuppliers = "= SupplierList"
-	, Descr = "Stap 2: de stores in StoreDir, uit de tussenstores van stap 1 en de XML van de overige objecttypen.";
-
-	parameter<string> SupplierList     := xml/folderinfo/CanGenerate == 0b && TussenstoresAanwezig
-		? 'Store/ligplaats;Store/standplaats;Store/pand;Store/vbo;Store/nummeraanduiding;Store/openbareruimte;Store/woonplaats;Store/overzicht'
-		: '';
-
-	parameter<string> EersteTussenstore    := expand(., Parameters/TempDir) + '/pand/fs_1.mmd/0Dictionary.dms';
-	parameter<bool>   TussenstoresAanwezig := ExistingFile('missing', EersteTussenstore) == EersteTussenstore, Descr = "Stap 1 is gedraaid: de eerste tussenstore van pand bestaat.";
+	#include<../Classifications.dms>
 
 	// De MMD-dictionary noemt een eenheid buiten de store bij haar absolute pad. Een lezer van de stores
-	// declareert daarom /geometries/rdc_mm onder precies deze naam, als ipoint; MakeSnapshot en Geocode doen dat.
-	container geometries
+	// declareert daarom /Geography/rdc_mm onder precies deze naam, als ipoint; MakeSnapshot, Geocode en
+	// RSopen doen dat.
+	container Geography
 	{
-		unit<dpoint> rdc_base : SpatialReference = "EPSG:28992";
-		unit<dpoint> rdc      := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d)), Descr = "Meters; hierin rekenen de polygoonoperatoren.";
-		unit<ipoint> rdc_mm   := gridset(rdc_base, point_yx(0.001d, 0.001d), point_yx(0d, 0d), ipoint), Descr = "Millimeters, de eenheid van de geometrie in de stores. De BAG levert drie decimalen, dus dit is verliesvrij en half zo groot als dpoint. Terug naar meters: geometry[/geometries/rdc].";
+		unit<dpoint> rdc_base    : SpatialReference = "EPSG:28992";
+		unit<dpoint> rdc         := range(rdc_base, point_yx(300000d,0d), point_yx(625000d,280000d)), Descr = "Meters; hierin rekenen de polygoonoperatoren.";
+		unit<ipoint> rdc_mm      := gridset(rdc_base, point_yx(0.001d, 0.001d), point_yx(0d, 0d), ipoint), Descr = "Millimeters, de eenheid van de geometrie in de stores. De BAG levert drie decimalen, dus dit is verliesvrij en half zo groot als dpoint. Terug naar meters: geometry[/Geography/rdc].";
 		unit<ipoint> rdc_mm_rond := gridset(rdc_base, point_yx(0.001d, 0.001d), point_yx(-0.0005d, -0.0005d), ipoint), Descr = "Alleen om af te ronden: de omzetting naar een gridset kapt af, en met de oorsprong een halve millimeter verschoven wordt dat afronden. De getallen zijn daarna de millimeters van rdc_mm.";
 	}
 
-	#include<../Classifications.dms>
-	#include<Store.dms>
-	#include<XML.dms>
+	#include<SourceData.dms>
 	#include<Templates.dms>
-	#include<overzichten.dms>
+	#include<Store.dms>
+	#include<Impl.dms>
 }

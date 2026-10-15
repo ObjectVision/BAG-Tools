@@ -8,23 +8,23 @@
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                    //
-// De stores: een per objecttype in StoreDir, met alle voorkomens. Ligplaats,         //
-// standplaats, openbare ruimte en woonplaats komen uit een parse; pand, vbo en       //
-// nummeraanduiding zijn de samenvoeging van hun tussenstores per fileset (XML.dms).  //
-// Elke store draagt zijn codelijsten als labeltabel mee, dus een lezer declareert    //
-// niets behalve /geometries/rdc_mm. De hulpitems staan onder Impl.                   //
+// Het resultaat: een store per objecttype in StoreDir, met alle voorkomens.          //
+// Ligplaats, standplaats, openbare ruimte en woonplaats komen uit hun parse in       //
+// SourceData; pand, vbo en nummeraanduiding zijn de samenvoeging van hun             //
+// tussenstores per fileset (Impl/step2). Elke store draagt zijn codelijsten als      //
+// labeltabel mee, dus een lezer declareert niets behalve /Geography/rdc_mm.          //
 //                                                                                    //
 ////////////////////////////////////////////////////////////////////////////////////////
 
 container Store: Using = "Parameters"
 {
-	unit<uint32> ligplaats := xml/ligplaats/ParsedXML/Objecten_ligplaats
-	, StorageName    = "= StoreDir + '/ligplaats.mmd'"
-	, IntegrityCheck = "Impl/ligplaats/meta/ok"
+	unit<uint32> ligplaats := SourceData/ligplaats/ParsedXML/Objecten_ligplaats
+	,	StorageName    = "= StoreDir + '/ligplaats.mmd'"
+	,	IntegrityCheck = "SourceData/ligplaats/meta/ok"
 	{
-		attribute<geometries/rdc_mm> geometry (polygon)  := Impl/ligplaats/mm/result;
-		attribute<uint64>            identificatie       := uint64(ligplaats/Objecten_identificatie);
-		attribute<uint64>            nummeraanduiding_id := uint64(ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef[invert(ligplaats/Objecten_heeftAlsHoofdadres/parent_rel[ligplaats])]);
+		attribute<Geography/rdc_mm> geometry (polygon)  := SourceData/ligplaats/mm/result;
+		attribute<uint64>           identificatie       := uint64(ligplaats/Objecten_identificatie);
+		attribute<uint64>           nummeraanduiding_id := uint64(ligplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef[invert(ligplaats/Objecten_heeftAlsHoofdadres/parent_rel[ligplaats])]);
 
 		unit<uint8> status := Classifications/status/ligplaats
 		{
@@ -33,15 +33,15 @@ container Store: Using = "Parameters"
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (ligplaats) := value(Impl/ligplaats/meta/status_rel, status);
-			attribute<uint32> VOORKOMENIDENTIFICATIE (ligplaats) := Impl/ligplaats/meta/VOORKOMENIDENTIFICATIE;
-			attribute<int32>  BEGINDATUM             (ligplaats) := Impl/ligplaats/meta/BEGINDATUM;
-			attribute<int32>  EINDDATUM              (ligplaats) := Impl/ligplaats/meta/EINDDATUM;
-			attribute<int32>  TIJDSTIPREGISTRATIE    (ligplaats) := Impl/ligplaats/meta/TIJDSTIPREGISTRATIE;
-			attribute<int32>  EINDREGISTRATIE        (ligplaats) := Impl/ligplaats/meta/EINDREGISTRATIE;
-			attribute<int32>  DOCUMENTDATUM          (ligplaats) := Impl/ligplaats/meta/DOCUMENTDATUM;
-			attribute<string> DOCUMENTNUMMER         (ligplaats) := Impl/ligplaats/meta/DOCUMENTNUMMER;
-			attribute<bool>   IS_GECONSTATEERD       (ligplaats) := Impl/ligplaats/meta/IS_GECONSTATEERD;
+			attribute<status> status_rel             (ligplaats) := value(SourceData/ligplaats/meta/status_rel, status);
+			attribute<uint32> VOORKOMENIDENTIFICATIE (ligplaats) := SourceData/ligplaats/meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (ligplaats) := SourceData/ligplaats/meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (ligplaats) := SourceData/ligplaats/meta/EINDDATUM;
+			attribute<int32>  TIJDSTIPREGISTRATIE    (ligplaats) := SourceData/ligplaats/meta/TIJDSTIPREGISTRATIE;
+			attribute<int32>  EINDREGISTRATIE        (ligplaats) := SourceData/ligplaats/meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (ligplaats) := SourceData/ligplaats/meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (ligplaats) := SourceData/ligplaats/meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (ligplaats) := SourceData/ligplaats/meta/IS_GECONSTATEERD;
 		}
 
 		unit<uint32> nevenadres := ligplaats/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef // 1->0..n relatie
@@ -51,13 +51,13 @@ container Store: Using = "Parameters"
 		}
 	}
 
-	unit<uint32> standplaats := xml/standplaats/ParsedXML/Objecten_standplaats
-	, StorageName    = "= StoreDir + '/standplaats.mmd'"
-	, IntegrityCheck = "Impl/standplaats/meta/ok"
+	unit<uint32> standplaats := SourceData/standplaats/ParsedXML/Objecten_standplaats
+	,	StorageName    = "= StoreDir + '/standplaats.mmd'"
+	,	IntegrityCheck = "SourceData/standplaats/meta/ok"
 	{
-		attribute<geometries/rdc_mm> geometry (polygon)  := Impl/standplaats/mm/result;
-		attribute<uint64>            identificatie       := uint64(standplaats/Objecten_identificatie);
-		attribute<uint64>            nummeraanduiding_id := uint64(standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef[invert(standplaats/Objecten_heeftAlsHoofdadres/parent_rel[standplaats])]);
+		attribute<Geography/rdc_mm> geometry (polygon)  := SourceData/standplaats/mm/result;
+		attribute<uint64>           identificatie       := uint64(standplaats/Objecten_identificatie);
+		attribute<uint64>           nummeraanduiding_id := uint64(standplaats/Objecten_heeftAlsHoofdadres/Objectenref_NummeraanduidingRef[invert(standplaats/Objecten_heeftAlsHoofdadres/parent_rel[standplaats])]);
 
 		unit<uint8> status := Classifications/status/standplaats
 		{
@@ -66,15 +66,15 @@ container Store: Using = "Parameters"
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (standplaats) := value(Impl/standplaats/meta/status_rel, status);
-			attribute<uint32> VOORKOMENIDENTIFICATIE (standplaats) := Impl/standplaats/meta/VOORKOMENIDENTIFICATIE;
-			attribute<int32>  BEGINDATUM             (standplaats) := Impl/standplaats/meta/BEGINDATUM;
-			attribute<int32>  EINDDATUM              (standplaats) := Impl/standplaats/meta/EINDDATUM;
-			attribute<int32>  TIJDSTIPREGISTRATIE    (standplaats) := Impl/standplaats/meta/TIJDSTIPREGISTRATIE;
-			attribute<int32>  EINDREGISTRATIE        (standplaats) := Impl/standplaats/meta/EINDREGISTRATIE;
-			attribute<int32>  DOCUMENTDATUM          (standplaats) := Impl/standplaats/meta/DOCUMENTDATUM;
-			attribute<string> DOCUMENTNUMMER         (standplaats) := Impl/standplaats/meta/DOCUMENTNUMMER;
-			attribute<bool>   IS_GECONSTATEERD       (standplaats) := Impl/standplaats/meta/IS_GECONSTATEERD;
+			attribute<status> status_rel             (standplaats) := value(SourceData/standplaats/meta/status_rel, status);
+			attribute<uint32> VOORKOMENIDENTIFICATIE (standplaats) := SourceData/standplaats/meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (standplaats) := SourceData/standplaats/meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (standplaats) := SourceData/standplaats/meta/EINDDATUM;
+			attribute<int32>  TIJDSTIPREGISTRATIE    (standplaats) := SourceData/standplaats/meta/TIJDSTIPREGISTRATIE;
+			attribute<int32>  EINDREGISTRATIE        (standplaats) := SourceData/standplaats/meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (standplaats) := SourceData/standplaats/meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (standplaats) := SourceData/standplaats/meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (standplaats) := SourceData/standplaats/meta/IS_GECONSTATEERD;
 		}
 
 		unit<uint32> nevenadres := standplaats/Objecten_heeftAlsNevenadres/Objectenref_NummeraanduidingRef // 1->0..n relatie
@@ -85,12 +85,12 @@ container Store: Using = "Parameters"
 	}
 
 	// pand, vbo en nummeraanduiding: de samenvoeging van de tussenstores per fileset (stap 2)
-	unit<uint32> pand := ='union_unit(' + AsItemList(Impl/pand/fs) + ')'
-	, StorageName = "= StoreDir + '/pand.mmd'"
+	unit<uint32> pand := ='union_unit(' + AsItemList(Impl/step2/pand/fs) + ')'
+	,	StorageName = "= StoreDir + '/pand.mmd'"
 	{
-		attribute<geometries/rdc_mm> geometry (polygon)       := ='union_data(., ' + AsItemList(Impl/pand/fs + '/geometry') + ')';
-		attribute<uint64>            identificatie          := ='union_data(., ' + AsItemList(Impl/pand/fs + '/identificatie') + ')';
-		attribute<int16>             oorspronkelijkBouwjaar := ='union_data(., ' + AsItemList(Impl/pand/fs + '/oorspronkelijkBouwjaar') + ')';
+		attribute<Geography/rdc_mm> geometry (polygon)       := ='union_data(., ' + AsItemList(Impl/step2/pand/fs + '/geometry') + ')';
+		attribute<uint64>           identificatie          := ='union_data(., ' + AsItemList(Impl/step2/pand/fs + '/identificatie') + ')';
+		attribute<int16>            oorspronkelijkBouwjaar := ='union_data(., ' + AsItemList(Impl/step2/pand/fs + '/oorspronkelijkBouwjaar') + ')';
 
 		unit<uint8> status := Classifications/status/pand
 		{
@@ -99,25 +99,25 @@ container Store: Using = "Parameters"
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (pand) := ='value(union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/status_rel') + '), status)';
-			attribute<uint32> VOORKOMENIDENTIFICATIE (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/VOORKOMENIDENTIFICATIE') + ')';
-			attribute<int32>  BEGINDATUM             (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/BEGINDATUM') + ')';
-			attribute<int32>  EINDDATUM              (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/EINDDATUM') + ')';
-			attribute<int32>  TIJDSTIPREGISTRATIE    (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/TIJDSTIPREGISTRATIE') + ')';
-			attribute<int32>  EINDREGISTRATIE        (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/EINDREGISTRATIE') + ')';
-			attribute<int32>  DOCUMENTDATUM          (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/DOCUMENTDATUM') + ')';
-			attribute<string> DOCUMENTNUMMER         (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/DOCUMENTNUMMER') + ')';
-			attribute<bool>   IS_GECONSTATEERD       (pand) := ='union_data(.., ' + AsItemList(Impl/pand/fs + '/meta/IS_GECONSTATEERD') + ')';
+			attribute<status> status_rel             (pand) := ='value(union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/status_rel') + '), status)';
+			attribute<uint32> VOORKOMENIDENTIFICATIE (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/VOORKOMENIDENTIFICATIE') + ')';
+			attribute<int32>  BEGINDATUM             (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/BEGINDATUM') + ')';
+			attribute<int32>  EINDDATUM              (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/EINDDATUM') + ')';
+			attribute<int32>  TIJDSTIPREGISTRATIE    (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/TIJDSTIPREGISTRATIE') + ')';
+			attribute<int32>  EINDREGISTRATIE        (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/EINDREGISTRATIE') + ')';
+			attribute<int32>  DOCUMENTDATUM          (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/DOCUMENTDATUM') + ')';
+			attribute<string> DOCUMENTNUMMER         (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/DOCUMENTNUMMER') + ')';
+			attribute<bool>   IS_GECONSTATEERD       (pand) := ='union_data(.., ' + AsItemList(Impl/step2/pand/fs + '/meta/IS_GECONSTATEERD') + ')';
 		}
 	}
 
-	unit<uint32> vbo := ='union_unit(' + AsItemList(Impl/vbo/fileset/fs) + ')'
-	, StorageName = "= StoreDir + '/vbo.mmd'"
+	unit<uint32> vbo := ='union_unit(' + AsItemList(Impl/step2/vbo/fileset/fs) + ')'
+	,	StorageName = "= StoreDir + '/vbo.mmd'"
 	{
-		attribute<geometries/rdc_mm> geometry            := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/geometry') + ')';
-		attribute<uint64>            identificatie       := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/identificatie') + ')';
-		attribute<uint64>            nummeraanduiding_id := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/nummeraanduiding_id') + ')';
-		attribute<int32>             oppervlakte         := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/oppervlakte') + ')';
+		attribute<Geography/rdc_mm> geometry            := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/geometry') + ')';
+		attribute<uint64>           identificatie       := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/identificatie') + ')';
+		attribute<uint64>           nummeraanduiding_id := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/nummeraanduiding_id') + ')';
+		attribute<int32>            oppervlakte         := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/oppervlakte') + ')';
 
 		unit<uint8> status := Classifications/status/vbo
 		{
@@ -127,55 +127,55 @@ container Store: Using = "Parameters"
 		container gebruiksdoelen :=
 			for_each_nedv(
 				  Classifications/gebruiksdoel_vbo/name
-				, '= replace(Impl/vbo/gebruiksdoelen_expr, ' + quote(Impl/vbo/gebruiksdoelen_tobereplaced) + ', ' + quote(Classifications/gebruiksdoel_vbo/name) + ')'
+				, '= replace(Impl/step2/vbo/gebruiksdoelen_expr, ' + quote(Impl/step2/vbo/gebruiksdoelen_tobereplaced) + ', ' + quote(Classifications/gebruiksdoel_vbo/name) + ')'
 				, vbo
 				, bool
 			);
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (vbo) := ='value(union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/status_rel') + '), status)';
-			attribute<uint32> VOORKOMENIDENTIFICATIE (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/VOORKOMENIDENTIFICATIE') + ')';
-			attribute<int32>  BEGINDATUM             (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/BEGINDATUM') + ')';
-			attribute<int32>  EINDDATUM              (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/EINDDATUM') + ')';
-			attribute<int32>  TIJDSTIPREGISTRATIE    (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/TIJDSTIPREGISTRATIE') + ')';
-			attribute<int32>  EINDREGISTRATIE        (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/EINDREGISTRATIE') + ')';
-			attribute<int32>  DOCUMENTDATUM          (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/DOCUMENTDATUM') + ')';
-			attribute<string> DOCUMENTNUMMER         (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/DOCUMENTNUMMER') + ')';
-			attribute<bool>   IS_GECONSTATEERD       (vbo) := ='union_data(.., ' + AsItemList(Impl/vbo/fileset/fs + '/meta/IS_GECONSTATEERD') + ')';
+			attribute<status> status_rel             (vbo) := ='value(union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/status_rel') + '), status)';
+			attribute<uint32> VOORKOMENIDENTIFICATIE (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/VOORKOMENIDENTIFICATIE') + ')';
+			attribute<int32>  BEGINDATUM             (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/BEGINDATUM') + ')';
+			attribute<int32>  EINDDATUM              (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/EINDDATUM') + ')';
+			attribute<int32>  TIJDSTIPREGISTRATIE    (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/TIJDSTIPREGISTRATIE') + ')';
+			attribute<int32>  EINDREGISTRATIE        (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/EINDREGISTRATIE') + ')';
+			attribute<int32>  DOCUMENTDATUM          (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/DOCUMENTDATUM') + ')';
+			attribute<string> DOCUMENTNUMMER         (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/DOCUMENTNUMMER') + ')';
+			attribute<bool>   IS_GECONSTATEERD       (vbo) := ='union_data(.., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/meta/IS_GECONSTATEERD') + ')';
 		}
 
-		unit<uint32> polygon := Impl/vbo/polygon // 1->0..1 relatie: het vlak van een vbo zonder punt; geometry van de vbo is dan een punt binnen dit vlak
+		unit<uint32> polygon := Impl/step2/vbo/polygon // 1->0..1 relatie: het vlak van een vbo zonder punt; geometry van de vbo is dan een punt binnen dit vlak
 		{
-			attribute<vbo>               vbo_rel         := value(Impl/vbo/polygon/rij, vbo);
-			attribute<geometries/rdc_mm> geometry (poly) := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/polygon/geometry') + ')';
+			attribute<vbo>              vbo_rel         := value(Impl/step2/vbo/polygon/rij, vbo);
+			attribute<Geography/rdc_mm> geometry (poly) := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/polygon/geometry') + ')';
 		}
 
-		unit<uint32> gerelateerdPand := Impl/vbo/gerelateerdPand // 1->0..n relatie: de panden waartoe het voorkomen behoort
+		unit<uint32> gerelateerdPand := Impl/step2/vbo/gerelateerdPand // 1->0..n relatie: de panden waartoe het voorkomen behoort
 		{
-			attribute<vbo>    vbo_rel := value(Impl/vbo/gerelateerdPand/rij, vbo);
-			attribute<uint64> pand_id := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/gerelateerdPand/pand_id') + ')';
+			attribute<vbo>    vbo_rel := value(Impl/step2/vbo/gerelateerdPand/rij, vbo);
+			attribute<uint64> pand_id := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/gerelateerdPand/pand_id') + ')';
 		}
 
-		unit<uint32> nevenadres := Impl/vbo/nevenadres // 1->0..n relatie
+		unit<uint32> nevenadres := Impl/step2/vbo/nevenadres // 1->0..n relatie
 		{
-			attribute<vbo>    vbo_rel             := value(Impl/vbo/nevenadres/rij, vbo);
-			attribute<uint64> nummeraanduiding_id := ='union_data(., ' + AsItemList(Impl/vbo/fileset/fs + '/nevenadres/nummeraanduiding_id') + ')';
+			attribute<vbo>    vbo_rel             := value(Impl/step2/vbo/nevenadres/rij, vbo);
+			attribute<uint64> nummeraanduiding_id := ='union_data(., ' + AsItemList(Impl/step2/vbo/fileset/fs + '/nevenadres/nummeraanduiding_id') + ')';
 		}
 	}
 
-	unit<uint32> nummeraanduiding := ='union_unit(' + AsItemList(Impl/nummeraanduiding/fs) + ')'
-	, StorageName = "= StoreDir + '/nummeraanduiding.mmd'"
+	unit<uint32> nummeraanduiding := ='union_unit(' + AsItemList(Impl/step2/nummeraanduiding/fs) + ')'
+	,	StorageName = "= StoreDir + '/nummeraanduiding.mmd'"
 	{
-		attribute<uint64> identificatie     := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/identificatie') + ')';
-		attribute<int32>  huisnummer        := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/huisnummer') + ')';
-		attribute<string> huisletter        := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/huisletter') + ')';
-		attribute<string> toevoeging        := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/toevoeging') + ')';
-		attribute<string> postcode          := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/postcode') + ')';
-		attribute<uint64> openbareruimte_id := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/openbareruimte_id') + ')';
-		attribute<uint64> woonplaats_id     := ='union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/woonplaats_id') + ')', Descr = "Alleen gevuld als de woonplaats afwijkt van die van de openbare ruimte.";
+		attribute<uint64> identificatie     := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/identificatie') + ')';
+		attribute<int32>  huisnummer        := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/huisnummer') + ')';
+		attribute<string> huisletter        := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/huisletter') + ')';
+		attribute<string> toevoeging        := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/toevoeging') + ')';
+		attribute<string> postcode          := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/postcode') + ')';
+		attribute<uint64> openbareruimte_id := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/openbareruimte_id') + ')';
+		attribute<uint64> woonplaats_id     := ='union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/woonplaats_id') + ')', Descr = "Alleen gevuld als de woonplaats afwijkt van die van de openbare ruimte.";
 
-		attribute<typeAdresseerbaarObject> typeAdresseerbaarObject_rel := ='value(union_data(., ' + AsItemList(Impl/nummeraanduiding/fs + '/typeAdresseerbaarObject_rel') + '), typeAdresseerbaarObject)';
+		attribute<typeAdresseerbaarObject> typeAdresseerbaarObject_rel := ='value(union_data(., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/typeAdresseerbaarObject_rel') + '), typeAdresseerbaarObject)';
 
 		unit<uint8> typeAdresseerbaarObject := Classifications/typeAdresseerbaarObject
 		{
@@ -189,26 +189,26 @@ container Store: Using = "Parameters"
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (nummeraanduiding) := ='value(union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/status_rel') + '), status)';
-			attribute<uint32> VOORKOMENIDENTIFICATIE (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/VOORKOMENIDENTIFICATIE') + ')';
-			attribute<int32>  BEGINDATUM             (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/BEGINDATUM') + ')';
-			attribute<int32>  EINDDATUM              (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/EINDDATUM') + ')';
-			attribute<int32>  TIJDSTIPREGISTRATIE    (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/TIJDSTIPREGISTRATIE') + ')';
-			attribute<int32>  EINDREGISTRATIE        (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/EINDREGISTRATIE') + ')';
-			attribute<int32>  DOCUMENTDATUM          (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/DOCUMENTDATUM') + ')';
-			attribute<string> DOCUMENTNUMMER         (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/DOCUMENTNUMMER') + ')';
-			attribute<bool>   IS_GECONSTATEERD       (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/nummeraanduiding/fs + '/meta/IS_GECONSTATEERD') + ')';
+			attribute<status> status_rel             (nummeraanduiding) := ='value(union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/status_rel') + '), status)';
+			attribute<uint32> VOORKOMENIDENTIFICATIE (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/VOORKOMENIDENTIFICATIE') + ')';
+			attribute<int32>  BEGINDATUM             (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/BEGINDATUM') + ')';
+			attribute<int32>  EINDDATUM              (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/EINDDATUM') + ')';
+			attribute<int32>  TIJDSTIPREGISTRATIE    (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/TIJDSTIPREGISTRATIE') + ')';
+			attribute<int32>  EINDREGISTRATIE        (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/EINDREGISTRATIE') + ')';
+			attribute<int32>  DOCUMENTDATUM          (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/DOCUMENTDATUM') + ')';
+			attribute<string> DOCUMENTNUMMER         (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/DOCUMENTNUMMER') + ')';
+			attribute<bool>   IS_GECONSTATEERD       (nummeraanduiding) := ='union_data(.., ' + AsItemList(Impl/step2/nummeraanduiding/fs + '/meta/IS_GECONSTATEERD') + ')';
 		}
 	}
 
-	unit<uint32> openbareruimte := XML/openbareruimte/ParsedXML/Objecten_openbareruimte
-	, StorageName    = "= StoreDir + '/openbareruimte.mmd'"
-	, IntegrityCheck = "Impl/openbareruimte/meta/ok && Impl/openbareruimte/type_ok"
+	unit<uint32> openbareruimte := SourceData/openbareruimte/ParsedXML/Objecten_openbareruimte
+	,	StorageName    = "= StoreDir + '/openbareruimte.mmd'"
+	,	IntegrityCheck = "SourceData/openbareruimte/meta/ok && SourceData/openbareruimte/type_ok"
 	{
 		attribute<uint64> identificatie := uint64(openbareruimte/Objecten_identificatie);
 		attribute<string> naam          := MakeDefined(openbareruimte/Objecten_Naam, '');
-		attribute<type>   type_rel      := value(Impl/openbareruimte/type_rel, type);
-		attribute<uint64> woonplaats_id := uint64(XML/openbareruimte/gerelateerdeWoonplaats_id);
+		attribute<type>   type_rel      := value(SourceData/openbareruimte/type_rel, type);
+		attribute<uint64> woonplaats_id := uint64(SourceData/openbareruimte/gerelateerdeWoonplaats_id);
 
 		unit<uint8> type := Classifications/openbareruimte_type
 		{
@@ -222,25 +222,25 @@ container Store: Using = "Parameters"
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (openbareruimte) := value(Impl/openbareruimte/meta/status_rel, status);
-			attribute<uint32> VOORKOMENIDENTIFICATIE (openbareruimte) := Impl/openbareruimte/meta/VOORKOMENIDENTIFICATIE;
-			attribute<int32>  BEGINDATUM             (openbareruimte) := Impl/openbareruimte/meta/BEGINDATUM;
-			attribute<int32>  EINDDATUM              (openbareruimte) := Impl/openbareruimte/meta/EINDDATUM;
-			attribute<int32>  TIJDSTIPREGISTRATIE    (openbareruimte) := Impl/openbareruimte/meta/TIJDSTIPREGISTRATIE;
-			attribute<int32>  EINDREGISTRATIE        (openbareruimte) := Impl/openbareruimte/meta/EINDREGISTRATIE;
-			attribute<int32>  DOCUMENTDATUM          (openbareruimte) := Impl/openbareruimte/meta/DOCUMENTDATUM;
-			attribute<string> DOCUMENTNUMMER         (openbareruimte) := Impl/openbareruimte/meta/DOCUMENTNUMMER;
-			attribute<bool>   IS_GECONSTATEERD       (openbareruimte) := Impl/openbareruimte/meta/IS_GECONSTATEERD;
+			attribute<status> status_rel             (openbareruimte) := value(SourceData/openbareruimte/meta/status_rel, status);
+			attribute<uint32> VOORKOMENIDENTIFICATIE (openbareruimte) := SourceData/openbareruimte/meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (openbareruimte) := SourceData/openbareruimte/meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (openbareruimte) := SourceData/openbareruimte/meta/EINDDATUM;
+			attribute<int32>  TIJDSTIPREGISTRATIE    (openbareruimte) := SourceData/openbareruimte/meta/TIJDSTIPREGISTRATIE;
+			attribute<int32>  EINDREGISTRATIE        (openbareruimte) := SourceData/openbareruimte/meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (openbareruimte) := SourceData/openbareruimte/meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (openbareruimte) := SourceData/openbareruimte/meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (openbareruimte) := SourceData/openbareruimte/meta/IS_GECONSTATEERD;
 		}
 	}
 
-	unit<uint32> woonplaats := XML/woonplaats/ParsedXML/Objecten_Woonplaats
-	, StorageName    = "= StoreDir + '/woonplaats.mmd'"
-	, IntegrityCheck = "Impl/woonplaats/meta/ok"
+	unit<uint32> woonplaats := SourceData/woonplaats/ParsedXML/Objecten_Woonplaats
+	,	StorageName    = "= StoreDir + '/woonplaats.mmd'"
+	,	IntegrityCheck = "SourceData/woonplaats/meta/ok"
 	{
-		attribute<geometries/rdc_mm> geometry (polygon) := Impl/woonplaats/mm/result;
-		attribute<uint64>            identificatie      := uint64(woonplaats/Objecten_identificatie);
-		attribute<string>            woonplaatsNaam     := MakeDefined(woonplaats/Objecten_Naam, '');
+		attribute<Geography/rdc_mm> geometry (polygon) := SourceData/woonplaats/mm/result;
+		attribute<uint64>           identificatie      := uint64(woonplaats/Objecten_identificatie);
+		attribute<string>           woonplaatsNaam     := MakeDefined(woonplaats/Objecten_Naam, '');
 
 		unit<uint8> status := Classifications/status/woonplaats
 		{
@@ -249,124 +249,17 @@ container Store: Using = "Parameters"
 
 		container meta // op de domain van de store zelf, zodat MMD er geen aparte domain voor vastlegt
 		{
-			attribute<status> status_rel             (woonplaats) := value(Impl/woonplaats/meta/status_rel, status);
-			attribute<uint32> VOORKOMENIDENTIFICATIE (woonplaats) := Impl/woonplaats/meta/VOORKOMENIDENTIFICATIE;
-			attribute<int32>  BEGINDATUM             (woonplaats) := Impl/woonplaats/meta/BEGINDATUM;
-			attribute<int32>  EINDDATUM              (woonplaats) := Impl/woonplaats/meta/EINDDATUM;
-			attribute<int32>  TIJDSTIPREGISTRATIE    (woonplaats) := Impl/woonplaats/meta/TIJDSTIPREGISTRATIE;
-			attribute<int32>  EINDREGISTRATIE        (woonplaats) := Impl/woonplaats/meta/EINDREGISTRATIE;
-			attribute<int32>  DOCUMENTDATUM          (woonplaats) := Impl/woonplaats/meta/DOCUMENTDATUM;
-			attribute<string> DOCUMENTNUMMER         (woonplaats) := Impl/woonplaats/meta/DOCUMENTNUMMER;
-			attribute<bool>   IS_GECONSTATEERD       (woonplaats) := Impl/woonplaats/meta/IS_GECONSTATEERD;
+			attribute<status> status_rel             (woonplaats) := value(SourceData/woonplaats/meta/status_rel, status);
+			attribute<uint32> VOORKOMENIDENTIFICATIE (woonplaats) := SourceData/woonplaats/meta/VOORKOMENIDENTIFICATIE;
+			attribute<int32>  BEGINDATUM             (woonplaats) := SourceData/woonplaats/meta/BEGINDATUM;
+			attribute<int32>  EINDDATUM              (woonplaats) := SourceData/woonplaats/meta/EINDDATUM;
+			attribute<int32>  TIJDSTIPREGISTRATIE    (woonplaats) := SourceData/woonplaats/meta/TIJDSTIPREGISTRATIE;
+			attribute<int32>  EINDREGISTRATIE        (woonplaats) := SourceData/woonplaats/meta/EINDREGISTRATIE;
+			attribute<int32>  DOCUMENTDATUM          (woonplaats) := SourceData/woonplaats/meta/DOCUMENTDATUM;
+			attribute<string> DOCUMENTNUMMER         (woonplaats) := SourceData/woonplaats/meta/DOCUMENTNUMMER;
+			attribute<bool>   IS_GECONSTATEERD       (woonplaats) := SourceData/woonplaats/meta/IS_GECONSTATEERD;
 		}
 	}
 
-	parameter<string> overzicht := overzichten/impl/genereer_rapport;
-
-	container Impl // De hulpitems: de drivers van stap 1, de lezers van stap 2, en per objecttype de afleidingen voor de store
-	{
-		// Stap 1: een driver per fileset in plaats van alle filesets als ExplicitSuppliers van een enkel item.
-		// ExplicitSuppliers-belang wordt losgelaten zodra het houdende item Committed is, dus met een driver
-		// per fileset laat elke fileset zijn XML en parse-resultaat los zodra zijn tussenstore geschreven is
-		// (ObjectVision/GeoDMS#1259). De drivers hieronder zijn de ExplicitSuppliers van /MaakTussenstores.
-		container tussenstores
-		{
-			Template driver
-			{
-				parameter<string> item;
-				parameter<string> result := 'OK', ExplicitSuppliers = "= item";
-			}
-
-			container pand_drivers             := for_each_ne('d_' + string(xml/pand/fileset/values),             'driver(' + quote('xml/pand/PerFileSet/fs_'             + string(xml/pand/fileset/values)             + '/pand') + ')');
-			container vbo_drivers              := for_each_ne('d_' + string(xml/vbo/fileset/values),              'driver(' + quote('xml/vbo/PerFileSet/fs_'              + string(xml/vbo/fileset/values)              + '/vbo') + ')');
-			container nummeraanduiding_drivers := for_each_ne('d_' + string(xml/nummeraanduiding/fileset/values), 'driver(' + quote('xml/nummeraanduiding/PerFileSet/fs_' + string(xml/nummeraanduiding/fileset/values) + '/nummeraanduiding') + ')');
-
-			parameter<string> pand             := 'OK', ExplicitSuppliers = "= AsList('pand_drivers/d_'             + string(xml/pand/fileset/values)             + '/result', ';')";
-			parameter<string> vbo              := 'OK', ExplicitSuppliers = "= AsList('vbo_drivers/d_'              + string(xml/vbo/fileset/values)              + '/result', ';')";
-			parameter<string> nummeraanduiding := 'OK', ExplicitSuppliers = "= AsList('nummeraanduiding_drivers/d_' + string(xml/nummeraanduiding/fileset/values) + '/result', ';')";
-		}
-
-		// Stap 2 leest de tussenstores terug als alleen-lezen holders; die bestaan pas na stap 1, dus tot dan
-		// zijn deze items en de stores van pand, vbo en nummeraanduiding niet te berekenen.
-		container temp
-		{
-			Template lezer
-			{
-				parameter<string> pad;
-				unit<uint32> store : StorageName = "= pad", StorageReadOnly = "True" {}
-			}
-
-			container pand             := for_each_ne('fs_' + string(xml/pand/fileset/values),             'lezer(' + quote(TempDir + '/pand/fs_'             + string(xml/pand/fileset/values)             + '.mmd') + ')');
-			container vbo              := for_each_ne('fs_' + string(xml/vbo/fileset/values),              'lezer(' + quote(TempDir + '/vbo/fs_'              + string(xml/vbo/fileset/values)              + '.mmd') + ')');
-			container nummeraanduiding := for_each_ne('fs_' + string(xml/nummeraanduiding/fileset/values), 'lezer(' + quote(TempDir + '/nummeraanduiding/fs_' + string(xml/nummeraanduiding/fileset/values) + '.mmd') + ')');
-		}
-
-		container ligplaats
-		{
-			container meta := Templates/meta(xml/ligplaats/ParsedXML/Objecten_ligplaats, xml/ligplaats/ParsedXML/Objecten_ligplaats/Objecten_Status, xml/ligplaats/ParsedXML/Objecten_ligplaats/Objecten_identificatie, Classifications/status/ligplaats);
-			container mm   := Templates/polygon_mm(xml/ligplaats/ParsedXML/Objecten_ligplaats, xml/ligplaats/geoBuilder/result);
-		}
-
-		container standplaats
-		{
-			container meta := Templates/meta(xml/standplaats/ParsedXML/Objecten_standplaats, xml/standplaats/ParsedXML/Objecten_standplaats/Objecten_Status, xml/standplaats/ParsedXML/Objecten_standplaats/Objecten_identificatie, Classifications/status/standplaats);
-			container mm   := Templates/polygon_mm(xml/standplaats/ParsedXML/Objecten_standplaats, xml/standplaats/geoBuilder/result);
-		}
-
-		container pand
-		{
-			attribute<string> fs (xml/pand/fileset) := 'Impl/temp/pand/fs_' + string(xml/pand/fileset/values) + '/store', Descr = "De tussenstore van elke fileset, als item.";
-		}
-
-		container vbo
-		{
-			unit<uint32> fileset := xml/vbo/fileset
-			{
-				attribute<string> fs     := 'Impl/temp/vbo/fs_' + string(xml/vbo/fileset/values) + '/store', Descr = "De tussenstore van elke fileset, als item.";
-				attribute<uint32> nr     := ='union_data(., ' + AsItemList('#' + fs) + ')';
-				attribute<uint32> offset := cumulate(nr) - nr, Descr = "De rij in Store/vbo van het eerste voorkomen van deze fileset; mutatie_rel in de tussenstores telt binnen de fileset.";
-			}
-
-			parameter<string> gebruiksdoelen_expr         := 'union_data(vbo, ' + AsItemList(fileset/fs + '/gebruiksdoelen/@@@') + ')';
-			parameter<string> gebruiksdoelen_tobereplaced := '@@@';
-
-			// de subtabellen samengevoegd, met voor elke rij de rij van het vbo-voorkomen in Store/vbo
-			unit<uint32> polygon := ='union_unit(' + AsItemList(fileset/fs + '/polygon') + ')'
-			{
-				attribute<fileset> fileset_rel := ='union_data(., ' + AsItemList('const(' + string(id(fileset)) + '[fileset], ' + fileset/fs + '/polygon)') + ')';
-				attribute<uint32>  mutatie_rel := ='union_data(., ' + AsItemList(fileset/fs + '/polygon/mutatie_rel') + ')';
-				attribute<uint32>  rij         := fileset/offset[fileset_rel] + mutatie_rel;
-			}
-			unit<uint32> gerelateerdPand := ='union_unit(' + AsItemList(fileset/fs + '/gerelateerdPand') + ')'
-			{
-				attribute<fileset> fileset_rel := ='union_data(., ' + AsItemList('const(' + string(id(fileset)) + '[fileset], ' + fileset/fs + '/gerelateerdPand)') + ')';
-				attribute<uint32>  mutatie_rel := ='union_data(., ' + AsItemList(fileset/fs + '/gerelateerdPand/mutatie_rel') + ')';
-				attribute<uint32>  rij         := fileset/offset[fileset_rel] + mutatie_rel;
-			}
-			unit<uint32> nevenadres := ='union_unit(' + AsItemList(fileset/fs + '/nevenadres') + ')'
-			{
-				attribute<fileset> fileset_rel := ='union_data(., ' + AsItemList('const(' + string(id(fileset)) + '[fileset], ' + fileset/fs + '/nevenadres)') + ')';
-				attribute<uint32>  mutatie_rel := ='union_data(., ' + AsItemList(fileset/fs + '/nevenadres/mutatie_rel') + ')';
-				attribute<uint32>  rij         := fileset/offset[fileset_rel] + mutatie_rel;
-			}
-		}
-
-		container nummeraanduiding
-		{
-			attribute<string> fs (xml/nummeraanduiding/fileset) := 'Impl/temp/nummeraanduiding/fs_' + string(xml/nummeraanduiding/fileset/values) + '/store', Descr = "De tussenstore van elke fileset, als item.";
-		}
-
-		container openbareruimte
-		{
-			container meta := Templates/meta(XML/openbareruimte/ParsedXML/Objecten_openbareruimte, XML/openbareruimte/ParsedXML/Objecten_openbareruimte/Objecten_Status, XML/openbareruimte/ParsedXML/Objecten_openbareruimte/Objecten_identificatie, Classifications/status/openbareruimte);
-			attribute<Classifications/openbareruimte_type> type_rel (XML/openbareruimte/ParsedXML/Objecten_openbareruimte) := rlookup(XML/openbareruimte/ParsedXML/Objecten_openbareruimte/Objecten_Type, Classifications/openbareruimte_type/label);
-			parameter<bool> type_ok := all(IsDefined(type_rel)), Descr = "Elk type openbare ruimte staat in de lijst; een nieuw type van het Kadaster stopt de run.";
-		}
-
-		container woonplaats
-		{
-			container meta := Templates/meta(XML/woonplaats/ParsedXML/Objecten_Woonplaats, XML/woonplaats/ParsedXML/Objecten_Woonplaats/Objecten_Status, XML/woonplaats/ParsedXML/Objecten_Woonplaats/Objecten_identificatie, Classifications/status/woonplaats);
-			container mm   := Templates/polygon_mm(XML/woonplaats/ParsedXML/Objecten_Woonplaats, XML/woonplaats/geoBuilder/result);
-		}
-	}
+	parameter<string> overzicht := Impl/overzichten/impl/genereer_rapport, Descr = "De tellingen van de run, ook geschreven als overzicht.txt in StoreDir.";
 }

@@ -71,14 +71,13 @@ container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20
 	{
 		unit<int32>   datum;
 		unit<int16>   jaar;
-		unit<int32>   mm        := int32(0.001 * m);
 		unit<uint16>  cm_uint16 := uint16(0.01 * m);
 		unit<float64> m         := baseunit('m', float64);
 	}
 
-	// De stores van Xml2MMD noemen hun coordinateneenheid bij haar absolute pad: /geometries/rdc_mm (ipoint, millimeters).
-	// De snapshot bag.mmd staat in /geometries/rdc (dpoint, meters), zodat een lezer er direct mee kan rekenen.
-	container geometries
+	// De stores van Xml2MMD noemen hun coordinateneenheid bij haar absolute pad: /Geography/rdc_mm (ipoint, millimeters).
+	// De snapshot bag.mmd staat in /Geography/rdc (dpoint, meters), zodat een lezer er direct mee kan rekenen.
+	container Geography
 	{
 		#include <wmts_layer.dms>
 
@@ -92,7 +91,7 @@ container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20
 	{
 		// Voorbeeld voor het configureren van een geo_selectie met een rechthoek, pas de pointset/X en pointset/Y attributen aan voor een nieuwe rechthoek
 		parameter<string>         Label           := 'NieuwegeinRechthoek';
-		attribute<geometries/rdc> geometry (poly) := points2sequence(pointset/point, pointset/sequence, pointset/ordinal);
+		attribute<Geography/rdc> geometry (poly) := points2sequence(pointset/point, pointset/sequence, pointset/ordinal);
 
 		unit<uint32> pointset: nrofrows = 5
 		{
@@ -103,20 +102,13 @@ container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20
 
 			attribute<eenheden/m>     X        := union_data(., X_min, X_max, X_max, X_min, X_min);
 			attribute<eenheden/m>     Y        := union_data(., Y_min, Y_min, Y_max, Y_max, Y_min);
-			attribute<geometries/rdc> point    := point_yx(Y, X, geometries/rdc);
+			attribute<Geography/rdc> point    := point_yx(Y, X, Geography/rdc);
 			attribute<geo_selectie>   sequence := const(0[geo_selectie],.);
 			attribute<.>              ordinal  := id(.);
 		}
 	}
 
-	// Voorbeeld voor het lezen van een geo_selectie uit een shape file
-	// : StorageName     = "%ProjDir%/data/geo_sel.shp"
-	// , StorageType     = "gdal.vect"
-	// , StorageReadOnly = "True"
-	// {
-		// parameter<string>         Label := 'BredaEO';
-		// attribute<geometries/rdc> geometry (poly);
-	// }
+	// Een gebied uit een shapefile in plaats van de rechthoek: zie de wiki, How to use the MakeSnapshot script.
 
 	unit<uint8> objecttypes: nrofrows = 7
 	{
@@ -216,16 +208,16 @@ container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20
 	{
 		// begin case parameters
 		unit<uint32> domain;
-		attribute<geometries/rdc> geometry (polygon, domain);
+		attribute<Geography/rdc> geometry (polygon, domain);
 		// end case parameters
 
 		container bbox := bbox_min_max(domain,geometry);
 
-		attribute<geometries/rdc> x_min_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> x_min_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_min[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> x_max_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> x_max_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_max[eenheden/m], geometries/rdc);
-		attribute<geometries/rdc> centroid    (domain) := centroid(geometry);
+		attribute<Geography/rdc> x_min_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_min[eenheden/m], Geography/rdc);
+		attribute<Geography/rdc> x_min_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_min[eenheden/m], Geography/rdc);
+		attribute<Geography/rdc> x_max_y_max (domain) := point_yx(bbox/y_max[eenheden/m], bbox/x_max[eenheden/m], Geography/rdc);
+		attribute<Geography/rdc> x_max_y_min (domain) := point_yx(bbox/y_min[eenheden/m], bbox/x_max[eenheden/m], Geography/rdc);
+		attribute<Geography/rdc> centroid    (domain) := centroid(geometry);
 
 		attribute<bool> result (domain) :=
 			   isDefined(point_in_polygon(x_min_y_min, /geo_selectie/geometry))
@@ -248,11 +240,11 @@ container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20
 	{
 		// begin case parameters
 		unit<uint32> domain;
-		attribute<geometries/rdc> geometry (polygon, domain);
+		attribute<Geography/rdc> geometry (polygon, domain);
 		// end case parameters
 
-		attribute<geometries/rdc> lowerbound (domain) := lower_bound(geometry);
-		attribute<geometries/rdc> upperbound (domain) := upper_bound(geometry);
+		attribute<Geography/rdc> lowerbound (domain) := lower_bound(geometry);
+		attribute<Geography/rdc> upperbound (domain) := upper_bound(geometry);
 
 		attribute<eenheden/m>     x_min      (domain) := PointCol(lowerbound)[eenheden/m];
 		attribute<eenheden/m>     x_max      (domain) := PointCol(upperbound)[eenheden/m];

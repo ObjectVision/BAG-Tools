@@ -32,12 +32,12 @@ The code lists the tools share (the statuses per object type, the gebruiksdoelen
 ## quick start
 
 1. Unzip the LIG, NUM, OPR, PND, STA, VBO and WPL zip files of the extract into `%SourceDataDir%/BAG/<yyyymmdd>/NGR`. `%SourceDataDir%` is a GeoDMS placeholder, `C:/SourceData` by default; the BAG folder itself is the overridable setting `BAG_DIR` of every configuration, on the command line the environment variable `GEODMS_Overridable_BAG_DIR`.
-2. Set `date` in `cfg/Xml2MMD.dms` to that date and run `bat\RunXml2MMD.bat`. In the GeoDMS GUI: double click `MaakTussenstores`, reopen the configuration, then double click `MaakMMDBestanden`. The stores appear in `%SourceDataDir%/BAG/<yyyymmdd>/mmd`, the intermediate stores in `%LocalDataProjDir%/Temp/<yyyymmdd>`.
+2. Set `date` in `cfg/Xml2MMD.dms` to that date and run `bat\RunXml2MMD.bat`. In the GeoDMS GUI: double click `Step1_Make_Temp_Files`, reopen the configuration, then double click `Step2_Make_MMD_Files`. The stores appear in `%SourceDataDir%/BAG/<yyyymmdd>/mmd`, the intermediate stores in `%LocalDataProjDir%/Temp/<yyyymmdd>`.
 3. Set `BAG_Date` and `Snapshot_Date_Input` in `cfg/MakeSnapshot.dms`, open it in the GUI, pick one of the examples under `snapshots` and double click its `MaakVolledigeSnapshot`. The snapshot appears in `%SourceDataDir%/BAG/snapshots.ext/<yyyymmdd>.new/bag.mmd`.
 4. Read a store from your own project with an empty storage holder; the store describes itself. Only the coordinate units and the two date units are yours to declare, under exactly these names:
 
 ```
-container geometries
+container Geography
 {
 	unit<dpoint> rdc    : SpatialReference = "EPSG:28992";                                        // the snapshot: metres
 	unit<ipoint> rdc_mm := gridset(rdc, point_yx(0.001d, 0.001d), point_yx(0d, 0d), ipoint);      // the stores of Xml2MMD: millimetres
@@ -53,7 +53,7 @@ attribute<string> pand_id_tekst (bag/vbo) := right('0000000000000000' + string(p
 unit<uint32> alle_panden : StorageName = "%SourceDataDir%/BAG/20261008/mmd/pand.mmd", StorageReadOnly = "True"
 {
 }
-attribute<geometries/rdc> geometry_m (alle_panden, polygon) := alle_panden/geometry[geometries/rdc];
+attribute<Geography/rdc> geometry_m (alle_panden, polygon) := alle_panden/geometry[Geography/rdc];
 attribute<string>         status     (alle_panden)          := alle_panden/status/Label[alle_panden/meta/status_rel];
 ```
 
@@ -68,7 +68,7 @@ The stores of Xml2MMD and the snapshot of MakeSnapshot changed format. Readers o
 - identificaties are `uint64` instead of strings, in the stores and in the snapshot; a relation such as `vbo/pand_rel` is unchanged;
 - the status of a voorkomen is a code, `meta/status_rel`, into the label table `status` in the store (in the snapshot `status_pand` and so on); `typeAdresseerbaarObject` and the `type` of an openbare ruimte are codes too, with the tables `typeAdresseerbaarObject` and `type` (in the snapshot `type_openbareruimte`);
 - `TIJDSTIPREGISTRATIE` and `EINDREGISTRATIE` are dates, `yyyymmdd`, no longer timestamps as text;
-- the geometry of the stores is in millimetres, `/geometries/rdc_mm`, and the pand polygons are simplified with a tolerance of 0.1 m; the snapshot stays in metres;
+- the geometry of the stores is in millimetres, `/Geography/rdc_mm`, and the pand polygons are simplified with a tolerance of 0.1 m; the snapshot stays in metres;
 - a verblijfsobject that the BAG delivers with a polygon has a point inside that polygon (`centroid_or_mid`); the snapshot used the centroid, which could lie outside a concave polygon;
 - a coordinate further than 2.147 km from the origin does not fit in millimetres as `int32`; such a pand gets an empty polygon and such a vbo no point (108 pand voorkomens and 108 vbo voorkomens in the extract of 2026-10-08, data errors far outside the country, which a snapshot drops anyway); `overzicht.txt` counts them;
 - pand, vbo and nummeraanduiding are one store each; the file sets `fs_<n>.mmd` and `nr_stores.csv` are gone;

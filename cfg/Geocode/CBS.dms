@@ -47,7 +47,6 @@ container CBS: Source = "http://www.cbs.nl/nl-NL/menu/themas/dossiers/nederland-
 		attribute<rdc_meter>  geometry                                 (poly) := ='gpkg/gemeente'+gegeneraliseerd_str+'/geometry[rdc_meter]';
 		attribute<string>    label                                           := statnaam;
 		attribute<string>    name                                            := AsItemName(statnaam);
-		attribute<uint32>    gem_nr                                          := uint32(right(statcode, 4));
 		attribute<string>    GM_CODE                                         := statcode;
 		attribute<string>    GM_NAAM                                         := name;
 	}
