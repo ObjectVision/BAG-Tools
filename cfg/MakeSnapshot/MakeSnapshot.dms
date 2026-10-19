@@ -30,8 +30,8 @@ template Snapshot_T
 	parameter<string>         format_export;
 	// end case parameters
 
-	parameter<string> SnapshotGeoDirPart := met_geo_sel ? geo_selectie/Label + '/' : '';
-	parameter<string> SnapshotDir        := SnapshotBaseDir + '/' + SnapshotGeoDirPart + string(prik_datum) + '.new';
+	parameter<string> SnapshotGeoDirPart := met_geo_sel ? '_' + geo_selectie/Label : '', Descr = "Een gebiedssnapshot krijgt het label van geo_selectie als staart van de mapnaam.";
+	parameter<string> SnapshotDir        := '%BAG_DIR%/BAG_' + BAG_Date + '_Snapshot_' + string(prik_datum) + SnapshotGeoDirPart, Descr = "De map van de snapshot: eerst de datum van het extract, dan de peildatum.";
 
 	parameter<bool> WriteToMMD := lowercase(format_export) = 'mmd';
 

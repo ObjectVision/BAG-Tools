@@ -31,9 +31,9 @@ The code lists the tools share (the statuses per object type, the gebruiksdoelen
 
 ## quick start
 
-1. Unzip the LIG, NUM, OPR, PND, STA, VBO and WPL zip files of the extract into `%SourceDataDir%/BAG/<yyyymmdd>/NGR`. `%SourceDataDir%` is a GeoDMS placeholder, `C:/SourceData` by default; the BAG folder itself is the overridable setting `BAG_DIR` of every configuration, on the command line the environment variable `GEODMS_Overridable_BAG_DIR`.
-2. Set `date` in `cfg/Xml2MMD.dms` to that date and run `bat\RunXml2MMD.bat`. In the GeoDMS GUI: double click `Step1_Make_Temp_Files`, reopen the configuration, then double click `Step2_Make_MMD_Files`. The stores appear in `%SourceDataDir%/BAG/<yyyymmdd>/mmd`, the intermediate stores in `%LocalDataProjDir%/Temp/<yyyymmdd>`.
-3. Set `BAG_Date` and `Snapshot_Date_Input` in `cfg/MakeSnapshot.dms`, open it in the GUI, pick one of the examples under `snapshots` and double click its `MaakVolledigeSnapshot`. The snapshot appears in `%SourceDataDir%/BAG/snapshots.ext/<yyyymmdd>.new/bag.mmd`.
+1. Unzip the LIG, NUM, OPR, PND, STA, VBO and WPL zip files of the extract into `%SourceDataDir%/BAG/BAG_<yyyymmdd>_XML`. `%SourceDataDir%` is a GeoDMS placeholder, `C:/SourceData` by default; the BAG folder itself is the overridable setting `BAG_DIR` of every configuration, on the command line the environment variable `GEODMS_Overridable_BAG_DIR`.
+2. Set `date` in `cfg/Xml2MMD.dms` to that date and run `bat\RunXml2MMD.bat`. In the GeoDMS GUI: double click `Step1_Make_Temp_Files`, reopen the configuration, then double click `Step2_Make_MMD_Files`. The stores appear in `%SourceDataDir%/BAG/BAG_<yyyymmdd>_History`, the intermediate stores in `%LocalDataProjDir%/Temp/<yyyymmdd>`.
+3. Set `BAG_Date` and `Snapshot_Date_Input` in `cfg/MakeSnapshot.dms`, open it in the GUI, pick one of the examples under `snapshots` and double click its `MaakVolledigeSnapshot`. The snapshot appears in `%SourceDataDir%/BAG/BAG_<BAG_Date>_Snapshot_<Snapshot_Date>/bag.mmd`; a snapshot of an area gets the label of the area as a suffix, `..._Snapshot_<Snapshot_Date>_<Label>`.
 4. Read a store from your own project with an empty storage holder; the store describes itself. Only the coordinate units and the two date units are yours to declare, under exactly these names:
 
 ```
@@ -44,13 +44,13 @@ container Geography
 }
 container eenheden   { unit<int16> jaar; unit<int32> datum; }
 
-container bag : StorageName = "%SourceDataDir%/BAG/snapshots.ext/20261001/bag.mmd", StorageReadOnly = "True"
+container bag : StorageName = "%SourceDataDir%/BAG/BAG_20261008_Snapshot_20261001/bag.mmd", StorageReadOnly = "True"
 {
 }
 attribute<uint64> pand_id (bag/vbo) := bag/pand/identificatie[bag/vbo/pand_rel];
 attribute<string> pand_id_tekst (bag/vbo) := right('0000000000000000' + string(pand_id), 16);   // the identificatie as the BAG writes it
 
-unit<uint32> alle_panden : StorageName = "%SourceDataDir%/BAG/20261008/mmd/pand.mmd", StorageReadOnly = "True"
+unit<uint32> alle_panden : StorageName = "%SourceDataDir%/BAG/BAG_20261008_History/pand.mmd", StorageReadOnly = "True"
 {
 }
 attribute<Geography/rdc> geometry_m (alle_panden, polygon) := alle_panden/geometry[Geography/rdc];
@@ -72,6 +72,7 @@ The stores of Xml2MMD and the snapshot of MakeSnapshot changed format. Readers o
 - a verblijfsobject that the BAG delivers with a polygon has a point inside that polygon (`centroid_or_mid`); the snapshot used the centroid, which could lie outside a concave polygon;
 - a coordinate further than 2.147 km from the origin does not fit in millimetres as `int32`; such a pand gets an empty polygon and such a vbo no point (108 pand voorkomens and 108 vbo voorkomens in the extract of 2026-10-08, data errors far outside the country, which a snapshot drops anyway); `overzicht.txt` counts them;
 - pand, vbo and nummeraanduiding are one store each; the file sets `fs_<n>.mmd` and `nr_stores.csv` are gone;
+- the folders are named after what they hold: `BAG_<date>_XML` for the unpacked extract (was `<date>/NGR`), `BAG_<date>_History` for the stores (was `<date>/mmd`) and `BAG_<date>_Snapshot_<peildatum>` for a snapshot (was `snapshots.ext/<peildatum>.new`), all directly under `BAG_DIR`; the name of a snapshot now carries the date of the extract it was made from;
 - the snapshot chooses, per object, the voorkomen with the highest voorkomenidentificatie among those valid on the date, for every attribute; it used to take the last one in file order for some attributes.
 
 On the extract of 2026-10-08 the new stores hold the same voorkomens, statuses, dates, relations and attributes as the previous format (checked voorkomen by voorkomen), and a snapshot for 2026-10-01 has the same 11.3 million panden, 9.6 million vbo's and 10.1 million nummeraanduidingen with the same chosen voorkomens, statuses, dates and relations. The differences are the simplified pand polygons (14% fewer points; 116.660 of the 24.7 million pand voorkomens in the stores and 37.914 of the panden in the snapshot change area by more than 1 m², at most 37 m² for a real pand), 194 panden whose woonpand type changes with it, and the point of 11 vbo's with a polygon, which moves up to 11 m to a point inside the polygon.

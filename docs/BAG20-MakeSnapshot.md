@@ -49,7 +49,7 @@ Optional, if the height information parameter is set to True (see [[How to use t
 
 If updating item: MaakVolledigeSnapshot or MaakAlleenAdressenTabel results in an error, check if:
 
-1. your _%SourceDataDir%_/BAG/_date_/mmd folder contains an .mmd store for each BAG object type (don't forget step 6 of the [[BAG20 Xml2MMD]] process).
+1. your _%SourceDataDir%_/BAG/BAG\__date_\_History folder contains an .mmd store for each BAG object type (don't forget step 6 of the [[BAG20 Xml2MMD]] process).
 2. your _%SourceDataDir%_/PHN folder contains a PHN_<I>date</I>.fss folder with 7 files, see also [requirements](https://github.com/ObjectVision/BAG-Tools/wiki#requirements).
 
 After solving, ignore the error(s) and reload the configuration file.

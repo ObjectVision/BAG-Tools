@@ -22,8 +22,8 @@ rem                   geos (default) of dms; doorgegeven als de
 rem                   ConfigSettings/Overridable-instelling GEODMS_Overridable_GEO_ENGINE
 rem    MEM_BUDGET_MB  geheugenbudget in MB voor /SB (default 8000)
 rem    BAG_DIR        de map met per extract een submap <date> (default
-rem                   %SourceDataDir%/BAG); de XML staat in <BAG_DIR>/<date>/NGR,
-rem                   de stores komen in <BAG_DIR>/<date>/mmd
+rem                   %SourceDataDir%/BAG); de XML staat in <BAG_DIR>/BAG_<date>_XML,
+rem                   de stores komen in <BAG_DIR>/BAG_<date>_History
 rem    PER_FILESET=1  elke fileset in een apart GeoDmsRun-proces, voor wie het
 rem                   geheugen hard wil begrenzen op een fileset; daarna voegt
 rem                   een proces de tussenstores samen

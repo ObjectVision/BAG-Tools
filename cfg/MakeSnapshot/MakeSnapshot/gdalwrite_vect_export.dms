@@ -33,7 +33,7 @@ container gdalwrite_vect_export
 		unit<uint32> optionSet := optionSets/GPKG/optionSet;
 		attribute<string> GDAL_LayerCreationOptions (optionSet) := optionSet/GDAL_LayerCreationOptions;
 		parameter<string> GDAL_Driver := 'GPKG';
-		parameter<string> filename    := '%LocalDataDir%/BAG20/snapshot_' + SnapshotGeoDirPart + string(prik_datum) + '_new.gpkg';
+		parameter<string> filename    := SnapshotDir + '.gpkg', Descr = "De GeoPackage naast de plek waar de mmd-snapshot zou komen, met dezelfde naam.";
 
 		parameter<string> make_geopackage := 'OK', ExplicitSuppliers =
 			"result/ligplaats;result/ligplaats_status_code;result/ligplaats_nevenadres;"

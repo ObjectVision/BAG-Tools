@@ -13,7 +13,7 @@
 //    https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract                    //
 //                                                                                    //
 // 2. Pak alleen de zipbestanden LIG, NUM, OPR, PND, STA, VBO en WPL uit in een map   //
-//    en configureer die als XmlDir (standaard %SourceDataDir%/BAG/<datum>/NGR).      //
+//    en configureer die als XmlDir (standaard %SourceDataDir%/BAG/BAG_<datum>_XML).  //
 //                                                                                    //
 // 3. Zet de parameter date op de datum van het extract, jjjjmmdd.                    //
 //                                                                                    //
@@ -64,16 +64,15 @@ container Xml2MMD: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20.23.1
 		container Overridable
 		{
 			parameter<string> GEO_ENGINE := 'geos',               Descr = "De familie polygoonoperatoren voor het samenvoegen per pand: 'geos' (default) of 'dms'.";
-			parameter<string> BAG_DIR    := '%SourceDataDir%/BAG', Descr = "De map met per extract een submap <date>: de XML in <date>/NGR, de stores in <date>/mmd.";
+			parameter<string> BAG_DIR    := '%SourceDataDir%/BAG', Descr = "De map met de BAG: de XML in BAG_<date>_XML, de stores van deze configuratie in BAG_<date>_History, de snapshots van MakeSnapshot in BAG_<date>_Snapshot_<peildatum>.";
 		}
 	}
 
 	container Parameters
 	{
 		parameter<string> date     := '20261008', Descr = "De datum van het extract, jjjjmmdd: de naam van de map onder BAG_DIR.";
-		parameter<string> date_dir := '%BAG_DIR%/' + date;
-		parameter<string> XmlDir   := date_dir + '/NGR', Descr = "De uitgepakte XML-bestanden van het extract, alle in een map.";
-		parameter<string> StoreDir := date_dir + '/mmd', Descr = "De stores die deze configuratie schrijft: een per objecttype, met alle voorkomens.";
+		parameter<string> XmlDir   := '%BAG_DIR%/BAG_' + date + '_XML', Descr = "De uitgepakte XML-bestanden van het extract, alle in een map.";
+		parameter<string> StoreDir := '%BAG_DIR%/BAG_' + date + '_History', Descr = "De stores die deze configuratie schrijft: een per objecttype, met alle voorkomens.";
 		parameter<string> TempDir  := '%LocalDataProjDir%/Temp/' + date, Descr = "De tussenstores per fileset van pand, vbo en nummeraanduiding. Ze mogen weg zodra StoreDir geschreven is; staan ze er bij een volgende run nog, dan worden de filesets niet opnieuw geparseerd.";
 
 		parameter<string>  GeoEngine                := expand(., '%GEO_ENGINE%');

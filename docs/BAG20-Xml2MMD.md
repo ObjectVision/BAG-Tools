@@ -27,17 +27,16 @@ The root of `cfg/Xml2MMD.dms` shows the two steps, `Step1_Make_Temp_Files` and `
 ## how to use this script
 
 1. Download the .zip from <https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract>. Extract the zip file to zip files for each BAG object type. DO ONLY EXTRACT THE *LIG*, *NUM*, *OPR*, *PND*, *STA*, *VBO*, *WPL* ZIP FILES !
-2. Extract the xml files from the zip files per BAG object type to a local folder, with naming convention: _%SourceDataDir%_/BAG/_date_/NGR:
+2. Extract the xml files from the zip files per BAG object type to a local folder, with naming convention: _%SourceDataDir%_/BAG/BAG\__date_\_XML:
      - The _%SourceDataDir%_ is a [placeholder](https://github.com/ObjectVision/GeoDMS/wiki/Folders-and-Placeholders) for the SourceData folder on your local disk. By default the path: C:/SourceData is used. You can choose another path for your SourceData, but then you have to configure this new path in the [GeoDMS GUI](https://github.com/ObjectVision/GeoDMS/wiki/GeoDMS-GUI), menu option: Tools > Options > Advanced Tab > SourceDataDir control. The BAG folder itself can be set with the overridable setting `BAG_DIR` (default `%SourceDataDir%/BAG`), on the command line as the environment variable `GEODMS_Overridable_BAG_DIR`.
      - Use for the _date_ placeholder the date of your download with as format: _yyyymmdd_.
-     - The subfoldername NGR stands for: Nationaal GeoRegister.
-3. Make sure all zip files are extracted (your NGR subfolder need to have more than 6.000 xml files).
+3. Make sure all zip files are extracted (your BAG\__date_\_XML folder needs to have more than 6.000 xml files).
 4. Open the Xml2MMD.dms file from the [[BAG Toolkit|Home]] scripts (in the cfg subfolder of your chosen project folder) in a text editor, configure the date of your download for the parameter _date_ (_yyyymmdd_) in the container _Parameters_ and save your file:
 <pre>
 parameter&lt;string&gt; date     := '<I>20261008</I>';
 </pre>
 5. Run `bat\RunXml2MMD.bat`, or open the Xml2MMD.dms in the GeoDMS GUI and update, one after the other, the items _Step1_Make_Temp_Files_ and _Step2_Make_MMD_Files_. The first step parses the pand, vbo and nummeraanduiding files per file set of 50 files into intermediate stores in _%LocalDataProjDir%/Temp/date_; the second step reads those back, merges them into one store per object type and converts the other object types. Reopen the configuration between the two steps: the second step reads the intermediate stores when the configuration is loaded. The two steps are separate because a process that does both keeps every file set in memory until the merged store is written (75 GB measured against 35 GB).
-6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG/date/mmd_ folder. The intermediate stores in _%LocalDataProjDir%/Temp/date_ can be deleted afterwards; if they are kept, a later run of the first step for the same date does nothing.
+6. The resulting MMD storages become folders in your _%SourceDataDir%/BAG/BAG\_date\_History_ folder. The intermediate stores in _%LocalDataProjDir%/Temp/date_ can be deleted afterwards; if they are kept, a later run of the first step for the same date does nothing.
 
 ## polygon engine (GEO_ENGINE)
 
@@ -56,8 +55,8 @@ Like every overridable setting it is given on the command line through an enviro
 
 If updating item _Step1_Make_Temp_Files_ or _Step2_Make_MMD_Files_ results in an error, check:
 
-1. if you have unzipped the earlier mentioned zip files, your NGR subfolder should contain more than 6.000 xml files.
-2. if your _%SourceDataDir%_ placeholder refers to the actual physical path containing the subfolder (BAG/_date_/NGR) with the xml files. If this is not the case, configure the path for your _%SourceDataDir%_ in the GeoDMS GUI: menu option: Tools > Options > Advanced Tab > SourceDataDir control.
+1. if you have unzipped the earlier mentioned zip files, your BAG\__date_\_XML folder should contain more than 6.000 xml files.
+2. if your _%SourceDataDir%_ placeholder refers to the actual physical path containing the subfolder (BAG/BAG\__date_\_XML) with the xml files. If this is not the case, configure the path for your _%SourceDataDir%_ in the GeoDMS GUI: menu option: Tools > Options > Advanced Tab > SourceDataDir control.
 3. if _Step2_Make_MMD_Files_ cannot find the intermediate stores: run _Step1_Make_Temp_Files_ first, and reopen the configuration afterwards.
 4. if the conversion stops on an IntegrityCheck of a store: the extract contains a status or type that is not in `cfg/Classifications.dms`; add it to the list.
 

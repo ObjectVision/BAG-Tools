@@ -2,7 +2,7 @@ This page describes how to use the MakeSnapshot.dms script to make a [[BAG20 Mak
 
 ## date configuration
 
-Make sure your _%SourceDataDir%_/BAG/_date_/mmd folder contains an .mmd store for each BAG object type, resulting from [[BAG20 Xml2MMD]].
+Make sure your _%SourceDataDir%_/BAG/BAG\__date_\_History folder contains an .mmd store for each BAG object type, resulting from [[BAG20 Xml2MMD]].
 
 Then configure the code lines (in the top of the MakeSnapshot.dms scriptfile):
 
@@ -10,7 +10,7 @@ Then configure the code lines (in the top of the MakeSnapshot.dms scriptfile):
 parameter&lt;string&gt; Snapshot_Date_Input := '<I>20261001</I>';</pre>
 
 Adapt the **BAG_Date** to the date for the downloaded BAG source, also configured as date in the [[BAG20 Xml2MMD]] script.
-The source MMD stores for making the snapshot will now be read from the StoreDir, configured as:  <BR><I>'%BAG_DIR%/' + BAG_Date + '/mmd'</I>;<BR> `BAG_DIR` is an overridable setting with default `%SourceDataDir%/BAG`; if the results of [[BAG20 Xml2MMD]] are saved in another folder, set it on the command line as the environment variable `GEODMS_Overridable_BAG_DIR` or in the GeoDMS GUI under Tools > Options. The snapshot is written under the same folder, in `snapshots.ext`.
+The source MMD stores for making the snapshot will now be read from the StoreDir, configured as:  <BR><I>'%BAG_DIR%/BAG_' + BAG_Date + '_History'</I>;<BR> `BAG_DIR` is an overridable setting with default `%SourceDataDir%/BAG`; if the results of [[BAG20 Xml2MMD]] are saved in another folder, set it on the command line as the environment variable `GEODMS_Overridable_BAG_DIR` or in the GeoDMS GUI under Tools > Options. The snapshot is written next to it, in `BAG_<BAG_Date>_Snapshot_<Snapshot_Date>`.
 
 The **Snapshot_Date_Input** defines for which date the snapshot is made. Always chose a date before the BAG_Date.
 
@@ -116,7 +116,6 @@ To generate the snapshot double click one of the following items :
 Especially the _MaakVolledigeSnapshot_ option can take some time.
 
 ## result
-The resulting snapshot becomes a folder in your _%SourceDataDir%_/BAG/snapshots.ext/_optional_geo_selection_name_/_date_.new folder.
-This contains the store `bag.mmd` (and `pandhoogte.mmd` with height information) or the GPKG file.
+The resulting snapshot becomes the folder _%SourceDataDir%_/BAG/BAG\__BAG_Date_\_Snapshot\__Snapshot_Date_, or BAG\__BAG_Date_\_Snapshot\__Snapshot_Date_\__Label_ for a geographic selection, where _Label_ is the label of the selection.
+This contains the store `bag.mmd` (and `pandhoogte.mmd` with height information); a GeoPackage export is written next to it as a file with the same name and the extension .gpkg.
 
-We advice to rename the resulting folder to a _%SourceDataDir%_/BAG/snapshots.ext/_optional_geo_selection_name_/_date_ folder 

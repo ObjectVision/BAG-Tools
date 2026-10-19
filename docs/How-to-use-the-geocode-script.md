@@ -4,13 +4,13 @@ This page describes how to use the Geocode.dms script to [[geocode|GeoCode]] add
 
 1. Make sure you generated the .mmd stores with the [[BAG20 Xml2MMD]] script; Geocode reads those stores directly and selects the voorkomens that are valid on BAG_date itself.
 
-2. Configure the **snapshot date**. Open the _BAG.dms_ script file (in the cfg/Geocode subfolder of the [download](https://github.com/ObjectVision/BAG-Tools) in a text editor. Adjust the configuration of the item: *BAG/impl/SnapshotDir*
+2. Configure the **BAG date**. Open _Geocode.dms_ (in the cfg subfolder of the [download](https://github.com/ObjectVision/BAG-Tools)) in a text editor and set the parameter *ModelParameters/BAG_date* to the date of the extract, _yyyymmdd_:
 
 <pre>
-parameter&lt;string&gt; SnapshotDir := '%SourceDataDir%/BAG20/snapshots.ext/<I>20220701</I>';
+parameter&lt;string&gt; BAG_date := '<I>20261008</I>';
 </pre>
 
-with the you date made the snapshot for with the MakeSnapshot tool of, using the format _yyyymmdd_.
+Geocode reads the stores in _%SourceDataDir%_/BAG/BAG\__date_\_History and takes, per object, the voorkomen that is valid on that date.
 
 3. Configure the **source file** with the addresses to be geocoded. Open the _bron.dms_ file (in the cfg/Geocode subfolder of your download) in a text editor. Configure the item *bron/BestandsNaam*:
 
@@ -116,7 +116,7 @@ and adjust the bold label adres into the name of your composite field.
 
 If updating the item: *Export/bestand* results in an error, check if:
 
-1. your %SourceDataDir%/BAG/snapshots.ext/date folder contains the .mmd stores (result of the [MakeSnapshot](MakeSnapshot "wikilink") process).
+1. your %SourceDataDir%/BAG/BAG\__date_\_History folder contains the .mmd stores (result of the [[BAG20 Xml2MMD]] process).
 2. the item *TeGeocoderen/bron/TableChopper/BestandsNaam* refers to your source file.
 3. your source file is a valid csv file with a comma or semicolon delimiter. This delimiter need to be specified for the item:
 _TeGeocoderen/bron/TableChopper/VeldScheidingsTeken_

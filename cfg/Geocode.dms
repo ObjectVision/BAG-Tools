@@ -33,7 +33,7 @@ container Geocode
 	container ModelParameters
 	{
 		parameter<string> BAG_date                 := '20261008', Descr = "De datum van het BAG-extract: de map onder BAG_DIR met de stores van Xml2MMD.";
-		parameter<string> BAG_StoreDir             := '%BAG_DIR%/' + BAG_date + '/mmd';
+		parameter<string> BAG_StoreDir             := '%BAG_DIR%/BAG_' + BAG_date + '_History';
 		parameter<string> CBS_RegioIndelingenJaar  := '2024';
 		parameter<string> PathToFileToBeGeocoded   := '%OneDrive_Dir%/VU/Projects/NVM Prijsindex/Temp';
 		parameter<string> FileToBeGeocoded         := 'NVM_adressen_20260711'; // .csv is appended later

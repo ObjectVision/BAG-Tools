@@ -26,8 +26,9 @@
 
 container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20.23.1 of later, zoals Xml2MMD
 {
-	// GEO_ENGINE kiest de familie polygoonoperatoren: 'geos' (default) of 'dms'. BAG_DIR is de map met per
-	// extract een submap <BAG_Date> en de submap snapshots.ext. Beide zijn ConfigSettings/Overridable-instellingen,
+	// GEO_ENGINE kiest de familie polygoonoperatoren: 'geos' (default) of 'dms'. BAG_DIR is de map met de stores
+	// van Xml2MMD (BAG_<BAG_Date>_History); de snapshot komt ernaast als BAG_<BAG_Date>_Snapshot_<peildatum>.
+	// Beide zijn ConfigSettings/Overridable-instellingen,
 	// dus op de commandoregel te zetten met een omgevingsvariabele: GEODMS_Overridable_GEO_ENGINE=dms,
 	// GEODMS_Overridable_BAG_DIR=C:/LocalData/BAG (de batchbestanden vertalen hun argumenten daarheen).
 	container ConfigSettings
@@ -43,8 +44,7 @@ container MakeSnapshot: IntegrityCheck = "GeoDMSVersion() >= 20.23" // GeoDMS 20
 	parameter<string> BAG_Date            := '20261008', Descr = "De datum van het extract: de map onder BAG_DIR met de stores van Xml2MMD.";
 	parameter<string> Snapshot_Date_Input := '20261001', Descr = "De peildatum, jjjjmmdd; de omgevingsvariabele snapshot_date_env gaat voor.";
 
-	parameter<string> StoreDir            := '%BAG_DIR%/' + BAG_Date + '/mmd';
-	parameter<string> SnapshotBaseDir     := '%BAG_DIR%/snapshots.ext';
+	parameter<string> StoreDir            := '%BAG_DIR%/BAG_' + BAG_Date + '_History';
 
 	parameter<string> Snapshot_Date_Batch := expand(., '%ENV:snapshot_date_env%');
 	parameter<string> Snapshot_Date       := replace(Snapshot_Date_Batch, 'ENV:snapshot_date_env', Snapshot_Date_input);
