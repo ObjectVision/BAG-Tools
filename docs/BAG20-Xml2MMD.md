@@ -1,4 +1,4 @@
-The [[BAG]] 2.0 can be downloaded (monthly update) from the [Kadaster BAG 2.0 download page](https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract).
+The [[BAG]] 2.0 can be downloaded (monthly update) from the [Kadaster BAG 2.0 download page](https://www.kadaster.nl/zakelijk/producten/adressen-en-gebouwen/bag-2.0-extract).
 
 The download consists of a zip file with more than 6.000 xml files. Xml files are used as exchange formats but less suitable for processing.
 
@@ -26,7 +26,7 @@ The root of `cfg/Xml2MMD.dms` shows the two steps, `Step1_Make_Temp_Files` and `
 
 ## how to use this script
 
-1. Download the .zip from <https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract>. Extract the zip file to zip files for each BAG object type. DO ONLY EXTRACT THE *LIG*, *NUM*, *OPR*, *PND*, *STA*, *VBO*, *WPL* ZIP FILES !
+1. Download the .zip from <https://www.kadaster.nl/zakelijk/producten/adressen-en-gebouwen/bag-2.0-extract>. Extract the zip file to zip files for each BAG object type. DO ONLY EXTRACT THE *LIG*, *NUM*, *OPR*, *PND*, *STA*, *VBO*, *WPL* ZIP FILES !
 2. Extract the xml files from the zip files per BAG object type to a local folder, with naming convention: _%SourceDataDir%_/BAG/BAG\__date_\_XML:
      - The _%SourceDataDir%_ is a [placeholder](https://github.com/ObjectVision/GeoDMS/wiki/Folders-and-Placeholders) for the SourceData folder on your local disk. By default the path: C:/SourceData is used. You can choose another path for your SourceData, but then you have to configure this new path in the [GeoDMS GUI](https://github.com/ObjectVision/GeoDMS/wiki/GeoDMS-GUI), menu option: Tools > Options > Advanced Tab > SourceDataDir control. The BAG folder itself can be set with the overridable setting `BAG_DIR` (default `%SourceDataDir%/BAG`), on the command line as the environment variable `GEODMS_Overridable_BAG_DIR`.
      - Use for the _date_ placeholder the date of your download with as format: _yyyymmdd_.

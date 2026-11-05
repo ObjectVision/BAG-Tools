@@ -10,7 +10,7 @@
 //                                                                                    //
 // Hoe een nieuwe BAG te verkrijgen en tot MMD-stores om te zetten:                   //
 // 1. Download het extract via:                                                       //
-//    https://www.kadaster.nl/-/kosteloze-download-bag-2.0-extract                    //
+//    https://www.kadaster.nl/zakelijk/producten/adressen-en-gebouwen/bag-2.0-extract //
 //                                                                                    //
 // 2. Pak alleen de zipbestanden LIG, NUM, OPR, PND, STA, VBO en WPL uit in een map   //
 //    en configureer die als XmlDir (standaard %SourceDataDir%/BAG/BAG_<datum>_XML).  //
