@@ -32,7 +32,9 @@ container SourceData: Using = "Parameters"
 			parameter<string> NewLine         : ['\n'];
 		}
 
-		parameter<uint32> writeObjectenlijst := exec_ec(impl/ComSpec, '/c ' + impl/DirCmd, Expand(., '%LocalDataProjDir%'));
+		// Geen werkmap: het commando maakt %LocalDataProjDir% zelf aan met MD en schrijft met een absoluut pad.
+		// Een map die nog niet bestaat, is voor exec_ec vanaf GeoDMS 20.29.0 een fout (ObjectVision/GeoDMS#1361).
+		parameter<uint32> writeObjectenlijst := exec_ec(impl/ComSpec, '/c ' + impl/DirCmd, '');
 		parameter<bool>   CheckIsBAG2data    := strcount(SourceData/ligplaats/XmlData[0], '<Objecten:Ligplaats>') > 0;
 		parameter<uint8>  CanGenerate        := writeObjectenlijst > 0
 			? 2b
